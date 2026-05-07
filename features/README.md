@@ -1,0 +1,65 @@
+# TPL Payroll App — Feature Index
+
+This document serves as an index for all features broken down from the [Product Requirements Document](./TPL_Payroll_App.md).
+
+Each feature has its own folder under `features/` containing:
+- **`feature-spec.md`** — Overall goal, scope, and E2E behavior tests.
+- **`user-stories.md`** — User stories with acceptance criteria and unit tests.
+- **`wireframes.md`** — Screen layouts, behaviors, and ShadCN component specifications.
+
+---
+
+## Phase 1: Payroll Core
+
+| # | Feature | Folder | Description |
+|---|---------|--------|-------------|
+| F01 | [Dashboard](./features/F01-dashboard/) | `F01-dashboard` | Landing page with quick operational totals and alert cards |
+| F02 | [Employee Management](./features/F02-employee-management/) | `F02-employee-management` | CRUD, search, filter, deactivate, wage history for employees |
+| F03 | [Employee Import / Export](./features/F03-employee-import-export/) | `F03-employee-import-export` | Bulk import from Excel with validation/preview; export to Excel |
+| F04 | [Attendance Upload](./features/F04-attendance-upload/) | `F04-attendance-upload` | Upload & parse multi-sheet attendance, match employees, surface errors |
+| F05 | [Payroll Adjustments](./features/F05-payroll-adjustments/) | `F05-payroll-adjustments` | One-time & recurring deductions/additions with weekly review |
+| F06 | [Payroll Generation](./features/F06-payroll-generation/) | `F06-payroll-generation` | Calculate weekly payroll, preview summary, approve |
+| F07 | [Payroll Reports & Slips](./features/F07-payroll-reports/) | `F07-payroll-reports` | PDF summary, per-employee payroll slips, ZIP packaging |
+| F08 | [Payroll Correction](./features/F08-payroll-correction/) | `F08-payroll-correction` | Revision workflow for correcting approved payroll runs |
+| F09 | [Payroll History](./features/F09-payroll-history/) | `F09-payroll-history` | Search & view historical payroll data by employee/week |
+| F10 | [Settings](./features/F10-settings/) | `F10-settings` | Payroll week start day configuration |
+| F11 | [Audit Logging](./features/F11-audit-logging/) | `F11-audit-logging` | Automatic logging of employee create/update and wage changes |
+
+---
+
+## Recommended Implementation Order
+
+```
+F10 Settings (foundation — needed by payroll week logic)
+ ↓
+F02 Employee Management (core data model)
+ ↓
+F11 Audit Logging (integrated into employee services)
+ ↓
+F03 Employee Import/Export (bulk data loading)
+ ↓
+F04 Attendance Upload (payroll input)
+ ↓
+F05 Payroll Adjustments (adjustments management)
+ ↓
+F06 Payroll Generation (core calculation engine)
+ ↓
+F07 Payroll Reports & Slips (output generation)
+ ↓
+F08 Payroll Correction (revision workflow)
+ ↓
+F09 Payroll History (historical data retrieval)
+ ↓
+F01 Dashboard (aggregation — needs all other features)
+```
+
+---
+
+## Feature Statistics
+
+| Metric | Count |
+|--------|-------|
+| Total Features | 11 |
+| Total User Stories | 44 |
+| Total E2E Tests | 56 |
+| Total Screens | 18 |
