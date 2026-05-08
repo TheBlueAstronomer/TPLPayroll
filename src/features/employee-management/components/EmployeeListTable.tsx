@@ -2,9 +2,10 @@
 
 import { useState, useCallback, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { MagnifyingGlass, UsersThree, WarningCircle, Plus, CaretLeft, CaretRight } from '@phosphor-icons/react'
+import { MagnifyingGlass, UsersThree, WarningCircle, Plus, CaretLeft, CaretRight, UploadSimple, DownloadSimple, CaretDown, SpinnerGap } from '@phosphor-icons/react'
 import { StatusBadge } from './StatusBadge'
 import { SkeletonRows } from './SkeletonRows'
+import { ImportDialog } from '@/features/employee-import-export/components/ImportDialog'
 import { getEmployeeListAction } from '@/features/employee-management/actions/employee.actions'
 import type { EmployeeListItem, EmployeeStatus } from '@/features/employee-management/types/employee.types'
 
@@ -29,6 +30,9 @@ export function EmployeeListTable() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusFilter>('ALL')
   const [loadState, setLoadState] = useState<'loading' | 'loaded' | 'error'>('loading')
+  const [showImportDialog, setShowImportDialog] = useState(false)
+  const [showImportMenu, setShowImportMenu] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   const fetchEmployees = useCallback(
     async (opts: { page: number; search: string; status: StatusFilter }) => {
@@ -69,19 +73,77 @@ export function EmployeeListTable() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
 
+  const handleExport = useCallback(async () => {
+    setIsExporting(true)
+    try {
+      const res = await fetch('/api/employees/export')
+      if (!res.ok) throw new Error('Export failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const cd = res.headers.get('content-disposition') ?? ''
+      const match = cd.match(/filename="(.+)"/)
+      a.download = match?.[1] ?? 'employee-master.xlsx'
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setIsExporting(false)
+    }
+  }, [])
+
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
   const showing = employees.length > 0
     ? `Showing ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, totalCount)} of ${totalCount}`
     : ''
 
   return (
+    <>
     <div className="space-y-6">
       {/* ── Page header ─────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4">
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900">
           Team Directory
         </h1>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Export button */}
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="inline-flex items-center gap-2 text-sm font-medium text-zinc-700 px-3.5 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-50 transition-colors duration-200 disabled:opacity-60"
+          >
+            {isExporting ? (
+              <SpinnerGap size={15} className="animate-spin" />
+            ) : (
+              <DownloadSimple size={15} />
+            )}
+            Export
+          </button>
+
+          {/* Import dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowImportMenu((v) => !v)}
+              onBlur={() => setTimeout(() => setShowImportMenu(false), 150)}
+              className="inline-flex items-center gap-2 text-sm font-medium text-zinc-700 px-3.5 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-50 transition-colors duration-200"
+            >
+              <UploadSimple size={15} />
+              Import
+              <CaretDown size={13} className="text-zinc-400" />
+            </button>
+            {showImportMenu && (
+              <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl bg-white border border-zinc-200/60 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] py-1 z-20">
+                <button
+                  onClick={() => { setShowImportMenu(false); setShowImportDialog(true) }}
+                  className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                >
+                  <UploadSimple size={15} className="text-zinc-400" />
+                  Import from Excel
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => router.push('/employees/new')}
             className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors duration-200 active:scale-[0.98]"
@@ -268,5 +330,11 @@ export function EmployeeListTable() {
         }
       `}</style>
     </div>
+
+    {/* ── Import dialog ─────────────────────────────────────────────────── */}
+    {showImportDialog && (
+      <ImportDialog onClose={() => setShowImportDialog(false)} />
+    )}
+    </>
   )
 }
