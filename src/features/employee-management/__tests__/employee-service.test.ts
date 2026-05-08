@@ -1,0 +1,656 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { Employee, EmployeeWageHistory, AuditLog } from '@prisma/client'
+
+// ─── Mock Prisma ─────────────────────────────────────────────────────────────
+vi.mock('@/lib/prisma', () => ({
+  default: {
+    employee: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    employeeWageHistory: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+      updateMany: vi.fn(),
+    },
+    auditLog: {
+      create: vi.fn(),
+    },
+    $transaction: vi.fn(),
+  },
+}))
+
+import prisma from '@/lib/prisma'
+import {
+  createEmployee,
+  getEmployeeList,
+  getEmployeeById,
+  getEmployeeWageHistory,
+  updateEmployee,
+} from '@/features/employee-management/services/employee.service'
+import { EmployeeServiceError } from '@/features/employee-management/types/employee.types'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const makeEmployee = (overrides: Partial<Employee> = {}): Employee => ({
+  id: 'uuid-1',
+  employeeImportBatchId: null,
+  employeeId: 'EMP-100',
+  serialNumber: null,
+  employeeName: 'Ravi Kumar',
+  nationalId: null,
+  designation: 'Guard',
+  dateOfJoining: null,
+  aadhaarId: null,
+  policeVerificationId: null,
+  phone: null,
+  dateOfBirth: null,
+  healthCardId: null,
+  gPay: null,
+  bankAccount: null,
+  dateOfResignation: null,
+  site: 'North Gate',
+  isActive: true,
+  designationShort: 'GRD',
+  createdAt: new Date('2025-01-01'),
+  updatedAt: new Date('2025-01-01'),
+  ...overrides,
+})
+
+const makeWageHistory = (overrides: Partial<EmployeeWageHistory> = {}): EmployeeWageHistory => ({
+  id: 'wh-uuid-1',
+  employeeId: 'uuid-1',
+  weeklySalary: 12000 as unknown as EmployeeWageHistory['weeklySalary'],
+  hourlyRate: 62.5 as unknown as EmployeeWageHistory['hourlyRate'],
+  effectiveFrom: new Date('2025-01-01'),
+  effectiveTo: null,
+  changeSource: 'MANUAL',
+  employeeImportBatchId: null,
+  changedBy: null,
+  createdAt: new Date('2025-01-01'),
+  ...overrides,
+})
+
+const validInput = {
+  employeeId: 'EMP-100',
+  employeeName: 'Ravi Kumar',
+  designation: 'Guard',
+  salary: 12000,
+  hourlyRate: 62.5,
+  isActive: true,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-02.1: createEmployee
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('createEmployee', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('saves employee and returns record', async () => {
+    // GIVEN valid employee data
+    const employee = makeEmployee()
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(null) // no duplicate
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      return fn({
+        employee: { create: vi.fn().mockResolvedValue(employee) },
+        employeeWageHistory: { create: vi.fn() },
+        auditLog: { create: vi.fn() },
+      } as unknown as typeof prisma)
+    })
+
+    // WHEN
+    const result = await createEmployee(validInput)
+
+    // THEN
+    expect(result.employeeId).toBe('EMP-100')
+    expect(result.employeeName).toBe('Ravi Kumar')
+  })
+
+  it('rejects duplicate employeeId with DUPLICATE_EMPLOYEE_ID error', async () => {
+    // GIVEN EMP-100 already exists
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
+
+    // WHEN / THEN
+    await expect(createEmployee(validInput)).rejects.toThrow(EmployeeServiceError)
+    await expect(createEmployee(validInput)).rejects.toMatchObject({
+      code: 'DUPLICATE_EMPLOYEE_ID',
+    })
+  })
+
+  it('rejects missing required fields (employeeName)', async () => {
+    // GIVEN employee data missing employeeName
+    const badInput = { ...validInput, employeeName: '' }
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(null)
+
+    // WHEN / THEN
+    await expect(createEmployee(badInput)).rejects.toThrow(EmployeeServiceError)
+    await expect(createEmployee(badInput)).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+    })
+  })
+
+  it('creates initial wage history with weeklySalary and hourlyRate', async () => {
+    // GIVEN valid input with salary = 12000, hourlyRate = 62.50
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(null)
+
+    let capturedWageHistory: unknown = null
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        employee: { create: vi.fn().mockResolvedValue(makeEmployee()) },
+        employeeWageHistory: {
+          create: vi.fn().mockImplementation((args: unknown) => {
+            capturedWageHistory = args
+            return makeWageHistory()
+          }),
+        },
+        auditLog: { create: vi.fn() },
+      }
+      return fn(mockTx as unknown as typeof prisma)
+    })
+
+    await createEmployee(validInput)
+
+    // THEN wage history was created with correct values
+    expect(capturedWageHistory).toMatchObject({
+      data: expect.objectContaining({
+        weeklySalary: 12000,
+        hourlyRate: 62.5,
+        changeSource: 'MANUAL',
+      }),
+    })
+  })
+
+  it('creates audit log with actionType CREATE and entityType EMPLOYEE', async () => {
+    // GIVEN valid input
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(null)
+
+    let capturedAuditLog: unknown = null
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        employee: { create: vi.fn().mockResolvedValue(makeEmployee()) },
+        employeeWageHistory: { create: vi.fn().mockResolvedValue(makeWageHistory()) },
+        auditLog: {
+          create: vi.fn().mockImplementation((args: unknown) => {
+            capturedAuditLog = args
+          }),
+        },
+      }
+      return fn(mockTx as unknown as typeof prisma)
+    })
+
+    await createEmployee(validInput)
+
+    // THEN
+    expect(capturedAuditLog).toMatchObject({
+      data: expect.objectContaining({
+        actionType: 'CREATE',
+        entityType: 'EMPLOYEE',
+      }),
+    })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-02.2: getEmployeeList
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('getEmployeeList', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns all employees with no filters', async () => {
+    // GIVEN 15 employees in the database
+    const employees = Array.from({ length: 15 }, (_, i) =>
+      makeEmployee({ id: `uuid-${i}`, employeeId: `EMP-${i}` })
+    )
+    vi.mocked(prisma.employee.count).mockResolvedValue(15)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue(employees)
+
+    // WHEN
+    const result = await getEmployeeList({})
+
+    // THEN
+    expect(result.totalCount).toBe(15)
+    expect(result.employees).toHaveLength(15)
+  })
+
+  it('paginates correctly returning 10 of 30 employees', async () => {
+    // GIVEN 30 employees, requesting page 1 limit 10
+    const employees = Array.from({ length: 10 }, (_, i) =>
+      makeEmployee({ id: `uuid-${i}`, employeeId: `EMP-${i}` })
+    )
+    vi.mocked(prisma.employee.count).mockResolvedValue(30)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue(employees)
+
+    // WHEN
+    const result = await getEmployeeList({ page: 1, limit: 10 })
+
+    // THEN
+    expect(result.totalCount).toBe(30)
+    expect(result.employees).toHaveLength(10)
+    expect(result.page).toBe(1)
+    expect(result.limit).toBe(10)
+  })
+
+  it('computes status RESIGNED for employee with dateOfResignation set', async () => {
+    // GIVEN an employee with isActive=false and dateOfResignation set
+    const resignedEmployee = makeEmployee({
+      isActive: false,
+      dateOfResignation: new Date('2025-01-15'),
+    })
+    vi.mocked(prisma.employee.count).mockResolvedValue(1)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue([resignedEmployee])
+
+    // WHEN
+    const result = await getEmployeeList({})
+
+    // THEN
+    expect(result.employees[0].status).toBe('RESIGNED')
+  })
+
+  it('computes status INACTIVE for isActive=false employee without resignation', async () => {
+    const inactiveEmployee = makeEmployee({ isActive: false, dateOfResignation: null })
+    vi.mocked(prisma.employee.count).mockResolvedValue(1)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue([inactiveEmployee])
+
+    const result = await getEmployeeList({})
+
+    expect(result.employees[0].status).toBe('INACTIVE')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-02.3: Search employees
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('getEmployeeList — search', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('matches employees by name substring (case-insensitive)', async () => {
+    const raviKumar = makeEmployee({ employeeName: 'Ravi Kumar' })
+    const raviSharma = makeEmployee({ id: 'uuid-2', employeeId: 'EMP-101', employeeName: 'Ravi Sharma' })
+    vi.mocked(prisma.employee.count).mockResolvedValue(2)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue([raviKumar, raviSharma])
+
+    const result = await getEmployeeList({ search: 'ravi' })
+
+    expect(result.employees).toHaveLength(2)
+    // AND the Prisma query used a case-insensitive contains
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            expect.objectContaining({
+              employeeName: expect.objectContaining({ contains: 'ravi', mode: 'insensitive' }),
+            }),
+          ]),
+        }),
+      })
+    )
+  })
+
+  it('matches employees by employee ID', async () => {
+    const emp = makeEmployee({ employeeId: 'EMP-042' })
+    vi.mocked(prisma.employee.count).mockResolvedValue(1)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue([emp])
+
+    const result = await getEmployeeList({ search: 'EMP-04' })
+
+    expect(result.employees).toHaveLength(1)
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            expect.objectContaining({
+              employeeId: expect.objectContaining({ contains: 'EMP-04', mode: 'insensitive' }),
+            }),
+          ]),
+        }),
+      })
+    )
+  })
+
+  it('returns empty array when no employees match the search term', async () => {
+    vi.mocked(prisma.employee.count).mockResolvedValue(0)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue([])
+
+    const result = await getEmployeeList({ search: 'zzzzz' })
+
+    expect(result.employees).toHaveLength(0)
+    expect(result.totalCount).toBe(0)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-02.4: Filter employees by status
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('getEmployeeList — status filter', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns only active employees when status=ACTIVE', async () => {
+    const activeEmployees = Array.from({ length: 10 }, (_, i) =>
+      makeEmployee({ id: `uuid-${i}`, employeeId: `EMP-${i}`, isActive: true })
+    )
+    vi.mocked(prisma.employee.count).mockResolvedValue(10)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue(activeEmployees)
+
+    const result = await getEmployeeList({ status: 'ACTIVE' })
+
+    expect(result.employees).toHaveLength(10)
+    result.employees.forEach((e) => expect(e.isActive).toBe(true))
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ isActive: true }),
+      })
+    )
+  })
+
+  it('returns only resigned employees when status=RESIGNED', async () => {
+    const resignedEmployees = [
+      makeEmployee({ dateOfResignation: new Date('2025-01-01') }),
+      makeEmployee({ id: 'uuid-2', employeeId: 'EMP-101', dateOfResignation: new Date('2025-02-01') }),
+    ]
+    vi.mocked(prisma.employee.count).mockResolvedValue(2)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue(resignedEmployees)
+
+    const result = await getEmployeeList({ status: 'RESIGNED' })
+
+    expect(result.employees).toHaveLength(2)
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          dateOfResignation: expect.objectContaining({ not: null }),
+        }),
+      })
+    )
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-02.5: View employee profile
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('getEmployeeById', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns complete employee record for a valid id', async () => {
+    const employee = makeEmployee()
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(employee)
+
+    const result = await getEmployeeById('uuid-1')
+
+    expect(result.id).toBe('uuid-1')
+    expect(result.employeeId).toBe('EMP-100')
+    expect(prisma.employee.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'uuid-1' } })
+    )
+  })
+
+  it('throws EMPLOYEE_NOT_FOUND when employee does not exist', async () => {
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(null)
+
+    await expect(getEmployeeById('nonexistent')).rejects.toMatchObject({
+      code: 'EMPLOYEE_NOT_FOUND',
+    })
+  })
+})
+
+describe('getEmployeeWageHistory', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns wage history sorted by effectiveFrom descending', async () => {
+    const entries = [
+      makeWageHistory({ id: 'wh-3', effectiveFrom: new Date('2025-06-01') }),
+      makeWageHistory({ id: 'wh-2', effectiveFrom: new Date('2025-03-01') }),
+      makeWageHistory({ id: 'wh-1', effectiveFrom: new Date('2023-03-01') }),
+    ]
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue(entries)
+
+    const result = await getEmployeeWageHistory('uuid-1')
+
+    expect(result).toHaveLength(3)
+    expect(result[0].id).toBe('wh-3')
+    expect(prisma.employeeWageHistory.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { employeeId: 'uuid-1' },
+        orderBy: { effectiveFrom: 'desc' },
+      })
+    )
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-02.6: Edit employee
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('updateEmployee', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('saves changes and returns updated employee record', async () => {
+    // GIVEN EMP-042 with phone = 9876543210
+    const existing = makeEmployee({ phone: '9876543210' })
+    const updated = makeEmployee({ phone: '1111111111' })
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(existing)
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        employee: { update: vi.fn().mockResolvedValue(updated) },
+        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
+        auditLog: { create: vi.fn() },
+      }
+      return fn(mockTx as unknown as typeof prisma)
+    })
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue([makeWageHistory()])
+
+    const result = await updateEmployee('uuid-1', { phone: '1111111111' })
+
+    expect(result.phone).toBe('1111111111')
+  })
+
+  it('creates new wage history entry when salary changes', async () => {
+    const existing = makeEmployee()
+    const existingWage = makeWageHistory({ weeklySalary: 12000 as unknown as EmployeeWageHistory['weeklySalary'] })
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(existing)
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue([existingWage])
+
+    let capturedWageCreate: unknown = null
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        employee: { update: vi.fn().mockResolvedValue(existing) },
+        employeeWageHistory: {
+          create: vi.fn().mockImplementation((args: unknown) => {
+            capturedWageCreate = args
+          }),
+          updateMany: vi.fn(),
+        },
+        auditLog: { create: vi.fn() },
+      }
+      return fn(mockTx as unknown as typeof prisma)
+    })
+
+    await updateEmployee('uuid-1', { salary: 14000 })
+
+    // THEN new wage history was created with new salary
+    expect(capturedWageCreate).toMatchObject({
+      data: expect.objectContaining({ weeklySalary: 14000 }),
+    })
+  })
+
+  it('closes previous wage history entry effectiveTo=today on salary change', async () => {
+    const existing = makeEmployee()
+    const existingWage = makeWageHistory()
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(existing)
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue([existingWage])
+
+    let capturedUpdateMany: unknown = null
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        employee: { update: vi.fn().mockResolvedValue(existing) },
+        employeeWageHistory: {
+          create: vi.fn(),
+          updateMany: vi.fn().mockImplementation((args: unknown) => {
+            capturedUpdateMany = args
+          }),
+        },
+        auditLog: { create: vi.fn() },
+      }
+      return fn(mockTx as unknown as typeof prisma)
+    })
+
+    await updateEmployee('uuid-1', { salary: 14000 })
+
+    // THEN previous wage history was closed
+    expect(capturedUpdateMany).toMatchObject({
+      where: { employeeId: 'uuid-1', effectiveTo: null },
+      data: expect.objectContaining({
+        effectiveTo: expect.any(Date),
+      }),
+    })
+  })
+
+  it('creates audit log with actionType UPDATE on any change', async () => {
+    const existing = makeEmployee()
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(existing)
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue([makeWageHistory()])
+
+    let capturedAuditLog: unknown = null
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        employee: { update: vi.fn().mockResolvedValue(existing) },
+        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
+        auditLog: {
+          create: vi.fn().mockImplementation((args: unknown) => {
+            capturedAuditLog = args
+          }),
+        },
+      }
+      return fn(mockTx as unknown as typeof prisma)
+    })
+
+    await updateEmployee('uuid-1', { site: 'North Gate' })
+
+    expect(capturedAuditLog).toMatchObject({
+      data: expect.objectContaining({
+        actionType: 'UPDATE',
+        entityType: 'EMPLOYEE',
+      }),
+    })
+  })
+
+  it('does NOT create wage history when only non-wage fields change', async () => {
+    const existing = makeEmployee()
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(existing)
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue([makeWageHistory()])
+
+    let wageCreateCalled = false
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        employee: { update: vi.fn().mockResolvedValue(existing) },
+        employeeWageHistory: {
+          create: vi.fn().mockImplementation(() => { wageCreateCalled = true }),
+          updateMany: vi.fn(),
+        },
+        auditLog: { create: vi.fn() },
+      }
+      return fn(mockTx as unknown as typeof prisma)
+    })
+
+    await updateEmployee('uuid-1', { phone: '9999999999' })
+
+    expect(wageCreateCalled).toBe(false)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-02.7: Deactivate / Reactivate
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('updateEmployee — deactivate / reactivate', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('sets isActive to false when deactivating', async () => {
+    const existing = makeEmployee({ isActive: true })
+    const deactivated = makeEmployee({ isActive: false })
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(existing)
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue([makeWageHistory()])
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        employee: { update: vi.fn().mockResolvedValue(deactivated) },
+        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
+        auditLog: { create: vi.fn() },
+      }
+      return fn(mockTx as unknown as typeof prisma)
+    })
+
+    const result = await updateEmployee('uuid-1', { isActive: false })
+
+    expect(result.isActive).toBe(false)
+  })
+
+  it('sets isActive to true when reactivating', async () => {
+    const existing = makeEmployee({ isActive: false })
+    const reactivated = makeEmployee({ isActive: true })
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(existing)
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue([makeWageHistory()])
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        employee: { update: vi.fn().mockResolvedValue(reactivated) },
+        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
+        auditLog: { create: vi.fn() },
+      }
+      return fn(mockTx as unknown as typeof prisma)
+    })
+
+    const result = await updateEmployee('uuid-1', { isActive: true })
+
+    expect(result.isActive).toBe(true)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-02.8: Set Date of Resignation
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('updateEmployee — resignation date', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('saves the resignation date on the employee record', async () => {
+    const existing = makeEmployee({ dateOfResignation: null })
+    const resigned = makeEmployee({ dateOfResignation: new Date('2025-06-15') })
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(existing)
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue([makeWageHistory()])
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        employee: { update: vi.fn().mockResolvedValue(resigned) },
+        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
+        auditLog: { create: vi.fn() },
+      }
+      return fn(mockTx as unknown as typeof prisma)
+    })
+
+    const result = await updateEmployee('uuid-1', { dateOfResignation: new Date('2025-06-15') })
+
+    expect(result.dateOfResignation).toEqual(new Date('2025-06-15'))
+  })
+})

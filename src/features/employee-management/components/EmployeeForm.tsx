@@ -1,0 +1,523 @@
+'use client'
+
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
+import { ArrowLeft, FloppyDisk, Circle } from '@phosphor-icons/react'
+import {
+  CreateEmployeeSchema,
+  UpdateEmployeeSchema,
+  type CreateEmployeeInput,
+  type UpdateEmployeeInput,
+  type EmployeeRecord,
+} from '@/features/employee-management/types/employee.types'
+import {
+  createEmployeeAction,
+  updateEmployeeAction,
+} from '@/features/employee-management/actions/employee.actions'
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type Mode = 'create' | 'edit'
+
+interface EmployeeFormProps {
+  mode: Mode
+  /** Populated when mode = 'edit' */
+  employee?: EmployeeRecord
+  /** Current salary — from wage history, passed in on edit */
+  currentSalary?: number
+  /** Current hourly rate — from wage history, passed in on edit */
+  currentHourlyRate?: number
+}
+
+// ─── Internal form value shape ────────────────────────────────────────────────
+// We accept date strings in the form, convert to Date before submit.
+
+type FormValues = {
+  employeeId: string
+  employeeName: string
+  designation: string
+  designationShort: string
+  nationalId: string
+  aadhaarId: string
+  policeVerificationId: string
+  phone: string
+  dateOfBirth: string
+  dateOfJoining: string
+  site: string
+  healthCardId: string
+  gPay: string
+  bankAccount: string
+  dateOfResignation: string
+  isActive: boolean
+  salary: string
+  hourlyRate: string
+}
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+
+function toDateOrUndefined(val: string): Date | undefined {
+  if (!val || val.trim() === '') return undefined
+  const d = new Date(val)
+  return isNaN(d.getTime()) ? undefined : d
+}
+
+// ─── Field wrapper ────────────────────────────────────────────────────────────
+
+function FieldWrapper({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string
+  required?: boolean
+  error?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        {label}
+        {required && <span className="ml-0.5 text-rose-500">*</span>}
+      </label>
+      {children}
+      {error && (
+        <p className="text-xs text-rose-600 mt-0.5">{error}</p>
+      )}
+    </div>
+  )
+}
+
+// ─── Input classes ────────────────────────────────────────────────────────────
+
+const inputCls =
+  'w-full px-3 py-2 text-sm text-zinc-900 rounded-xl bg-white border border-zinc-200/60 ' +
+  'focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 ' +
+  'transition-colors duration-200 placeholder:text-zinc-400 disabled:bg-zinc-50 disabled:text-zinc-500 disabled:cursor-not-allowed'
+
+const errorInputCls =
+  'w-full px-3 py-2 text-sm text-zinc-900 rounded-xl bg-white border border-rose-400 ' +
+  'focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 ' +
+  'transition-colors duration-200 placeholder:text-zinc-400'
+
+// ─── Switch ───────────────────────────────────────────────────────────────────
+
+function Switch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500/30 ${
+        checked ? 'bg-emerald-600' : 'bg-zinc-200'
+      }`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+          checked ? 'translate-x-5' : 'translate-x-0'
+        }`}
+      />
+    </button>
+  )
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
+export function EmployeeForm({
+  mode,
+  employee,
+  currentSalary,
+  currentHourlyRate,
+}: EmployeeFormProps) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [serverError, setServerError] = useState<string | null>(null)
+
+  const isEdit = mode === 'edit'
+  const pageTitle = isEdit
+    ? `Edit — ${employee?.employeeName ?? 'Employee'}`
+    : 'Add Employee'
+
+  const defaultValues: FormValues = {
+    employeeId: employee?.employeeId ?? '',
+    employeeName: employee?.employeeName ?? '',
+    designation: employee?.designation ?? '',
+    designationShort: employee?.designationShort ?? '',
+    nationalId: employee?.nationalId ?? '',
+    aadhaarId: employee?.aadhaarId ?? '',
+    policeVerificationId: employee?.policeVerificationId ?? '',
+    phone: employee?.phone ?? '',
+    dateOfBirth: employee?.dateOfBirth
+      ? new Date(employee.dateOfBirth).toISOString().split('T')[0]
+      : '',
+    dateOfJoining: employee?.dateOfJoining
+      ? new Date(employee.dateOfJoining).toISOString().split('T')[0]
+      : '',
+    site: employee?.site ?? '',
+    healthCardId: employee?.healthCardId ?? '',
+    gPay: employee?.gPay ?? '',
+    bankAccount: employee?.bankAccount ?? '',
+    dateOfResignation: employee?.dateOfResignation
+      ? new Date(employee.dateOfResignation).toISOString().split('T')[0]
+      : '',
+    isActive: employee?.isActive ?? true,
+    salary: currentSalary !== undefined ? String(currentSalary) : '',
+    hourlyRate: currentHourlyRate !== undefined ? String(currentHourlyRate) : '',
+  }
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    formState: { errors },
+  } = useForm<FormValues>({ defaultValues })
+
+  const isActive = watch('isActive')
+
+  async function onSubmit(data: FormValues) {
+    setServerError(null)
+    startTransition(async () => {
+      const salaryNum = parseFloat(data.salary)
+      const hourlyNum = parseFloat(data.hourlyRate)
+
+      if (isEdit && employee) {
+        const payload: UpdateEmployeeInput = {
+          employeeName: data.employeeName || undefined,
+          designation: data.designation || undefined,
+          designationShort: data.designationShort || undefined,
+          nationalId: data.nationalId || undefined,
+          aadhaarId: data.aadhaarId || undefined,
+          policeVerificationId: data.policeVerificationId || undefined,
+          phone: data.phone || undefined,
+          dateOfBirth: toDateOrUndefined(data.dateOfBirth),
+          dateOfJoining: toDateOrUndefined(data.dateOfJoining),
+          site: data.site || undefined,
+          healthCardId: data.healthCardId || undefined,
+          gPay: data.gPay || undefined,
+          bankAccount: data.bankAccount || undefined,
+          dateOfResignation: toDateOrUndefined(data.dateOfResignation),
+          isActive: data.isActive,
+          salary: isNaN(salaryNum) ? undefined : salaryNum,
+          hourlyRate: isNaN(hourlyNum) ? undefined : hourlyNum,
+        }
+        // Client-side validate update schema
+        const parsed = UpdateEmployeeSchema.safeParse(payload)
+        if (!parsed.success) {
+          setServerError(parsed.error.issues[0]?.message ?? 'Validation error')
+          return
+        }
+        const result = await updateEmployeeAction(employee.id, payload)
+        if (!result.ok) {
+          setServerError(result.error)
+          return
+        }
+        router.push(`/employees/${employee.id}`)
+        router.refresh()
+      } else {
+        const payload: CreateEmployeeInput = {
+          employeeId: data.employeeId,
+          employeeName: data.employeeName,
+          designation: data.designation,
+          designationShort: data.designationShort || undefined,
+          nationalId: data.nationalId || undefined,
+          aadhaarId: data.aadhaarId || undefined,
+          policeVerificationId: data.policeVerificationId || undefined,
+          phone: data.phone || undefined,
+          dateOfBirth: toDateOrUndefined(data.dateOfBirth),
+          dateOfJoining: toDateOrUndefined(data.dateOfJoining),
+          site: data.site || undefined,
+          healthCardId: data.healthCardId || undefined,
+          gPay: data.gPay || undefined,
+          bankAccount: data.bankAccount || undefined,
+          dateOfResignation: toDateOrUndefined(data.dateOfResignation),
+          isActive: data.isActive,
+          salary: salaryNum,
+          hourlyRate: hourlyNum,
+        }
+        const parsed = CreateEmployeeSchema.safeParse(payload)
+        if (!parsed.success) {
+          setServerError(parsed.error.issues[0]?.message ?? 'Validation error')
+          return
+        }
+        const result = await createEmployeeAction(payload)
+        if (!result.ok) {
+          if (result.code === 'DUPLICATE_EMPLOYEE_ID') {
+            setServerError(`Employee ID "${data.employeeId}" already exists`)
+          } else {
+            setServerError(result.error)
+          }
+          return
+        }
+        router.push(`/employees/${result.data.id}`)
+        router.refresh()
+      }
+    })
+  }
+
+  return (
+    <div className="space-y-0">
+      {/* ── Back link ───────────────────────────────────────────────────────── */}
+      <button
+        type="button"
+        onClick={() => router.push('/employees')}
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors duration-200 mb-6"
+      >
+        <ArrowLeft size={16} />
+        Back to directory
+      </button>
+
+      {/* ── Page title ──────────────────────────────────────────────────────── */}
+      <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900 mb-8">
+        {pageTitle}
+      </h1>
+
+      {/* ── Server error banner ─────────────────────────────────────────────── */}
+      {serverError && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+          <Circle weight="fill" size={8} className="mt-1.5 shrink-0 text-rose-500" />
+          <p className="text-sm text-rose-700">{serverError}</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-0" noValidate>
+
+        {/* ── Section: Personal Details ────────────────────────────────────── */}
+        <div className="border-t border-zinc-200/60 pt-8 pb-10">
+          <p className="text-sm font-medium text-zinc-900 mb-6">Personal Details</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+
+            <FieldWrapper label="Employee ID" required error={errors.employeeId?.message}>
+              <input
+                {...register('employeeId', { required: 'Employee ID is required' })}
+                disabled={isEdit}
+                placeholder="EMP-042"
+                className={errors.employeeId ? errorInputCls : inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Employee Name" required error={errors.employeeName?.message}>
+              <input
+                {...register('employeeName', { required: 'Employee Name is required' })}
+                placeholder="Lakshmi Venkatesh"
+                className={errors.employeeName ? errorInputCls : inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Designation" required error={errors.designation?.message}>
+              <input
+                {...register('designation', { required: 'Designation is required' })}
+                placeholder="Guard"
+                className={errors.designation ? errorInputCls : inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Designation Short" error={errors.designationShort?.message}>
+              <input
+                {...register('designationShort')}
+                placeholder="GRD"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="National ID" error={errors.nationalId?.message}>
+              <input
+                {...register('nationalId')}
+                placeholder="XXXXX-1234567-X"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Aadhaar ID" error={errors.aadhaarId?.message}>
+              <input
+                {...register('aadhaarId')}
+                placeholder="XXXX XXXX XXXX"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Date of Birth" error={errors.dateOfBirth?.message}>
+              <input
+                {...register('dateOfBirth')}
+                type="date"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Phone" error={errors.phone?.message}>
+              <input
+                {...register('phone')}
+                placeholder="+91 98765 43210"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Date of Joining" error={errors.dateOfJoining?.message}>
+              <input
+                {...register('dateOfJoining')}
+                type="date"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Site" error={errors.site?.message}>
+              <input
+                {...register('site')}
+                placeholder="North Gate"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Police Verification ID" error={errors.policeVerificationId?.message}>
+              <input
+                {...register('policeVerificationId')}
+                placeholder="PV-XXXXXXXX"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Health Card ID" error={errors.healthCardId?.message}>
+              <input
+                {...register('healthCardId')}
+                placeholder="HC-XXXXXXXX"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+          </div>
+        </div>
+
+        {/* ── Section: Compensation ────────────────────────────────────────── */}
+        <div className="border-t border-zinc-200/60 pt-8 pb-10">
+          <p className="text-sm font-medium text-zinc-900 mb-6">Compensation</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+
+            <FieldWrapper label="Monthly Salary (₹)" required error={errors.salary?.message}>
+              <input
+                {...register('salary', { required: 'Salary is required' })}
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="14375"
+                className={`${errors.salary ? errorInputCls : inputCls} font-mono tabular-nums`}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Hourly Rate (₹)" required error={errors.hourlyRate?.message}>
+              <input
+                {...register('hourlyRate', { required: 'Hourly Rate is required' })}
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="68.75"
+                className={`${errors.hourlyRate ? errorInputCls : inputCls} font-mono tabular-nums`}
+              />
+            </FieldWrapper>
+
+          </div>
+        </div>
+
+        {/* ── Section: Payment Details ─────────────────────────────────────── */}
+        <div className="border-t border-zinc-200/60 pt-8 pb-10">
+          <p className="text-sm font-medium text-zinc-900 mb-6">Payment Details</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+
+            <FieldWrapper label="GPay Number" error={errors.gPay?.message}>
+              <input
+                {...register('gPay')}
+                placeholder="+91 98765 43210"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper label="Bank Account" error={errors.bankAccount?.message}>
+              <input
+                {...register('bankAccount')}
+                placeholder="HDFC xxxxxx1234"
+                className={inputCls}
+              />
+            </FieldWrapper>
+
+          </div>
+        </div>
+
+        {/* ── Section: Status ──────────────────────────────────────────────── */}
+        <div className="border-t border-zinc-200/60 pt-8 pb-10">
+          <p className="text-sm font-medium text-zinc-900 mb-6">Status</p>
+          <div className="flex flex-wrap items-start gap-x-12 gap-y-6">
+
+            {/* Active toggle */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+                Active<span className="ml-0.5 text-rose-500">*</span>
+              </span>
+              <div className="flex items-center gap-3 pt-1">
+                <Controller
+                  control={control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <Switch checked={field.value} onChange={field.onChange} />
+                  )}
+                />
+                <span className="text-sm text-zinc-600">
+                  {isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
+
+            {/* Date of Resignation */}
+            <FieldWrapper label="Date of Resignation" error={errors.dateOfResignation?.message}>
+              <input
+                {...register('dateOfResignation')}
+                type="date"
+                className={inputCls}
+                style={{ width: '200px' }}
+              />
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Independent of active status
+              </p>
+            </FieldWrapper>
+
+          </div>
+        </div>
+
+        {/* ── Actions ──────────────────────────────────────────────────────── */}
+        <div className="border-t border-zinc-200/60 pt-8 flex justify-end items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-200/60 rounded-xl hover:bg-zinc-50 transition-colors duration-200 active:scale-[0.98]"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            disabled={isPending}
+            className="relative inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 rounded-xl transition-colors duration-200 active:scale-[0.98] overflow-hidden"
+          >
+            {isPending ? (
+              <>
+                {/* Shimmer loading bar inside button */}
+                <span
+                  className="absolute inset-0 skeleton-shimmer opacity-30 pointer-events-none"
+                  aria-hidden
+                />
+                <span className="opacity-60">Saving…</span>
+              </>
+            ) : (
+              <>
+                <FloppyDisk size={16} weight="bold" />
+                {isEdit ? 'Save Changes' : 'Save Employee'}
+              </>
+            )}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  )
+}

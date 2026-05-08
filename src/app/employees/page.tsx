@@ -1,16 +1,15 @@
 import { AppShell } from '@/components/layout/AppShell'
+import { EmployeeListTable } from '@/features/employee-management/components/EmployeeListTable'
 
 export const metadata = {
-  title: 'Employees — TPL Payroll',
+  title: 'Team Directory — TPL Payroll',
+  description: 'Browse, search, and manage all employee records.',
 }
 
 export default function EmployeesPage() {
   return (
     <AppShell>
-      <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900">
-        Employee Management
-      </h1>
-      <p className="mt-4 text-sm text-zinc-400">Coming soon — F02 implementation.</p>
+      <EmployeeListTable />
     </AppShell>
   )
 }
