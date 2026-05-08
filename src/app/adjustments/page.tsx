@@ -1,16 +1,15 @@
 import { AppShell } from '@/components/layout/AppShell'
+import { AdjustmentListTable } from '@/features/payroll-adjustments/components/AdjustmentListTable'
 
 export const metadata = {
-  title: 'Adjustments — TPL Payroll',
+  title: 'Payroll Adjustments — TPL Payroll',
+  description: 'Manage deductions and additions for employees.',
 }
 
 export default function AdjustmentsPage() {
   return (
     <AppShell>
-      <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900">
-        Payroll Adjustments
-      </h1>
-      <p className="mt-4 text-sm text-zinc-400">Coming soon — F05 implementation.</p>
+      <AdjustmentListTable />
     </AppShell>
   )
 }

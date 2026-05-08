@@ -1,0 +1,292 @@
+'use client'
+
+import Link from 'next/link'
+import {
+  ArrowLeft,
+  Circle,
+  CurrencyInr,
+  CalendarBlank,
+  ArrowsClockwise,
+  CheckCircle,
+  XCircle,
+  Clock,
+} from '@phosphor-icons/react'
+import type {
+  AdjustmentDetailRecord,
+  AdjustmentApplicationRecord,
+  ApprovalStatus,
+} from '@/features/payroll-adjustments/types/adjustment.types'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatAmount(amount: number) {
+  return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(amount)
+}
+
+function formatDate(d: Date) {
+  return new Date(d).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+function formatWeek(start: Date, end: Date) {
+  const s = new Date(start).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  const e = new Date(end).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+  return `${s} – ${e}`
+}
+
+// ─── Application status badge ─────────────────────────────────────────────────
+
+function AppStatusBadge({ status }: { status: ApprovalStatus }) {
+  if (status === 'APPROVED') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+        <CheckCircle size={15} weight="fill" className="text-emerald-500" />
+        Approved
+      </span>
+    )
+  }
+  if (status === 'SKIPPED') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm text-zinc-400">
+        <XCircle size={15} weight="fill" className="text-zinc-300" />
+        Skipped
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600">
+      <Clock size={15} weight="fill" className="text-amber-400" />
+      Pending
+    </span>
+  )
+}
+
+// ─── Metadata row ─────────────────────────────────────────────────────────────
+
+function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-2.5">
+      <span className="text-sm text-zinc-500">{label}</span>
+      <span className="text-sm font-medium text-zinc-900 text-right">{value}</span>
+    </div>
+  )
+}
+
+// ─── AdjustmentDetail ─────────────────────────────────────────────────────────
+
+interface Props {
+  adjustment: AdjustmentDetailRecord
+}
+
+export function AdjustmentDetail({ adjustment: adj }: Props) {
+  const endConditionLabel =
+    adj.recurrenceEndType === 'END_WEEK'
+      ? `Until ${adj.endPayrollWeekStartDate ? formatWeek(adj.endPayrollWeekStartDate, adj.endPayrollWeekEndDate!) : '—'}`
+      : adj.recurrenceEndType === 'FIXED_WEEKS'
+        ? `${adj.totalRecurrenceWeeks} weeks`
+        : adj.recurrenceEndType === 'TOTAL_BALANCE'
+          ? `Until ₹${formatAmount(adj.totalBalance ?? 0)} depleted`
+          : '—'
+
+  return (
+    <div className="space-y-8">
+      {/* ── Back link ─────────────────────────────────────────────────────── */}
+      <Link
+        href="/adjustments"
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 transition-colors hover:text-zinc-900"
+      >
+        <ArrowLeft size={15} />
+        Back to adjustments
+      </Link>
+
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+            Adjustment Detail
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            {adj.employeeName}{' '}
+            <span className="font-mono text-zinc-400">({adj.employeeCode})</span>
+          </p>
+        </div>
+
+        {/* Status badge */}
+        <div className="shrink-0">
+          {adj.status === 'ACTIVE' ? (
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700">
+              <Circle size={8} weight="fill" className="text-emerald-500" />
+              Active
+            </span>
+          ) : adj.status === 'COMPLETED' ? (
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-100 px-3 py-1.5 text-sm text-zinc-500">
+              <Circle size={8} weight="fill" className="text-zinc-400" />
+              Completed
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-rose-50 px-3 py-1.5 text-sm text-rose-500">
+              <Circle size={8} weight="fill" className="text-rose-400" />
+              Cancelled
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Metadata grid ─────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {/* Left card: adjustment info */}
+        <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
+          <h2 className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-400">
+            <CurrencyInr size={14} />
+            Adjustment Info
+          </h2>
+          <div className="divide-y divide-zinc-100">
+            <MetaRow
+              label="Type"
+              value={
+                adj.adjustmentType === 'DEDUCTION' ? (
+                  <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-600">
+                    Deduction
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                    Addition
+                  </span>
+                )
+              }
+            />
+            <MetaRow
+              label="Amount"
+              value={
+                <span className="font-mono tabular-nums">₹{formatAmount(adj.amount)}</span>
+              }
+            />
+            <MetaRow label="Reason" value={adj.reason} />
+          </div>
+        </div>
+
+        {/* Right card: recurrence info */}
+        <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
+          <h2 className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-400">
+            <ArrowsClockwise size={14} />
+            Recurrence
+          </h2>
+          <div className="divide-y divide-zinc-100">
+            <MetaRow
+              label="Type"
+              value={adj.recurrenceType === 'RECURRING' ? 'Recurring' : 'One-time'}
+            />
+            <MetaRow
+              label="Start Week"
+              value={
+                <span className="flex items-center gap-1.5">
+                  <CalendarBlank size={13} className="text-zinc-400" />
+                  {formatWeek(adj.startPayrollWeekStartDate, adj.startPayrollWeekEndDate)}
+                </span>
+              }
+            />
+            {adj.recurrenceType === 'RECURRING' && (
+              <MetaRow label="End Condition" value={endConditionLabel} />
+            )}
+            {adj.recurrenceEndType === 'TOTAL_BALANCE' && adj.remainingBalance != null && (
+              <MetaRow
+                label="Remaining Balance"
+                value={
+                  <span className="font-mono tabular-nums">
+                    ₹{formatAmount(adj.remainingBalance)}
+                    <span className="ml-1 text-xs text-zinc-400">
+                      / ₹{formatAmount(adj.totalBalance ?? 0)}
+                    </span>
+                  </span>
+                }
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Application timeline ───────────────────────────────────────────── */}
+      <div>
+        <h2 className="mb-4 text-sm font-semibold text-zinc-700">Application History</h2>
+
+        {adj.applications.length === 0 ? (
+          <p className="text-sm text-zinc-400">No applications yet.</p>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-zinc-200/60">
+            <table className="w-full divide-y divide-zinc-100">
+              <thead className="bg-zinc-50/50">
+                <tr>
+                  {['Payroll Week', 'Applied Amount', 'Status', 'Applied At'].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 bg-white">
+                {adj.applications.map((app: AdjustmentApplicationRecord, i) => (
+                  <tr
+                    key={app.id}
+                    className={app.approvalStatus === 'SKIPPED' ? 'opacity-50' : ''}
+                    style={{
+                      opacity: app.approvalStatus === 'SKIPPED' ? undefined : 0,
+                      animation:
+                        app.approvalStatus !== 'SKIPPED'
+                          ? 'fadeSlideIn 0.3s ease forwards'
+                          : undefined,
+                      animationDelay: `${i * 50}ms`,
+                    }}
+                  >
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-zinc-700">
+                        {formatWeek(app.payrollWeekStartDate, app.payrollWeekEndDate)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`font-mono tabular-nums text-sm ${
+                          app.approvalStatus === 'SKIPPED' ? 'line-through text-zinc-400' : 'text-zinc-900'
+                        }`}
+                      >
+                        ₹{formatAmount(app.appliedAmount)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <AppStatusBadge status={app.approvalStatus} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-zinc-500">
+                        {app.appliedAt
+                          ? formatDate(app.appliedAt)
+                          : app.skippedAt
+                            ? formatDate(app.skippedAt)
+                            : '—'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
+  )
+}
