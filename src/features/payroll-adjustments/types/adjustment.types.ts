@@ -27,6 +27,24 @@ export const CreateAdjustmentSchema = z.object({
 
 export type CreateAdjustmentInput = z.infer<typeof CreateAdjustmentSchema>
 
+// ─── Update schema (same shape minus employeeId) ─────────────────────────────
+
+export const UpdateAdjustmentSchema = z.object({
+  adjustmentType: z.enum(['DEDUCTION', 'ADDITION']),
+  amount: z.number({ error: 'Amount is required' }).positive('Amount must be positive'),
+  reason: z.string().min(1, 'Reason is required'),
+  recurrenceType: z.enum(['ONE_TIME', 'RECURRING']),
+  startPayrollWeekStartDate: z.date(),
+  startPayrollWeekEndDate: z.date(),
+  recurrenceEndType: z.enum(['END_WEEK', 'FIXED_WEEKS', 'TOTAL_BALANCE']).optional().nullable(),
+  endPayrollWeekStartDate: z.date().optional().nullable(),
+  endPayrollWeekEndDate: z.date().optional().nullable(),
+  totalRecurrenceWeeks: z.number().int().positive().optional().nullable(),
+  totalBalance: z.number().positive().optional().nullable(),
+})
+
+export type UpdateAdjustmentInput = z.infer<typeof UpdateAdjustmentSchema>
+
 // ─── List / pagination ────────────────────────────────────────────────────────
 
 export interface AdjustmentListOptions {
@@ -129,7 +147,9 @@ export class AdjustmentServiceError extends Error {
       | 'EMPLOYEE_NOT_FOUND'
       | 'ADJUSTMENT_NOT_FOUND'
       | 'APPLICATION_NOT_FOUND'
-      | 'INVALID_APPROVAL_STATUS',
+      | 'INVALID_APPROVAL_STATUS'
+      | 'EDIT_NOT_ALLOWED'
+      | 'CANCEL_NOT_ALLOWED',
     message: string,
   ) {
     super(message)

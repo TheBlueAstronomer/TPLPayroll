@@ -1,8 +1,10 @@
 import prisma from '@/lib/prisma'
 import {
   CreateAdjustmentSchema,
+  UpdateAdjustmentSchema,
   AdjustmentServiceError,
   type CreateAdjustmentInput,
+  type UpdateAdjustmentInput,
   type AdjustmentListOptions,
   type PaginatedAdjustmentList,
   type AdjustmentListItem,
@@ -355,4 +357,98 @@ export async function getAdjustmentsForWeekReview(
       payrollWeekEndDate: row.payrollWeekEndDate,
     }
   })
+}
+
+// ─── updateAdjustment ─────────────────────────────────────────────────────────
+
+export async function updateAdjustment(id: string, input: UpdateAdjustmentInput) {
+  const parsed = UpdateAdjustmentSchema.safeParse(input)
+  if (!parsed.success) {
+    const first = parsed.error.issues?.[0]
+    throw new AdjustmentServiceError('VALIDATION_ERROR', first?.message ?? 'Invalid adjustment data')
+  }
+
+  const adj = await prisma.payrollAdjustment.findUnique({
+    where: { id },
+    include: { adjustmentApplications: { select: { approvalStatus: true } } },
+  })
+
+  if (!adj) {
+    throw new AdjustmentServiceError('ADJUSTMENT_NOT_FOUND', `Adjustment "${id}" not found`)
+  }
+
+  const hasApproved = adj.adjustmentApplications.some((a) => a.approvalStatus === 'APPROVED')
+  if (hasApproved) {
+    throw new AdjustmentServiceError(
+      'EDIT_NOT_ALLOWED',
+      'Cannot edit an adjustment that has already been applied to payroll',
+    )
+  }
+
+  const d = parsed.data
+  const isTotalBalance = d.recurrenceType === 'RECURRING' && d.recurrenceEndType === 'TOTAL_BALANCE'
+
+  const updated = await prisma.payrollAdjustment.update({
+    where: { id },
+    data: {
+      adjustmentType: d.adjustmentType,
+      amount: d.amount,
+      reason: d.reason,
+      recurrenceType: d.recurrenceType,
+      startPayrollWeekStartDate: d.startPayrollWeekStartDate,
+      startPayrollWeekEndDate: d.startPayrollWeekEndDate,
+      recurrenceEndType: d.recurrenceEndType ?? null,
+      endPayrollWeekStartDate: d.endPayrollWeekStartDate ?? null,
+      endPayrollWeekEndDate: d.endPayrollWeekEndDate ?? null,
+      totalRecurrenceWeeks: d.totalRecurrenceWeeks ?? null,
+      totalBalance: d.totalBalance ?? null,
+      remainingBalance: isTotalBalance ? (d.totalBalance ?? null) : null,
+    },
+  })
+
+  // Keep PENDING applications in sync with new amount and start week
+  await prisma.payrollAdjustmentApplication.updateMany({
+    where: { payrollAdjustmentId: id, approvalStatus: 'PENDING' },
+    data: {
+      appliedAmount: d.amount,
+      payrollWeekStartDate: d.startPayrollWeekStartDate,
+      payrollWeekEndDate: d.startPayrollWeekEndDate,
+    },
+  })
+
+  return {
+    ...updated,
+    amount: Number(updated.amount),
+    totalBalance: updated.totalBalance != null ? Number(updated.totalBalance) : null,
+    remainingBalance: updated.remainingBalance != null ? Number(updated.remainingBalance) : null,
+  }
+}
+
+// ─── cancelAdjustment ─────────────────────────────────────────────────────────
+
+export async function cancelAdjustment(id: string) {
+  const adj = await prisma.payrollAdjustment.findUnique({ where: { id } })
+
+  if (!adj) {
+    throw new AdjustmentServiceError('ADJUSTMENT_NOT_FOUND', `Adjustment "${id}" not found`)
+  }
+
+  if (adj.status === 'COMPLETED' || adj.status === 'CANCELLED') {
+    throw new AdjustmentServiceError(
+      'CANCEL_NOT_ALLOWED',
+      `Adjustment is already ${adj.status.toLowerCase()} and cannot be cancelled`,
+    )
+  }
+
+  // Remove unprocessed applications only — approved ones stay for audit trail
+  await prisma.payrollAdjustmentApplication.deleteMany({
+    where: { payrollAdjustmentId: id, approvalStatus: 'PENDING' },
+  })
+
+  const cancelled = await prisma.payrollAdjustment.update({
+    where: { id },
+    data: { status: 'CANCELLED' },
+  })
+
+  return cancelled
 }

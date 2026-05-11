@@ -1,6 +1,8 @@
 'use client'
 
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
   Circle,
@@ -10,7 +12,12 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  PencilSimple,
+  Trash,
+  Warning,
+  SpinnerGap,
 } from '@phosphor-icons/react'
+import { cancelAdjustmentAction } from '@/features/payroll-adjustments/actions/adjustment.actions'
 import type {
   AdjustmentDetailRecord,
   AdjustmentApplicationRecord,
@@ -86,6 +93,29 @@ interface Props {
 }
 
 export function AdjustmentDetail({ adjustment: adj }: Props) {
+  const router = useRouter()
+  const [isCancelling, startCancelTransition] = useTransition()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const hasApprovedApp = adj.applications.some((a) => a.approvalStatus === 'APPROVED')
+  const canEdit = adj.status === 'ACTIVE' && !hasApprovedApp
+  const canDelete = adj.status === 'ACTIVE'
+
+  function handleDelete() {
+    setDeleteError(null)
+    startCancelTransition(async () => {
+      const result = await cancelAdjustmentAction(adj.id)
+      if (result.ok) {
+        router.push('/adjustments')
+        router.refresh()
+      } else {
+        setDeleteError(result.error)
+        setShowDeleteConfirm(false)
+      }
+    })
+  }
+
   const endConditionLabel =
     adj.recurrenceEndType === 'END_WEEK'
       ? `Until ${adj.endPayrollWeekStartDate ? formatWeek(adj.endPayrollWeekStartDate, adj.endPayrollWeekEndDate!) : '—'}`
@@ -107,7 +137,7 @@ export function AdjustmentDetail({ adjustment: adj }: Props) {
       </Link>
 
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
             Adjustment Detail
@@ -118,8 +148,8 @@ export function AdjustmentDetail({ adjustment: adj }: Props) {
           </p>
         </div>
 
-        {/* Status badge */}
-        <div className="shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Status badge */}
           {adj.status === 'ACTIVE' ? (
             <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700">
               <Circle size={8} weight="fill" className="text-emerald-500" />
@@ -136,8 +166,81 @@ export function AdjustmentDetail({ adjustment: adj }: Props) {
               Cancelled
             </span>
           )}
+
+          {/* Edit button — only for ACTIVE with no approved apps */}
+          {canEdit && (
+            <button
+              id="edit-adjustment-btn"
+              onClick={() => router.push(`/adjustments/${adj.id}/edit`)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 hover:border-zinc-300 active:scale-[0.98]"
+            >
+              <PencilSimple size={14} />
+              Edit
+            </button>
+          )}
+
+          {/* Delete button — only for ACTIVE adjustments */}
+          {canDelete && (
+            <button
+              id="delete-adjustment-btn"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-100 active:scale-[0.98]"
+            >
+              <Trash size={14} />
+              Delete
+            </button>
+          )}
         </div>
       </div>
+
+      {/* ── Error banner ──────────────────────────────────────────────────── */}
+      {deleteError && (
+        <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+          <Warning size={16} className="shrink-0 text-rose-500" />
+          <p className="text-sm text-rose-700">{deleteError}</p>
+        </div>
+      )}
+
+      {/* ── Delete confirmation dialog ────────────────────────────────────── */}
+      {showDeleteConfirm && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 space-y-3">
+          <div className="flex items-start gap-3">
+            <Warning size={20} weight="fill" className="mt-0.5 shrink-0 text-rose-500" />
+            <div>
+              <p className="text-sm font-semibold text-rose-800">Cancel this adjustment?</p>
+              <p className="mt-1 text-sm text-rose-700">
+                This will cancel the adjustment and remove any pending applications. Any already-approved
+                applications will remain in the record for audit purposes.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 justify-end">
+            <button
+              id="delete-cancel-btn"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isCancelling}
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50"
+            >
+              Keep adjustment
+            </button>
+            <button
+              id="delete-confirm-btn"
+              onClick={handleDelete}
+              disabled={isCancelling}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-rose-700 active:scale-[0.98] disabled:opacity-60"
+            >
+              {isCancelling ? (
+                <>
+                  <SpinnerGap size={13} className="animate-spin" />
+                  Cancelling…
+                </>
+              ) : (
+                'Yes, cancel it'
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Metadata grid ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">

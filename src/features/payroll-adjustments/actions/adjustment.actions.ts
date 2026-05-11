@@ -7,10 +7,13 @@ import {
   approveAdjustmentApplication,
   skipAdjustmentApplication,
   getAdjustmentsForWeekReview,
+  updateAdjustment,
+  cancelAdjustment,
 } from '@/features/payroll-adjustments/services/adjustment.service'
 import {
   AdjustmentServiceError,
   type CreateAdjustmentInput,
+  type UpdateAdjustmentInput,
   type AdjustmentListOptions,
   type PaginatedAdjustmentList,
   type AdjustmentDetailRecord,
@@ -113,3 +116,31 @@ export async function getAdjustmentsForWeekReviewAction(
     return handleError(e)
   }
 }
+
+// ─── updateAdjustmentAction ───────────────────────────────────────────────────
+
+export async function updateAdjustmentAction(
+  id: string,
+  input: UpdateAdjustmentInput,
+): Promise<ActionResult<{ id: string; amount: number }>> {
+  try {
+    const result = await updateAdjustment(id, input)
+    return ok({ id: result.id, amount: result.amount })
+  } catch (e) {
+    return handleError(e)
+  }
+}
+
+// ─── cancelAdjustmentAction ───────────────────────────────────────────────────
+
+export async function cancelAdjustmentAction(
+  id: string,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const result = await cancelAdjustment(id)
+    return ok({ id: result.id })
+  } catch (e) {
+    return handleError(e)
+  }
+}
+

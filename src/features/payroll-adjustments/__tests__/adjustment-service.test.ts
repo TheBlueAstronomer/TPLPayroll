@@ -18,6 +18,8 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
+      deleteMany: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -30,6 +32,8 @@ import {
   getAdjustmentDetail,
   approveAdjustmentApplication,
   skipAdjustmentApplication,
+  updateAdjustment,
+  cancelAdjustment,
 } from '@/features/payroll-adjustments/services/adjustment.service'
 import { AdjustmentServiceError } from '@/features/payroll-adjustments/types/adjustment.types'
 
@@ -689,6 +693,199 @@ describe('skipAdjustmentApplication', () => {
 
     await expect(skipAdjustmentApplication('nonexistent')).rejects.toMatchObject({
       code: 'APPLICATION_NOT_FOUND',
+    })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// updateAdjustment
+// ─────────────────────────────────────────────────────────────────────────────
+
+const validUpdateInput = {
+  adjustmentType: 'DEDUCTION' as const,
+  amount: 750,
+  reason: 'Updated recovery',
+  recurrenceType: 'ONE_TIME' as const,
+  startPayrollWeekStartDate: new Date('2025-03-06'),
+  startPayrollWeekEndDate: new Date('2025-03-12'),
+}
+
+describe('updateAdjustment', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('updates amount and reason on an ACTIVE adjustment with no approved applications', async () => {
+    // GIVEN an ACTIVE adjustment with only a PENDING application
+    const adj = makeAdjustment({ status: 'ACTIVE' })
+    const apps = [makeApplication({ approvalStatus: 'PENDING' })]
+    vi.mocked(prisma.payrollAdjustment.findUnique).mockResolvedValue({
+      ...adj,
+      adjustmentApplications: apps,
+    } as never)
+    vi.mocked(prisma.payrollAdjustment.update).mockResolvedValue({
+      ...adj,
+      amount: 750 as unknown as typeof adj.amount,
+      reason: 'Updated recovery',
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.updateMany).mockResolvedValue({ count: 1 })
+
+    // WHEN
+    const result = await updateAdjustment('adj-uuid-1', validUpdateInput)
+
+    // THEN amount and reason are updated
+    expect(result.amount).toBe(750)
+    expect(result.reason).toBe('Updated recovery')
+    expect(prisma.payrollAdjustment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'adj-uuid-1' },
+        data: expect.objectContaining({ amount: 750, reason: 'Updated recovery' }),
+      }),
+    )
+  })
+
+  it('also updates PENDING applications to reflect new amount and start week', async () => {
+    // GIVEN ACTIVE adjustment with a PENDING app for March 6-12
+    const adj = makeAdjustment({ status: 'ACTIVE' })
+    const apps = [makeApplication({ approvalStatus: 'PENDING' })]
+    vi.mocked(prisma.payrollAdjustment.findUnique).mockResolvedValue({
+      ...adj,
+      adjustmentApplications: apps,
+    } as never)
+    vi.mocked(prisma.payrollAdjustment.update).mockResolvedValue({
+      ...adj,
+      amount: 750 as unknown as typeof adj.amount,
+    })
+
+    let capturedAppUpdate: unknown = null
+    vi.mocked(prisma.payrollAdjustmentApplication.updateMany).mockImplementation((args: unknown) => {
+      capturedAppUpdate = args
+      return Promise.resolve({ count: 1 })
+    })
+
+    await updateAdjustment('adj-uuid-1', validUpdateInput)
+
+    // THEN PENDING applications are updated with new amount and week
+    expect(capturedAppUpdate).toMatchObject({
+      where: expect.objectContaining({ payrollAdjustmentId: 'adj-uuid-1', approvalStatus: 'PENDING' }),
+      data: expect.objectContaining({
+        appliedAmount: 750,
+        payrollWeekStartDate: new Date('2025-03-06'),
+        payrollWeekEndDate: new Date('2025-03-12'),
+      }),
+    })
+  })
+
+  it('throws ADJUSTMENT_NOT_FOUND when adjustment does not exist', async () => {
+    vi.mocked(prisma.payrollAdjustment.findUnique).mockResolvedValue(null)
+
+    await expect(updateAdjustment('nonexistent', validUpdateInput)).rejects.toMatchObject({
+      code: 'ADJUSTMENT_NOT_FOUND',
+    })
+  })
+
+  it('throws EDIT_NOT_ALLOWED when any application is already APPROVED', async () => {
+    // GIVEN an adjustment that has one APPROVED application
+    const adj = makeAdjustment({ status: 'ACTIVE' })
+    const apps = [
+      makeApplication({ approvalStatus: 'APPROVED' }),
+      makeApplication({ id: 'app-uuid-2', approvalStatus: 'PENDING' }),
+    ]
+    vi.mocked(prisma.payrollAdjustment.findUnique).mockResolvedValue({
+      ...adj,
+      adjustmentApplications: apps,
+    } as never)
+
+    await expect(updateAdjustment('adj-uuid-1', validUpdateInput)).rejects.toMatchObject({
+      code: 'EDIT_NOT_ALLOWED',
+    })
+  })
+
+  it('allows update when applications are only SKIPPED (none APPROVED)', async () => {
+    // GIVEN an adjustment with only SKIPPED + PENDING applications
+    const adj = makeAdjustment({ status: 'ACTIVE' })
+    const apps = [
+      makeApplication({ id: 'app-uuid-1', approvalStatus: 'SKIPPED' }),
+      makeApplication({ id: 'app-uuid-2', approvalStatus: 'PENDING' }),
+    ]
+    vi.mocked(prisma.payrollAdjustment.findUnique).mockResolvedValue({
+      ...adj,
+      adjustmentApplications: apps,
+    } as never)
+    vi.mocked(prisma.payrollAdjustment.update).mockResolvedValue({
+      ...adj,
+      amount: 750 as unknown as typeof adj.amount,
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.updateMany).mockResolvedValue({ count: 1 })
+
+    // WHEN (should not throw)
+    const result = await updateAdjustment('adj-uuid-1', validUpdateInput)
+
+    expect(result.amount).toBe(750)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cancelAdjustment
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('cancelAdjustment', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('sets adjustment status to CANCELLED and deletes PENDING applications', async () => {
+    // GIVEN an ACTIVE adjustment
+    const adj = makeAdjustment({ status: 'ACTIVE' })
+    vi.mocked(prisma.payrollAdjustment.findUnique).mockResolvedValue(adj)
+
+    let capturedDeleteMany: unknown = null
+    vi.mocked(prisma.payrollAdjustmentApplication.deleteMany).mockImplementation((args: unknown) => {
+      capturedDeleteMany = args
+      return Promise.resolve({ count: 1 })
+    })
+    vi.mocked(prisma.payrollAdjustment.update).mockResolvedValue({
+      ...adj,
+      status: 'CANCELLED',
+    })
+
+    const result = await cancelAdjustment('adj-uuid-1')
+
+    // THEN status is CANCELLED
+    expect(result.status).toBe('CANCELLED')
+
+    // AND only PENDING applications are deleted
+    expect(capturedDeleteMany).toMatchObject({
+      where: expect.objectContaining({
+        payrollAdjustmentId: 'adj-uuid-1',
+        approvalStatus: 'PENDING',
+      }),
+    })
+  })
+
+  it('throws ADJUSTMENT_NOT_FOUND when adjustment does not exist', async () => {
+    vi.mocked(prisma.payrollAdjustment.findUnique).mockResolvedValue(null)
+
+    await expect(cancelAdjustment('nonexistent')).rejects.toMatchObject({
+      code: 'ADJUSTMENT_NOT_FOUND',
+    })
+  })
+
+  it('throws CANCEL_NOT_ALLOWED when adjustment is already COMPLETED', async () => {
+    const adj = makeAdjustment({ status: 'COMPLETED' })
+    vi.mocked(prisma.payrollAdjustment.findUnique).mockResolvedValue(adj)
+
+    await expect(cancelAdjustment('adj-uuid-1')).rejects.toMatchObject({
+      code: 'CANCEL_NOT_ALLOWED',
+    })
+  })
+
+  it('throws CANCEL_NOT_ALLOWED when adjustment is already CANCELLED', async () => {
+    const adj = makeAdjustment({ status: 'CANCELLED' })
+    vi.mocked(prisma.payrollAdjustment.findUnique).mockResolvedValue(adj)
+
+    await expect(cancelAdjustment('adj-uuid-1')).rejects.toMatchObject({
+      code: 'CANCEL_NOT_ALLOWED',
     })
   })
 })
