@@ -129,7 +129,12 @@ async function saveAttendanceRecords(
   const baseDate = new Date(payrollWeekStartISO + 'T00:00:00Z')
 
   const matchedRecords = records.filter(
-    (r) => (r.matchStatus === 'MATCHED' || r.matchStatus === 'INACTIVE' || r.matchStatus === 'RESIGNED_BEFORE_WEEK') && r.employeeDbId
+    (r) =>
+      (r.matchStatus === 'MATCHED' ||
+        r.matchStatus === 'MANUALLY_MATCHED' ||
+        r.matchStatus === 'INACTIVE' ||
+        r.matchStatus === 'RESIGNED_BEFORE_WEEK') &&
+      r.employeeDbId
   )
 
   if (matchedRecords.length === 0) return

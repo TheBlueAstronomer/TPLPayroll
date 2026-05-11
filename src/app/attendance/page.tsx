@@ -1,14 +1,48 @@
 import { AppShell } from '@/components/layout/AppShell'
 import { AttendanceUploadClient } from '@/features/attendance-upload/components/AttendanceUploadClient'
+import type { InitialDialogState } from '@/features/attendance-upload/components/AttendanceUploadClient'
 import { getAttendanceUploadsAction } from '@/features/attendance-upload/actions/attendance.actions'
+import { resumeAttendanceUploadSessionAction } from '@/features/attendance-upload/actions/session.actions'
 
 export const metadata = {
   title: 'Attendance Upload — TPL Payroll',
 }
 
-export default async function AttendancePage() {
+interface Props {
+  searchParams: Promise<{ resumeSession?: string; newEmployeeId?: string }>
+}
+
+export default async function AttendancePage({ searchParams }: Props) {
+  const { resumeSession, newEmployeeId } = await searchParams
+
   const result = await getAttendanceUploadsAction()
   const uploads = result.ok ? result.data : []
+
+  let initialDialogState: InitialDialogState | null = null
+  if (resumeSession) {
+    const resumeResult = await resumeAttendanceUploadSessionAction(
+      resumeSession,
+      newEmployeeId ?? ''
+    )
+    if (resumeResult.ok) {
+      const d = resumeResult.data
+      initialDialogState = {
+        records: d.records,
+        summary: d.summary,
+        payrollWeekStartDate: d.payrollWeekStartDate,
+        payrollWeekEndDate: d.payrollWeekEndDate,
+        payrollWeekSource: d.payrollWeekSource,
+        tempFilePath: d.tempFilePath,
+        fileName: d.fileName,
+        fileType: d.fileType,
+        dialogState: {
+          verificationDecisions: d.verificationDecisions,
+          manualMatchDecisions: d.manualMatchDecisions,
+          rejectedBlockKeys: d.rejectedBlockKeys,
+        },
+      }
+    }
+  }
 
   return (
     <AppShell>
@@ -21,7 +55,10 @@ export default async function AttendancePage() {
         </p>
       </div>
 
-      <AttendanceUploadClient initialUploads={uploads} />
+      <AttendanceUploadClient
+        initialUploads={uploads}
+        initialDialogState={initialDialogState}
+      />
     </AppShell>
   )
 }

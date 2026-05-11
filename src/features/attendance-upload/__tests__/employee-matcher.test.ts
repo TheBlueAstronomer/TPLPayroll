@@ -192,6 +192,15 @@ describe('matchEmployees', () => {
       expect(result[0].employeeDbId).toBe('uuid-71')
     })
 
+    it('matches User ID 70 to long Employee ID using only the last 3 digits', () => {
+      // "TPLGOASPV002070" → last 3 of trailing digits "070" → 70
+      const blocks = [makeBlock('Anooj', 70)]
+      const employees = [makeEmployee({ id: 'uuid-2070', employeeId: 'TPLGOASPV002070', employeeName: 'Anooj Jayan' })]
+      const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
+      expect(result[0].matchStatus).toBe('MATCHED')
+      expect(result[0].employeeDbId).toBe('uuid-2070')
+    })
+
     it('falls back to name match when userIdFromSheet is undefined', () => {
       const blocks = [makeBlock('Ravi Kumar')]  // no User ID
       const employees = [makeEmployee()]

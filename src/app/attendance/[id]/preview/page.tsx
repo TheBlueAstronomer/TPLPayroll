@@ -24,9 +24,24 @@ export default async function AttendancePreviewPage({ params }: Props) {
   const { upload, records } = data
 
   const total = records.length
-  const matched = records.filter(r => (r as any).matchStatus === 'MATCHED').length
-  const unmatched = records.filter(r => (r as any).matchStatus === 'UNMATCHED').length
-  const errors = records.filter(r => (r as any).matchStatus === 'INACTIVE' || (r as any).matchStatus === 'RESIGNED_BEFORE_WEEK').length
+  const matched = records.filter((r) => {
+    const status = (r as any).matchStatus
+    const decision = (r as any).verificationDecision
+    return (
+      status === 'MATCHED' ||
+      status === 'MANUALLY_MATCHED' ||
+      ((status === 'INACTIVE' || status === 'RESIGNED_BEFORE_WEEK') && decision === 'APPROVED')
+    )
+  }).length
+  const unmatched = records.filter((r) => (r as any).matchStatus === 'UNMATCHED').length
+  const excluded = records.filter((r) => {
+    const status = (r as any).matchStatus
+    if (status === 'REJECTED_UNMATCHED') return true
+    return (
+      (status === 'INACTIVE' || status === 'RESIGNED_BEFORE_WEEK') &&
+      (r as any).verificationDecision === 'REJECTED'
+    )
+  }).length
 
   // Determine blocking status from the upload record
   const uploadRecord = await prisma.attendanceUpload.findUnique({
@@ -44,7 +59,7 @@ export default async function AttendancePreviewPage({ params }: Props) {
         total={total}
         matched={matched}
         unmatched={unmatched}
-        errors={errors}
+        excluded={excluded}
         records={records as any}
       />
     </AppShell>

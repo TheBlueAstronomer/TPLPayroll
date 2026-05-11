@@ -27,15 +27,21 @@ function fmtWeek(start: string, end: string): string {
 
 // ─── Status cell ──────────────────────────────────────────────────────────────
 
-type MatchStatus = 'MATCHED' | 'UNMATCHED' | 'INACTIVE' | 'RESIGNED_BEFORE_WEEK'
+type MatchStatus =
+  | 'MATCHED'
+  | 'MANUALLY_MATCHED'
+  | 'UNMATCHED'
+  | 'INACTIVE'
+  | 'RESIGNED_BEFORE_WEEK'
+  | 'REJECTED_UNMATCHED'
 type VerificationDecision = 'APPROVED' | 'REJECTED'
 
 function MatchStatusCell({ status, verificationDecision }: { status: MatchStatus; verificationDecision?: VerificationDecision | null }) {
-  if (status === 'MATCHED') {
+  if (status === 'MATCHED' || status === 'MANUALLY_MATCHED') {
     return (
       <span className="inline-flex items-center gap-1.5 text-sm text-emerald-700">
         <CheckCircle size={14} className="text-emerald-500" />
-        Matched
+        {status === 'MANUALLY_MATCHED' ? 'Matched (manual)' : 'Matched'}
       </span>
     )
   }
@@ -44,6 +50,14 @@ function MatchStatusCell({ status, verificationDecision }: { status: MatchStatus
       <span className="inline-flex items-center gap-1.5 text-sm text-rose-600">
         <XCircle size={14} className="text-rose-500" />
         Unmatched
+      </span>
+    )
+  }
+  if (status === 'REJECTED_UNMATCHED') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm text-zinc-500">
+        <Prohibit size={14} className="text-zinc-400" />
+        Rejected
       </span>
     )
   }
@@ -97,7 +111,7 @@ interface AttendancePreviewClientProps {
   total: number
   matched: number
   unmatched: number
-  errors: number
+  excluded: number
   records: PreviewRecord[]
 }
 
@@ -107,7 +121,7 @@ export function AttendancePreviewClient({
   total,
   matched,
   unmatched,
-  errors,
+  excluded,
   records,
 }: AttendancePreviewClientProps) {
   const router = useRouter()
@@ -140,7 +154,6 @@ export function AttendancePreviewClient({
             <p className="text-sm text-rose-600 mt-0.5">
               {[
                 unmatched > 0 && `${unmatched} unmatched`,
-                errors > 0 && `${errors} error${errors !== 1 ? 's' : ''}`,
               ]
                 .filter(Boolean)
                 .join(', ') || 'Blocking issues found'}
@@ -163,7 +176,7 @@ export function AttendancePreviewClient({
           { label: 'Total', value: total, highlight: false },
           { label: 'Matched', value: matched, highlight: false },
           { label: 'Unmatched', value: unmatched, highlight: unmatched > 0 },
-          { label: 'Errors', value: errors, highlight: errors > 0 },
+          { label: 'Excluded', value: excluded, highlight: false },
         ].map(({ label, value, highlight }) => (
           <div key={label} className="flex-1 px-4 first:pl-0 last:pr-0">
             <p className="text-xs uppercase tracking-wider text-zinc-400 mb-1">{label}</p>

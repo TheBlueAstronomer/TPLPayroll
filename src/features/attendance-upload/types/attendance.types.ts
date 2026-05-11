@@ -38,7 +38,17 @@ export interface ParsedAttendanceBlock {
 
 // ─── Matching ─────────────────────────────────────────────────────────────────
 
-export type MatchStatus = 'MATCHED' | 'UNMATCHED' | 'INACTIVE' | 'RESIGNED_BEFORE_WEEK'
+export type MatchStatus =
+  | 'MATCHED'
+  | 'UNMATCHED'
+  | 'INACTIVE'
+  | 'RESIGNED_BEFORE_WEEK'
+  | 'MANUALLY_MATCHED'
+  | 'REJECTED_UNMATCHED'
+
+export function getBlockKey(block: { sourceSheetName: string | null; sourceEmployeeBlockIndex: number }): string {
+  return `${block.sourceSheetName ?? ''}||${block.sourceEmployeeBlockIndex}`
+}
 
 export type VerificationDecision = 'APPROVED' | 'REJECTED'
 
@@ -57,6 +67,7 @@ export interface ImportSummary {
   unmatched: number
   inactive: number
   resignedBeforeWeek: number
+  rejectedUnmatched: number
   needsVerification: number
   errors: number
   isBlocked: boolean

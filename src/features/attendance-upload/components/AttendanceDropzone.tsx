@@ -99,9 +99,11 @@ export function AttendanceDropzone({ onWeekRequired, onVerificationRequired }: A
       return
     }
 
-    // Check if verification is required for INACTIVE or RESIGNED_BEFORE_WEEK employees
     const needsVerification = records.some(
-      (r) => r.matchStatus === 'INACTIVE' || r.matchStatus === 'RESIGNED_BEFORE_WEEK'
+      (r) =>
+        r.matchStatus === 'UNMATCHED' ||
+        r.matchStatus === 'INACTIVE' ||
+        r.matchStatus === 'RESIGNED_BEFORE_WEEK'
     )
 
     if (needsVerification) {

@@ -14,14 +14,21 @@ import {
   createAttendanceUpload,
   replaceAttendanceUpload,
 } from '@/features/attendance-upload/services/upload.service'
+import {
+  createUploadSession,
+  loadUploadSession,
+  type SessionDecisions,
+} from '@/features/attendance-upload/services/upload-session.service'
 import type {
   ActionResult,
   MatchedAttendanceRecord,
+  MatchStatus,
   PayrollWeekSource,
   PayrollWeekDetectionResult,
   ImportSummary,
   VerificationDecision,
 } from '@/features/attendance-upload/types/attendance.types'
+import { getBlockKey } from '@/features/attendance-upload/types/attendance.types'
 
 // ─── parseAttendanceFileAction ────────────────────────────────────────────────
 
@@ -86,6 +93,8 @@ export async function parseAttendanceFileAction(
           unmatched: 0,
           inactive: 0,
           resignedBeforeWeek: 0,
+          rejectedUnmatched: 0,
+          needsVerification: 0,
           errors: 0,
           isBlocked: true,
         },
@@ -118,6 +127,8 @@ export interface FinalizeUploadInput {
   records: MatchedAttendanceRecord[]
   summary: ImportSummary
   verificationDecisions?: Record<string, VerificationDecision> // employeeDbId → decision
+  manualMatchDecisions?: Record<string, string> // blockKey → employeeDbId
+  rejectedBlockKeys?: string[] // blockKeys of UNMATCHED records explicitly rejected
 }
 
 export async function finalizeAttendanceUploadAction(
@@ -131,20 +142,49 @@ export async function finalizeAttendanceUploadAction(
     payrollWeekEndDate,
     payrollWeekSource,
     records,
-    summary,
     verificationDecisions = {},
+    manualMatchDecisions = {},
+    rejectedBlockKeys = [],
   } = input
 
-  const status = summary.isBlocked ? 'ERRORS' : 'READY'
   const weekStart = new Date(payrollWeekStartDate + 'T00:00:00Z')
   const weekEnd = new Date(payrollWeekEndDate + 'T00:00:00Z')
 
+  const rejectedKeySet = new Set(rejectedBlockKeys)
+
+  // Apply manual matches and rejections to UNMATCHED records
+  const recordsWithManualMatches = records.map((r) => {
+    if (r.matchStatus !== 'UNMATCHED') return r
+    const blockKey = getBlockKey(r)
+    const matchedId = manualMatchDecisions[blockKey]
+    if (matchedId) {
+      return {
+        ...r,
+        employeeDbId: matchedId,
+        matchStatus: 'MANUALLY_MATCHED' as MatchStatus,
+        isBlocking: false,
+      }
+    }
+    if (rejectedKeySet.has(blockKey)) {
+      return {
+        ...r,
+        matchStatus: 'REJECTED_UNMATCHED' as MatchStatus,
+        isBlocking: false,
+      }
+    }
+    return r
+  })
+
   // Merge verification decisions onto records
-  const recordsWithDecisions = records.map((r) =>
+  const recordsWithDecisions = recordsWithManualMatches.map((r) =>
     r.employeeDbId && verificationDecisions[r.employeeDbId]
       ? { ...r, verificationDecision: verificationDecisions[r.employeeDbId] }
       : r
   )
+
+  // Recompute summary after manual matches (some UNMATCHED may now be resolved)
+  const recomputedSummary = computeImportSummary(recordsWithDecisions)
+  const status = recomputedSummary.isBlocked ? 'ERRORS' : 'READY'
 
   // Check for existing upload for this week
   const existing = await prisma.attendanceUpload.findFirst({
@@ -233,6 +273,22 @@ export async function parseAttendanceWithDatesAction(
   }
 }
 
+// ─── getEmployeesForMatchingAction ────────────────────────────────────────────
+
+export interface EmployeeOption {
+  id: string
+  employeeId: string
+  employeeName: string
+}
+
+export async function getEmployeesForMatchingAction(): Promise<ActionResult<EmployeeOption[]>> {
+  const employees = await prisma.employee.findMany({
+    select: { id: true, employeeId: true, employeeName: true },
+    orderBy: { employeeName: 'asc' },
+  })
+  return { ok: true, data: employees }
+}
+
 // ─── getAttendanceUploadsAction ───────────────────────────────────────────────
 
 export interface AttendanceUploadRow {
@@ -286,8 +342,8 @@ export async function getAttendanceUploadPreviewAction(
   })
   if (!upload) return { ok: false, error: 'Upload not found' }
 
-  // To show ALL records (matched and unmatched), we re-parse the source file if it exists.
-  // This is more reliable than fetching from AttendanceRecord table which only stores matched ones.
+  // Re-parse source file to show ALL records (matched and unmatched), then overlay
+  // the saved state (verification decisions + manual matches) from the DB.
   if (upload.sourceFilePath && existsSync(upload.sourceFilePath)) {
     try {
       const buffer = require('fs').readFileSync(upload.sourceFilePath)
@@ -300,6 +356,20 @@ export async function getAttendanceUploadPreviewAction(
         upload.payrollWeekStartDate,
         upload.payrollWeekEndDate
       )
+
+      // Load saved decisions + manual matches from stored AttendanceRecord rows.
+      // Key = sourceSheetName||sourceEmployeeBlockIndex (same formula as getBlockKey).
+      const savedRows = await prisma.attendanceRecord.findMany({
+        where: { attendanceUploadId: uploadId },
+        select: { sourceSheetName: true, sourceEmployeeBlockIndex: true, verificationDecision: true },
+      })
+      const savedByBlockKey = new Map<string, { verificationDecision: string | null }>()
+      for (const row of savedRows) {
+        const key = `${row.sourceSheetName ?? ''}||${row.sourceEmployeeBlockIndex}`
+        if (!savedByBlockKey.has(key)) {
+          savedByBlockKey.set(key, { verificationDecision: row.verificationDecision })
+        }
+      }
 
       return {
         ok: true,
@@ -314,16 +384,24 @@ export async function getAttendanceUploadPreviewAction(
             status: upload.status,
             uploadedAt: upload.uploadedAt.toISOString(),
           },
-          records: records.map((r, i) => ({
-            id: `preview-${i}`,
-            employeeName: r.employeeName,
-            employeeId: r.employeeId || '—',
-            totalRegularHours: r.totalRegularHours,
-            totalOvertimeHours: r.totalOvertimeHours,
-            sourceSheetName: r.sourceSheetName,
-            matchStatus: r.matchStatus,
-            isBlocking: r.isBlocking,
-          })),
+          records: records.map((r, i) => {
+            const blockKey = `${r.sourceSheetName ?? ''}||${r.sourceEmployeeBlockIndex}`
+            const saved = savedByBlockKey.get(blockKey)
+            // UNMATCHED with a saved record = was manually matched in the upload dialog
+            const matchStatus =
+              r.matchStatus === 'UNMATCHED' && saved ? 'MANUALLY_MATCHED' : r.matchStatus
+            return {
+              id: `preview-${i}`,
+              employeeName: r.employeeName,
+              employeeId: r.employeeDbId || '—',
+              totalRegularHours: r.totalRegularHours,
+              totalOvertimeHours: r.totalOvertimeHours,
+              sourceSheetName: r.sourceSheetName,
+              matchStatus,
+              isBlocking: matchStatus === 'UNMATCHED',
+              verificationDecision: saved?.verificationDecision ?? null,
+            }
+          }),
         },
       }
     } catch (err) {
@@ -374,6 +452,152 @@ export async function getAttendanceUploadPreviewAction(
         uploadedAt: upload.uploadedAt.toISOString(),
       },
       records: summaryRows,
+    },
+  }
+}
+
+// ─── createAttendanceUploadSessionAction ─────────────────────────────────────
+// Serialises the current dialog state to a short-lived AttendanceUploadSession
+// row so the user can navigate to /employees/new and return.
+
+export interface CreateUploadSessionInput {
+  tempFilePath: string
+  fileName: string
+  fileType: string
+  payrollWeekStartDate: string // YYYY-MM-DD
+  payrollWeekEndDate: string
+  payrollWeekSource: PayrollWeekSource
+  verificationDecisions: Record<string, VerificationDecision>
+  manualMatchDecisions: Record<string, string>
+  rejectedBlockKeys: string[]
+  pendingBlockKey: string
+  pendingSheetEmployeeName: string
+}
+
+export async function createAttendanceUploadSessionAction(
+  input: CreateUploadSessionInput
+): Promise<ActionResult<{ sessionId: string; pendingSheetEmployeeName: string }>> {
+  const decisions: SessionDecisions = {
+    verificationDecisions: input.verificationDecisions,
+    manualMatchDecisions: input.manualMatchDecisions,
+    rejectedBlockKeys: input.rejectedBlockKeys,
+  }
+
+  // Store the pending sheet name inside decisionsJson under a reserved key so
+  // /employees/new can pre-fill the form without a separate column.
+  const decisionsForStore = {
+    ...decisions,
+    _pendingSheetEmployeeName: input.pendingSheetEmployeeName,
+  } as SessionDecisions & { _pendingSheetEmployeeName: string }
+
+  const session = await createUploadSession({
+    tempFilePath: input.tempFilePath,
+    fileName: input.fileName,
+    fileType: input.fileType,
+    weekStart: input.payrollWeekStartDate,
+    weekEnd: input.payrollWeekEndDate,
+    weekSource: input.payrollWeekSource,
+    decisions: decisionsForStore,
+    pendingBlockKey: input.pendingBlockKey,
+  })
+
+  return {
+    ok: true,
+    data: {
+      sessionId: session.id,
+      pendingSheetEmployeeName: input.pendingSheetEmployeeName,
+    },
+  }
+}
+
+// ─── getAttendanceUploadSessionAction ────────────────────────────────────────
+// Light-weight session read used by /employees/new to pre-fill the form.
+
+export async function getAttendanceUploadSessionAction(
+  sessionId: string
+): Promise<ActionResult<{ pendingSheetEmployeeName: string }>> {
+  const session = await loadUploadSession(sessionId)
+  if (!session) {
+    return { ok: false, error: 'Upload session expired. Please re-upload the attendance file.', code: 'SESSION_EXPIRED' }
+  }
+  const stored = session.decisions as SessionDecisions & { _pendingSheetEmployeeName?: string }
+  return {
+    ok: true,
+    data: {
+      pendingSheetEmployeeName: stored._pendingSheetEmployeeName ?? '',
+    },
+  }
+}
+
+// ─── resumeAttendanceUploadSessionAction ─────────────────────────────────────
+// Reconstructs the verification-dialog state after a successful onboard.
+// Re-parses the temp file, overlays stored decisions, and links the new
+// employee to the pendingBlockKey row by adding it to manualMatchDecisions.
+
+export interface ResumedDialogState {
+  tempFilePath: string
+  fileName: string
+  fileType: string
+  payrollWeekStartDate: string
+  payrollWeekEndDate: string
+  payrollWeekSource: PayrollWeekSource
+  records: MatchedAttendanceRecord[]
+  summary: ImportSummary
+  verificationDecisions: Record<string, VerificationDecision>
+  manualMatchDecisions: Record<string, string>
+  rejectedBlockKeys: string[]
+}
+
+export async function resumeAttendanceUploadSessionAction(
+  sessionId: string,
+  newEmployeeId: string
+): Promise<ActionResult<ResumedDialogState>> {
+  const session = await loadUploadSession(sessionId)
+  if (!session) {
+    return {
+      ok: false,
+      error: 'Upload session expired. Please re-upload the attendance file.',
+      code: 'SESSION_EXPIRED',
+    }
+  }
+
+  // Re-parse the still-live temp file via parseAttendanceWithDatesAction
+  const parsed = await parseAttendanceWithDatesAction(
+    session.tempFilePath,
+    session.weekStart,
+    session.weekEnd,
+    session.fileName,
+    session.fileType
+  )
+
+  if (!parsed.ok) {
+    return {
+      ok: false,
+      error: parsed.error,
+      code: parsed.code,
+    }
+  }
+
+  // Link the new employee to the pending blockKey by merging into manualMatchDecisions
+  const manualMatchDecisions = {
+    ...session.decisions.manualMatchDecisions,
+    [session.pendingBlockKey]: newEmployeeId,
+  }
+
+  return {
+    ok: true,
+    data: {
+      tempFilePath: session.tempFilePath,
+      fileName: session.fileName,
+      fileType: session.fileType,
+      payrollWeekStartDate: session.weekStart,
+      payrollWeekEndDate: session.weekEnd,
+      payrollWeekSource: session.weekSource,
+      records: parsed.data.records,
+      summary: parsed.data.summary,
+      verificationDecisions: session.decisions.verificationDecisions ?? {},
+      manualMatchDecisions,
+      rejectedBlockKeys: session.decisions.rejectedBlockKeys ?? [],
     },
   }
 }

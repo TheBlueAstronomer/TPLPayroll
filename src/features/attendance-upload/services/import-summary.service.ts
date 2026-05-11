@@ -8,6 +8,7 @@ export function computeImportSummary(records: MatchedAttendanceRecord[]): Import
   let unmatched = 0
   let inactive = 0
   let resignedBeforeWeek = 0
+  let rejectedUnmatched = 0
   let errors = 0
   let isBlocked = false
 
@@ -20,6 +21,7 @@ export function computeImportSummary(records: MatchedAttendanceRecord[]): Import
 
     switch (record.matchStatus) {
       case 'MATCHED':
+      case 'MANUALLY_MATCHED':
         matched++
         break
       case 'UNMATCHED':
@@ -30,6 +32,9 @@ export function computeImportSummary(records: MatchedAttendanceRecord[]): Import
         break
       case 'RESIGNED_BEFORE_WEEK':
         resignedBeforeWeek++
+        break
+      case 'REJECTED_UNMATCHED':
+        rejectedUnmatched++
         break
     }
   }
@@ -42,6 +47,7 @@ export function computeImportSummary(records: MatchedAttendanceRecord[]): Import
     unmatched,
     inactive,
     resignedBeforeWeek,
+    rejectedUnmatched,
     needsVerification,
     errors,
     isBlocked,

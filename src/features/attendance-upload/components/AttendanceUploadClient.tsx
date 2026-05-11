@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useCallback, useTransition, useEffect, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   CheckCircle,
   WarningCircle,
@@ -12,12 +12,24 @@ import {
 import { AttendanceDropzone } from './AttendanceDropzone'
 import { WeekSelectionDialog } from './WeekSelectionDialog'
 import { EmployeeVerificationDialog } from './EmployeeVerificationDialog'
+import type { VerificationDialogState } from './EmployeeVerificationDialog'
 import {
   parseAttendanceWithDatesAction,
   finalizeAttendanceUploadAction,
+  getEmployeesForMatchingAction,
 } from '@/features/attendance-upload/actions/attendance.actions'
-import type { AttendanceUploadRow } from '@/features/attendance-upload/actions/attendance.actions'
-import type { MatchedAttendanceRecord, PayrollWeekSource, ImportSummary, VerificationDecision } from '@/features/attendance-upload/types/attendance.types'
+import {
+  createAttendanceUploadSessionAction,
+  resumeAttendanceUploadSessionAction,
+} from '@/features/attendance-upload/actions/session.actions'
+import type { AttendanceUploadRow, EmployeeOption } from '@/features/attendance-upload/actions/attendance.actions'
+import type {
+  MatchedAttendanceRecord,
+  PayrollWeekSource,
+  ImportSummary,
+  VerificationDecision,
+} from '@/features/attendance-upload/types/attendance.types'
+import { getBlockKey } from '@/features/attendance-upload/types/attendance.types'
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -72,20 +84,78 @@ type DialogState =
       tempFilePath: string
       fileName: string
       fileType: string
+      initialState?: VerificationDialogState
+      pendingOnboardBlockKeys?: string[]
     }
+
+export interface InitialDialogState {
+  records: MatchedAttendanceRecord[]
+  summary: ImportSummary
+  payrollWeekStartDate: string
+  payrollWeekEndDate: string
+  payrollWeekSource: PayrollWeekSource
+  tempFilePath: string
+  fileName: string
+  fileType: string
+  dialogState: VerificationDialogState
+}
 
 // ─── AttendanceUploadClient ───────────────────────────────────────────────────
 
 interface AttendanceUploadClientProps {
   initialUploads: AttendanceUploadRow[]
+  /** When set, the verification dialog opens immediately seeded with prior decisions.
+   * Used after returning from the "Add Employee" onboarding flow. */
+  initialDialogState?: InitialDialogState | null
 }
 
-export function AttendanceUploadClient({ initialUploads }: AttendanceUploadClientProps) {
+export function AttendanceUploadClient({
+  initialUploads,
+  initialDialogState,
+}: AttendanceUploadClientProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [uploads] = useState(initialUploads)
   const [dialog, setDialog] = useState<DialogState>({ type: 'none' })
   const [processingError, setProcessingError] = useState<string | null>(null)
+  const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([])
+  const hydratedFromSession = useRef(false)
+
+  const loadEmployeeOptions = useCallback(async (records: MatchedAttendanceRecord[]) => {
+    if (!records.some((r) => r.matchStatus === 'UNMATCHED')) return
+    const result = await getEmployeesForMatchingAction()
+    if (result.ok) setEmployeeOptions(result.data)
+  }, [])
+
+  // ── Hydrate from server-provided session resume ────────────────────────────
+  useEffect(() => {
+    if (hydratedFromSession.current) return
+    if (!initialDialogState) return
+    hydratedFromSession.current = true
+    loadEmployeeOptions(initialDialogState.records)
+    setDialog({
+      type: 'verify_required',
+      records: initialDialogState.records,
+      summary: initialDialogState.summary,
+      payrollWeekStartDate: initialDialogState.payrollWeekStartDate,
+      payrollWeekEndDate: initialDialogState.payrollWeekEndDate,
+      payrollWeekSource: initialDialogState.payrollWeekSource,
+      tempFilePath: initialDialogState.tempFilePath,
+      fileName: initialDialogState.fileName,
+      fileType: initialDialogState.fileType,
+      initialState: initialDialogState.dialogState,
+      pendingOnboardBlockKeys: [],
+    })
+    // Clear resume params from URL so a refresh doesn't re-trigger resume.
+    const params = new URLSearchParams(searchParams.toString())
+    if (params.has('resumeSession') || params.has('newEmployeeId')) {
+      params.delete('resumeSession')
+      params.delete('newEmployeeId')
+      const qs = params.toString()
+      router.replace(qs ? `/attendance?${qs}` : '/attendance')
+    }
+  }, [initialDialogState, loadEmployeeOptions, router, searchParams])
 
   const handleWeekRequired = useCallback(
     (tempFilePath: string, fileName: string, fileType: string) => {
@@ -105,9 +175,10 @@ export function AttendanceUploadClient({ initialUploads }: AttendanceUploadClien
       fileName: string
       fileType: string
     }) => {
+      loadEmployeeOptions(payload.records)
       setDialog({ type: 'verify_required', ...payload })
     },
-    []
+    [loadEmployeeOptions]
   )
 
   const handleWeekConfirm = useCallback(
@@ -130,12 +201,15 @@ export function AttendanceUploadClient({ initialUploads }: AttendanceUploadClien
         return
       }
 
-      // Check if verification is required
       const needsVerification = result.data.records.some(
-        (r) => r.matchStatus === 'INACTIVE' || r.matchStatus === 'RESIGNED_BEFORE_WEEK'
+        (r) =>
+          r.matchStatus === 'UNMATCHED' ||
+          r.matchStatus === 'INACTIVE' ||
+          r.matchStatus === 'RESIGNED_BEFORE_WEEK'
       )
 
       if (needsVerification) {
+        loadEmployeeOptions(result.data.records)
         setDialog({
           type: 'verify_required',
           records: result.data.records,
@@ -166,11 +240,15 @@ export function AttendanceUploadClient({ initialUploads }: AttendanceUploadClien
         router.push(`/attendance/${finalResult.data.uploadId}/preview`)
       })
     },
-    [dialog, router, startTransition]
+    [dialog, loadEmployeeOptions, router, startTransition]
   )
 
   const handleVerificationConfirm = useCallback(
-    async (decisions: Record<string, VerificationDecision>) => {
+    async (
+      decisions: Record<string, VerificationDecision>,
+      manualMatchDecisions: Record<string, string>,
+      rejectedBlockKeys: string[]
+    ) => {
       if (dialog.type !== 'verify_required') return
       const { tempFilePath, fileName, fileType, payrollWeekStartDate, payrollWeekEndDate, payrollWeekSource, records, summary } = dialog
       setDialog({ type: 'none' })
@@ -186,6 +264,8 @@ export function AttendanceUploadClient({ initialUploads }: AttendanceUploadClien
         records,
         summary,
         verificationDecisions: decisions,
+        manualMatchDecisions,
+        rejectedBlockKeys,
       })
 
       if (!finalResult.ok) {
@@ -195,6 +275,51 @@ export function AttendanceUploadClient({ initialUploads }: AttendanceUploadClien
 
       startTransition(() => {
         router.push(`/attendance/${finalResult.data.uploadId}/preview`)
+      })
+    },
+    [dialog, router, startTransition]
+  )
+
+  const handleOnboard = useCallback(
+    async (record: MatchedAttendanceRecord, currentState: VerificationDialogState) => {
+      if (dialog.type !== 'verify_required') return
+      setProcessingError(null)
+      const blockKey = getBlockKey(record)
+
+      const result = await createAttendanceUploadSessionAction({
+        tempFilePath: dialog.tempFilePath,
+        fileName: dialog.fileName,
+        fileType: dialog.fileType,
+        payrollWeekStartDate: dialog.payrollWeekStartDate,
+        payrollWeekEndDate: dialog.payrollWeekEndDate,
+        payrollWeekSource: dialog.payrollWeekSource,
+        verificationDecisions: currentState.verificationDecisions,
+        manualMatchDecisions: currentState.manualMatchDecisions,
+        rejectedBlockKeys: currentState.rejectedBlockKeys,
+        pendingBlockKey: blockKey,
+        pendingSheetEmployeeName: record.employeeName,
+      })
+
+      if (!result.ok) {
+        setProcessingError(result.error)
+        return
+      }
+
+      // Mark the row as pending while we navigate away.
+      setDialog((prev) =>
+        prev.type === 'verify_required'
+          ? {
+              ...prev,
+              initialState: currentState,
+              pendingOnboardBlockKeys: Array.from(
+                new Set([...(prev.pendingOnboardBlockKeys ?? []), blockKey])
+              ),
+            }
+          : prev
+      )
+
+      startTransition(() => {
+        router.push(`/employees/new?attendanceSession=${result.data.sessionId}`)
       })
     },
     [dialog, router, startTransition]
@@ -293,7 +418,12 @@ export function AttendanceUploadClient({ initialUploads }: AttendanceUploadClien
           employees={dialog.records.filter(
             (r) => r.matchStatus === 'INACTIVE' || r.matchStatus === 'RESIGNED_BEFORE_WEEK'
           )}
+          unmatchedEmployees={dialog.records.filter((r) => r.matchStatus === 'UNMATCHED')}
+          employeeOptions={employeeOptions}
+          initialState={dialog.initialState}
+          pendingOnboardBlockKeys={dialog.pendingOnboardBlockKeys}
           onConfirm={handleVerificationConfirm}
+          onOnboard={handleOnboard}
           onCancel={() => setDialog({ type: 'none' })}
         />
       )}

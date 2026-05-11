@@ -11,7 +11,10 @@ import type {
 // e.g. "EMP-001" → 1,  "GUARD-25" → 25,  "ABC" → null
 function trailingNumber(employeeId: string): number | null {
   const m = employeeId.match(/(\d+)$/)
-  return m ? parseInt(m[1], 10) : null
+  if (!m) return null
+  // Only take the last 3 digits of the employeeID sequence
+  const lastThree = m[1].slice(-3)
+  return parseInt(lastThree, 10)
 }
 
 // ─── matchEmployees ───────────────────────────────────────────────────────────

@@ -56,29 +56,38 @@ npm install
 
 ### 2. Configure Environment Variables
 
-Create a `.env.local` file in the project root and set the following variables:
+For local development, the project comes with a `.env` file pre-configured to work with the local Prisma Dev database. You can create a `.env.local` override if needed:
 
 ```env
-# Database connection
-DATABASE_URL="postgresql://username:password@localhost:5432/tpl_payroll"
-
 # Application URL (for development)
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-Replace `username`, `password`, and `localhost:5432` with your PostgreSQL credentials.
+### 3. Start the Development Database
 
-### 3. Set Up the Database
-
-Initialize the database schema:
+The project leverages Prisma 7's development database capabilities. Before running the app, start the local Prisma Postgres server on the configured port:
 
 ```bash
-npx prisma migrate deploy
+npx prisma dev -n freshport -P 65000
 ```
 
-This will create all necessary tables defined in `prisma/schema.prisma`.
+Wait for the server to start successfully. It is configured to listen on port `65000` as defined in the default `DIRECT_DATABASE_URL`.
 
-### 4. Run the Development Server
+### 4. Set Up the Database Schema
+
+Synchronize the database schema with the application without creating migrations files:
+
+```bash
+npx prisma db push
+```
+
+*(Optional)* You can seed the database with basic test data using the E2E setup utility:
+
+```bash
+node e2e/utils/setup-db.js
+```
+
+### 5. Run the Development Server
 
 Start the Next.js development server:
 
@@ -153,16 +162,16 @@ The development server automatically reloads when you modify files. Edit any fil
 
 ### Database Management
 
-To create a new migration after schema changes:
+To synchronize schema changes without full migrations:
 
 ```bash
-npx prisma migrate dev --name migration_name
+npx prisma db push
 ```
 
-To reset the database (destructive):
+To reset the database:
 
 ```bash
-npx prisma migrate reset
+npx prisma db push --force-reset
 ```
 
 ## Production Deployment

@@ -21,6 +21,11 @@ import {
 
 type Mode = 'create' | 'edit'
 
+export interface AttendanceReturnContext {
+  sessionId: string
+  sheetEmployeeName: string
+}
+
 interface EmployeeFormProps {
   mode: Mode
   /** Populated when mode = 'edit' */
@@ -29,6 +34,10 @@ interface EmployeeFormProps {
   currentSalary?: number
   /** Current hourly rate — from wage history, passed in on edit */
   currentHourlyRate?: number
+  /** Present when the form was opened from the attendance upload flow.
+   * Pre-fills the name field and re-routes the back link + post-save
+   * navigation back into the upload session. */
+  returnContext?: AttendanceReturnContext
 }
 
 // ─── Internal form value shape ────────────────────────────────────────────────
@@ -131,6 +140,7 @@ export function EmployeeForm({
   employee,
   currentSalary,
   currentHourlyRate,
+  returnContext,
 }: EmployeeFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -143,7 +153,7 @@ export function EmployeeForm({
 
   const defaultValues: FormValues = {
     employeeId: employee?.employeeId ?? '',
-    employeeName: employee?.employeeName ?? '',
+    employeeName: employee?.employeeName ?? returnContext?.sheetEmployeeName ?? '',
     designation: employee?.designation ?? '',
     designationShort: employee?.designationShort ?? '',
     nationalId: employee?.nationalId ?? '',
@@ -252,6 +262,15 @@ export function EmployeeForm({
           }
           return
         }
+        if (returnContext) {
+          const params = new URLSearchParams({
+            resumeSession: returnContext.sessionId,
+            newEmployeeId: result.data.id,
+          })
+          router.push(`/attendance?${params.toString()}`)
+          router.refresh()
+          return
+        }
         router.push(`/employees/${result.data.id}`)
         router.refresh()
       }
@@ -261,14 +280,25 @@ export function EmployeeForm({
   return (
     <div className="space-y-0">
       {/* ── Back link ───────────────────────────────────────────────────────── */}
-      <button
-        type="button"
-        onClick={() => router.push('/employees')}
-        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors duration-200 mb-6"
-      >
-        <ArrowLeft size={16} />
-        Back to directory
-      </button>
+      {returnContext ? (
+        <button
+          type="button"
+          onClick={() => router.push(`/attendance?resumeSession=${returnContext.sessionId}`)}
+          className="inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-800 transition-colors duration-200 mb-6"
+        >
+          <ArrowLeft size={16} />
+          Return to attendance upload
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => router.push('/employees')}
+          className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors duration-200 mb-6"
+        >
+          <ArrowLeft size={16} />
+          Back to directory
+        </button>
+      )}
 
       {/* ── Page title ──────────────────────────────────────────────────────── */}
       <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900 mb-8">
