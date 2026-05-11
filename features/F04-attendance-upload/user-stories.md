@@ -136,8 +136,9 @@ TEST: parseAttendanceBlock extracts employee name and site
 - AC1: Matching is attempted by employee name or employee identifier.
 - AC2: Matched employees show a green "Matched" indicator.
 - AC3: Unmatched employees show a red "Unmatched" error and block payroll.
-- AC4: Matched inactive employees show a warning "Inactive — blocks payroll".
-- AC5: Matched employees resigned before the payroll week show a warning "Resigned before payroll week — blocks payroll".
+- AC4: Matched inactive employees show status "INACTIVE" — requires manual verification (non-blocking).
+- AC5: Matched employees resigned before the payroll week show status "RESIGNED_BEFORE_WEEK" — requires manual verification (non-blocking).
+- AC6: Matched employees resigned during the payroll week show status "MATCHED" (no verification needed).
 
 ### Unit Tests
 
@@ -153,20 +154,26 @@ TEST: matchEmployees flags unmatched employees
   WHEN matchEmployees() is called
   THEN the record has status "UNMATCHED" and isBlocking = true
 
-TEST: matchEmployees flags inactive employees
+TEST: matchEmployees flags inactive employees (non-blocking, requires verification)
   GIVEN master has "Ravi Kumar" with isActive = false
   WHEN matchEmployees() is called
-  THEN the record has status "INACTIVE" and isBlocking = true
+  THEN the record has status "INACTIVE" and isBlocking = false
 
-TEST: matchEmployees flags resigned-before-week employees
+TEST: matchEmployees flags resigned-before-week employees (non-blocking, requires verification)
   GIVEN "Ravi Kumar" has dateOfResignation = "2025-03-01"
-  AND payroll week starts "2025-03-06"
+  AND payroll week is "2025-03-06" to "2025-03-12"
   WHEN matchEmployees() is called
-  THEN the record has status "RESIGNED_BEFORE_WEEK" and isBlocking = true
+  THEN the record has status "RESIGNED_BEFORE_WEEK" and isBlocking = false
 
-TEST: matchEmployees allows employee resigned during or after week
+TEST: matchEmployees allows employee resigned during week (no verification)
   GIVEN "Ravi Kumar" has dateOfResignation = "2025-03-10"
-  AND payroll week starts "2025-03-06"
+  AND payroll week is "2025-03-06" to "2025-03-12"
+  WHEN matchEmployees() is called
+  THEN the record has status "MATCHED" and isBlocking = false
+
+TEST: matchEmployees allows employee resigned after week
+  GIVEN "Ravi Kumar" has dateOfResignation = "2025-03-15"
+  AND payroll week is "2025-03-06" to "2025-03-12"
   WHEN matchEmployees() is called
   THEN the record has status "MATCHED" and isBlocking = false
 ```
@@ -193,7 +200,13 @@ TEST: matchEmployees allows employee resigned during or after week
 TEST: computeImportSummary returns correct counts
   GIVEN 15 matched, 2 unmatched, 1 inactive, 1 resigned-before-week
   WHEN computeImportSummary() is called
-  THEN it returns { matched: 15, unmatched: 2, inactive: 1, resignedBeforeWeek: 1, isBlocked: true }
+  THEN it returns { matched: 15, unmatched: 2, inactive: 1, resignedBeforeWeek: 1, needsVerification: 2, isBlocked: true }
+
+TEST: computeImportSummary not blocked by inactive/resigned-before-week
+  GIVEN 15 matched, 0 unmatched, 1 inactive, 1 resigned-before-week, 0 parse errors
+  WHEN computeImportSummary() is called
+  THEN isBlocked = false (inactive and resigned-before-week do NOT contribute to isBlocked)
+  AND needsVerification = 2
 
 TEST: computeImportSummary unblocked when all matched
   GIVEN 15 matched, 0 unmatched, 0 inactive, 0 resigned
@@ -233,4 +246,58 @@ TEST: replaceAttendanceUpload deactivates previous upload record
 TEST: replaceAttendanceUpload sets new upload as active
   WHEN replaceAttendanceUpload() is called with a new file
   THEN the new AttendanceUpload record has isActiveForPayrollWeek = true
+```
+
+---
+
+## US-04.7: Manual verification of inactive and resigned-before-week employees
+
+**As a** Payroll Owner
+**I want to** manually approve or reject payroll processing for employees who are inactive or resigned before the payroll week
+**So that** I can decide on a case-by-case basis whether to process their final payroll.
+
+### Acceptance Criteria
+
+- AC1: Employees with `isActive = false` are flagged with status "INACTIVE" — requires manual verification (non-blocking).
+- AC2: Employees with `dateOfResignation < weekStart` are flagged with status "RESIGNED_BEFORE_WEEK" — requires manual verification (non-blocking).
+- AC3: A modal dialog appears during the upload flow titled "Manual Verification Required" showing all flagged employees.
+- AC4: Each flagged employee shows: name, reason ("Inactive employee" or "Resigned before payroll week (YYYY-MM-DD)"), total regular hours, total overtime hours.
+- AC5: Each employee has two action buttons: [Approve] [Reject] (mutually exclusive toggle).
+- AC6: A [Confirm Selections] button is disabled until every flagged employee has been approved or rejected.
+- AC7: When the user clicks "Approve" for an employee, they are included in payroll processing.
+- AC8: When the user clicks "Reject" for an employee, they are excluded from payroll processing.
+- AC9: The approval/rejection decision is stored in `AttendanceRecord.verificationDecision` for audit purposes.
+- AC10: Payroll finalization is only blocked if UNMATCHED or parse errors exist (not by manual verification flags).
+
+### Unit Tests
+
+```
+TEST: matchEmployees detects inactive employee (non-blocking)
+  GIVEN employee "EMP-010" with isActive = false
+  WHEN matchEmployees() is called
+  THEN the record has status "INACTIVE" and isBlocking = false
+
+TEST: matchEmployees detects resignation before week (non-blocking)
+  GIVEN "EMP-011" has dateOfResignation = "2025-03-01"
+  AND payroll week is "2025-03-06" to "2025-03-12"
+  WHEN matchEmployees() is called
+  THEN the record has status "RESIGNED_BEFORE_WEEK" and isBlocking = false
+
+TEST: computeImportSummary includes needsVerification count
+  GIVEN 1 matched, 2 inactive, 1 resigned-before-week
+  WHEN computeImportSummary() is called
+  THEN it returns { matched: 1, inactive: 2, resignedBeforeWeek: 1, needsVerification: 3, isBlocked: false }
+
+TEST: finalizeAttendanceUploadAction stores verification decisions
+  GIVEN upload has 1 INACTIVE employee
+  AND user approved that employee
+  WHEN finalizeAttendanceUploadAction is called with verificationDecisions: { employeeDbId: "APPROVED" }
+  THEN the AttendanceRecord row has verificationDecision = "APPROVED"
+
+TEST: finalizeAttendanceUploadAction stores rejection decisions
+  GIVEN upload has 1 RESIGNED_BEFORE_WEEK employee
+  AND user rejected that employee
+  WHEN finalizeAttendanceUploadAction is called with verificationDecisions: { employeeDbId: "REJECTED" }
+  THEN the AttendanceRecord row has verificationDecision = "REJECTED"
+  AND payroll logic excludes this employee from processing
 ```

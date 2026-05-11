@@ -10,14 +10,27 @@ import {
   X,
 } from '@phosphor-icons/react'
 import { parseAttendanceFileAction } from '@/features/attendance-upload/actions/attendance.actions'
+import type { MatchedAttendanceRecord, PayrollWeekSource, ImportSummary } from '@/features/attendance-upload/types/attendance.types'
 
 type DragState = 'idle' | 'over'
 
-interface AttendanceDropzoneProps {
-  onWeekRequired: (tempFilePath: string, fileName: string, fileType: string) => void
+interface VerificationRequiredPayload {
+  records: MatchedAttendanceRecord[]
+  summary: ImportSummary
+  payrollWeekStartDate: string
+  payrollWeekEndDate: string
+  payrollWeekSource: PayrollWeekSource
+  tempFilePath: string
+  fileName: string
+  fileType: string
 }
 
-export function AttendanceDropzone({ onWeekRequired }: AttendanceDropzoneProps) {
+interface AttendanceDropzoneProps {
+  onWeekRequired: (tempFilePath: string, fileName: string, fileType: string) => void
+  onVerificationRequired: (payload: VerificationRequiredPayload) => void
+}
+
+export function AttendanceDropzone({ onWeekRequired, onVerificationRequired }: AttendanceDropzoneProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -79,10 +92,29 @@ export function AttendanceDropzone({ onWeekRequired }: AttendanceDropzoneProps) 
       return
     }
 
-    const { payrollWeek, tempFilePath, fileName, fileType, records } = result.data
+    const { payrollWeek, tempFilePath, fileName, fileType, records, summary } = result.data
 
     if (payrollWeek.source === 'MANUAL_REQUIRED') {
       onWeekRequired(tempFilePath, fileName, fileType)
+      return
+    }
+
+    // Check if verification is required for INACTIVE or RESIGNED_BEFORE_WEEK employees
+    const needsVerification = records.some(
+      (r) => r.matchStatus === 'INACTIVE' || r.matchStatus === 'RESIGNED_BEFORE_WEEK'
+    )
+
+    if (needsVerification) {
+      onVerificationRequired({
+        records,
+        summary,
+        payrollWeekStartDate: payrollWeek.start,
+        payrollWeekEndDate: payrollWeek.end,
+        payrollWeekSource: payrollWeek.source,
+        tempFilePath,
+        fileName,
+        fileType,
+      })
       return
     }
 
@@ -103,7 +135,7 @@ export function AttendanceDropzone({ onWeekRequired }: AttendanceDropzoneProps) 
     startTransition(() => {
       router.push(`/attendance/${finalResult.data.uploadId}/preview`)
     })
-  }, [selectedFile, router, startTransition, onWeekRequired])
+  }, [selectedFile, router, startTransition, onWeekRequired, onVerificationRequired])
 
   const isOver = dragState === 'over'
 

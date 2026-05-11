@@ -152,6 +152,174 @@ export async function seedAdjustmentTestData() {
   }
 }
 
+// ─── seedPayrollTestData ──────────────────────────────────────────────────────
+// Seeds a minimal but complete scenario for F06 E2E tests:
+//   - 3 employees with wage history
+//   - 1 READY AttendanceUpload for March 6-12 with daily records
+//   - 1 ERRORS AttendanceUpload for March 13-19 (blocked)
+//   - 1 pending adjustment application for March 6-12
+
+export async function seedPayrollTestData() {
+  try {
+    await prisma.$connect();
+
+    const weekStart = new Date('2025-03-06T00:00:00.000Z');
+    const weekEnd   = new Date('2025-03-12T00:00:00.000Z');
+    const errWeekStart = new Date('2025-03-13T00:00:00.000Z');
+    const errWeekEnd   = new Date('2025-03-19T00:00:00.000Z');
+
+    // ── Employees ──────────────────────────────────────────────────────────
+    const employees = await Promise.all([
+      prisma.employee.create({
+        data: {
+          employeeId: 'EMP-PRY-001',
+          employeeName: 'Kavitha Rajan',
+          designation: 'Security Guard',
+          designationShort: 'Guard',
+          site: 'North Gate',
+          gPay: '9876543210',
+          bankAccount: '012345678901',
+          isActive: true,
+          wageHistory: {
+            create: {
+              weeklySalary: 2500,
+              hourlyRate: 62.5,
+              effectiveFrom: new Date('2025-01-01T00:00:00.000Z'),
+              changeSource: 'SEED',
+            },
+          },
+        },
+      }),
+      prisma.employee.create({
+        data: {
+          employeeId: 'EMP-PRY-002',
+          employeeName: 'Ramesh Nair',
+          designation: 'Supervisor',
+          designationShort: 'Supv.',
+          site: 'South Gate',
+          gPay: '9123456780',
+          bankAccount: '098765432109',
+          isActive: true,
+          wageHistory: {
+            create: {
+              weeklySalary: 3000,
+              hourlyRate: 75.0,
+              effectiveFrom: new Date('2025-01-01T00:00:00.000Z'),
+              changeSource: 'SEED',
+            },
+          },
+        },
+      }),
+      prisma.employee.create({
+        data: {
+          employeeId: 'EMP-PRY-003',
+          employeeName: 'Sunita Pillai',
+          designation: 'Security Guard',
+          designationShort: 'Guard',
+          site: 'East Gate',
+          gPay: null,
+          bankAccount: null,
+          isActive: true,
+          wageHistory: {
+            create: {
+              weeklySalary: 2500,
+              hourlyRate: 62.5,
+              effectiveFrom: new Date('2025-01-01T00:00:00.000Z'),
+              changeSource: 'SEED',
+            },
+          },
+        },
+      }),
+    ]);
+
+    // ── READY upload for March 6-12 ────────────────────────────────────────
+    const readyUpload = await prisma.attendanceUpload.create({
+      data: {
+        fileName: 'attendance-march-wk1.xlsx',
+        fileType: 'xlsx',
+        payrollWeekStartDate: weekStart,
+        payrollWeekEndDate: weekEnd,
+        payrollWeekSource: 'SHEET_CONTENT',
+        status: 'READY',
+        isActiveForPayrollWeek: true,
+        sourceFilePath: '/tmp/attendance-march-wk1.xlsx',
+      },
+    });
+
+    // Daily records for each employee (Thu–Wed = 7 days)
+    // Employee 1: reg=[8,8,6,0,8,8,8], OT=[2,0,0,0,3,1,0] → reg=46, OT=6
+    // Employee 2: reg=[8,8,8,8,8,8,8], OT=[0,0,0,0,0,0,0] → reg=56, OT=0
+    // Employee 3: reg=[8,8,8,0,8,8,8], OT=[0,0,0,0,0,0,0] → reg=48, OT=0
+    const attendanceDays = [
+      [{ reg: 8, ot: 2 }, { reg: 8, ot: 0 }, { reg: 6, ot: 0 }, { reg: 0, ot: 0 }, { reg: 8, ot: 3 }, { reg: 8, ot: 1 }, { reg: 8, ot: 0 }],
+      [{ reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }],
+      [{ reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 0, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }],
+    ];
+
+    for (let empIdx = 0; empIdx < employees.length; empIdx++) {
+      for (let day = 0; day < 7; day++) {
+        const date = new Date(weekStart);
+        date.setUTCDate(date.getUTCDate() + day);
+        await prisma.attendanceRecord.create({
+          data: {
+            attendanceUploadId: readyUpload.id,
+            employeeId: employees[empIdx].id,
+            attendanceDate: date,
+            regularHours: attendanceDays[empIdx][day].reg,
+            overtimeHours: attendanceDays[empIdx][day].ot,
+            sourceSheetName: 'Attendance',
+            sourceEmployeeBlockIndex: empIdx,
+          },
+        });
+      }
+    }
+
+    // ── Pending adjustment for Employee 1 in week 1 ───────────────────────
+    const adj = await prisma.payrollAdjustment.create({
+      data: {
+        employeeId: employees[0].id,
+        adjustmentType: 'DEDUCTION',
+        recurrenceType: 'ONE_TIME',
+        amount: 500,
+        reason: 'Advance recovery',
+        startPayrollWeekStartDate: weekStart,
+        startPayrollWeekEndDate: weekEnd,
+        status: 'ACTIVE',
+        skippedCarryForwardCount: 0,
+      },
+    });
+    await prisma.payrollAdjustmentApplication.create({
+      data: {
+        payrollAdjustmentId: adj.id,
+        employeeId: employees[0].id,
+        payrollWeekStartDate: weekStart,
+        payrollWeekEndDate: weekEnd,
+        appliedAmount: 500,
+        approvalStatus: 'PENDING',
+      },
+    });
+
+    // ── ERRORS upload for March 13-19 ─────────────────────────────────────
+    await prisma.attendanceUpload.create({
+      data: {
+        fileName: 'attendance-march-wk2.xlsx',
+        fileType: 'xlsx',
+        payrollWeekStartDate: errWeekStart,
+        payrollWeekEndDate: errWeekEnd,
+        payrollWeekSource: 'SHEET_CONTENT',
+        status: 'ERRORS',
+        isActiveForPayrollWeek: true,
+        sourceFilePath: '/tmp/attendance-march-wk2.xlsx',
+      },
+    });
+
+    return { employees, readyUpload };
+  } catch (err) {
+    console.error('Payroll seed failed:', err);
+    throw err;
+  }
+}
+
 export async function seedTestData() {
   try {
     // We use a transaction for seeding to ensure atomicity

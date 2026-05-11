@@ -1,36 +1,201 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TPL Payroll
+
+A comprehensive payroll management system built with Next.js, designed to streamline employee management, attendance tracking, and payroll generation for organizational needs.
+
+## Overview
+
+TPL Payroll is a modern web application that enables organizations to:
+
+- **Manage Employees**: Create, update, and maintain employee records with comprehensive personal and employment details
+- **Track Attendance**: Upload and validate weekly attendance records with automatic error detection and correction
+- **Generate Payroll**: Create payroll runs with multi-step verification, including attendance and adjustment reviews
+- **Handle Adjustments**: Create and approve payroll adjustments (bonuses, deductions, etc.) with a review workflow
+- **Bulk Import/Export**: Import employee data from Excel and export reports in standard formats
+
+## Tech Stack
+
+- **Framework**: [Next.js 16.2](https://nextjs.org/) (App Router)
+- **Database**: PostgreSQL with [Prisma ORM](https://www.prisma.io/)
+- **UI**: React 19 with [Tailwind CSS 4](https://tailwindcss.com/) and [shadcn/ui](https://ui.shadcn.com/)
+- **Forms**: React Hook Form with Zod validation
+- **Testing**: Vitest (unit tests) and Playwright (E2E tests)
+- **Icons**: Phosphor Icons and Lucide React
+
+## Project Structure
+
+```
+src/
+├── app/              # Next.js App Router pages and layouts
+├── components/       # Shared UI components (layout, dashboard)
+├── features/         # Feature slices (each self-contained)
+│   ├── employee-management/
+│   ├── employee-import-export/
+│   ├── attendance-upload/
+│   ├── payroll-generation/
+│   └── payroll-adjustments/
+├── services/         # Shared business logic (database queries)
+└── types/            # Shared TypeScript types
+
+e2e/                 # End-to-end tests with Playwright
+prisma/              # Database schema and migrations
+```
+
+## Prerequisites
+
+- **Node.js**: v18 or higher
+- **PostgreSQL**: v12 or higher (local or remote)
+- **npm or yarn**: Package manager
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure Environment Variables
+
+Create a `.env.local` file in the project root and set the following variables:
+
+```env
+# Database connection
+DATABASE_URL="postgresql://username:password@localhost:5432/tpl_payroll"
+
+# Application URL (for development)
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+Replace `username`, `password`, and `localhost:5432` with your PostgreSQL credentials.
+
+### 3. Set Up the Database
+
+Initialize the database schema:
+
+```bash
+npx prisma migrate deploy
+```
+
+This will create all necessary tables defined in `prisma/schema.prisma`.
+
+### 4. Run the Development Server
+
+Start the Next.js development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application will be available at [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Start development server with hot reload |
+| `npm run build` | Build for production |
+| `npm start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm run test` | Run unit tests in watch mode |
+| `npm run test:run` | Run unit tests once |
+| `npm run test:e2e` | Run E2E tests (requires database setup) |
+| `npm run test:e2e:ui` | Run E2E tests with UI browser |
 
-## Learn More
+## Features
 
-To learn more about Next.js, take a look at the following resources:
+### Employee Management
+- Create, read, update, and deactivate employee records
+- Track wage history and employment changes
+- Store critical documents and identifiers (Aadhaar, bank account, etc.)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Attendance Upload
+- Upload weekly attendance data via Excel files
+- Automatic validation and error detection
+- Manual week selection for flexible scheduling
+- Employee matching and error flagging
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Payroll Generation
+- Multi-step payroll creation workflow with verification gates
+- Attendance verification before payroll processing
+- Integration with payroll adjustments
+- Support for multiple payroll runs per period
 
-## Deploy on Vercel
+### Payroll Adjustments
+- Create adjustments (bonuses, deductions, corrections)
+- Review and approval workflow
+- Prevent duplicate adjustments
+- Integration with payroll runs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Bulk Import/Export
+- Import employee data from Excel with batch processing
+- Export employee records to Excel
+- Validation and error reporting during import
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Developing Locally
+
+### Running Tests
+
+**Unit Tests:**
+```bash
+npm run test
+```
+
+**E2E Tests:**
+```bash
+npm run test:e2e
+```
+
+Ensure your PostgreSQL database is running before running E2E tests. The test suite will automatically set up a test database.
+
+### Hot Reload
+
+The development server automatically reloads when you modify files. Edit any file in `src/` to see changes instantly in your browser.
+
+### Database Management
+
+To create a new migration after schema changes:
+
+```bash
+npx prisma migrate dev --name migration_name
+```
+
+To reset the database (destructive):
+
+```bash
+npx prisma migrate reset
+```
+
+## Production Deployment
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+### Start Production Server
+
+```bash
+npm start
+```
+
+The application will be available on the configured port (default: 3000).
+
+## Documentation
+
+- [Domain Model & Architecture](./CONTEXT.md) - Core concepts and data model
+- [Agent Workflows](./AGENTS.md) - Development guidelines and feature slice architecture
+- [API Routes](./src/app/api/) - Server-side endpoints
+
+## Contributing
+
+When adding new features, follow the feature slice architecture:
+
+1. Create a feature directory under `src/features/[feature-name]/`
+2. Include components, services, actions, and types specific to the feature
+3. Add unit tests alongside implementation
+4. Update documentation as needed
+
+## License
+
+This project is private and proprietary.

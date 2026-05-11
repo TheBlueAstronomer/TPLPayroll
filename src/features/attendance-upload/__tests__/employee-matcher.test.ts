@@ -53,11 +53,12 @@ function makeBlock(
 
 describe('matchEmployees', () => {
   const payrollWeekStartDate = new Date('2025-03-06T00:00:00Z')
+  const payrollWeekEndDate = new Date('2025-03-12T00:00:00Z')
 
   it('matches by exact name and returns MATCHED status', () => {
     const blocks = [makeBlock('Ravi Kumar')]
     const employees = [makeEmployee({ employeeName: 'Ravi Kumar' })]
-    const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
     expect(result[0].matchStatus).toBe('MATCHED')
     expect(result[0].isBlocking).toBe(false)
     expect(result[0].employeeDbId).toBe('uuid-1')
@@ -66,32 +67,32 @@ describe('matchEmployees', () => {
   it('flags unmatched employees with UNMATCHED and isBlocking=true', () => {
     const blocks = [makeBlock('Unknown Person')]
     const employees = [makeEmployee({ employeeName: 'Ravi Kumar' })]
-    const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
     expect(result[0].matchStatus).toBe('UNMATCHED')
     expect(result[0].isBlocking).toBe(true)
     expect(result[0].employeeDbId).toBeNull()
   })
 
-  it('flags inactive employees with INACTIVE and isBlocking=true', () => {
+  it('flags inactive employees with INACTIVE and isBlocking=false (requires verification)', () => {
     const blocks = [makeBlock('Ravi Kumar')]
     const employees = [makeEmployee({ isActive: false })]
-    const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
     expect(result[0].matchStatus).toBe('INACTIVE')
-    expect(result[0].isBlocking).toBe(true)
+    expect(result[0].isBlocking).toBe(false)
   })
 
-  it('flags employees resigned before payroll week with RESIGNED_BEFORE_WEEK', () => {
+  it('flags employees resigned before payroll week with RESIGNED_BEFORE_WEEK and isBlocking=false (requires verification)', () => {
     const blocks = [makeBlock('Ravi Kumar')]
     const employees = [makeEmployee({ dateOfResignation: new Date('2025-03-01T00:00:00Z') })]
-    const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
     expect(result[0].matchStatus).toBe('RESIGNED_BEFORE_WEEK')
-    expect(result[0].isBlocking).toBe(true)
+    expect(result[0].isBlocking).toBe(false)
   })
 
   it('allows employee resigned on the week start date', () => {
     const blocks = [makeBlock('Ravi Kumar')]
     const employees = [makeEmployee({ dateOfResignation: new Date('2025-03-06T00:00:00Z') })]
-    const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
     expect(result[0].matchStatus).toBe('MATCHED')
     expect(result[0].isBlocking).toBe(false)
   })
@@ -99,14 +100,38 @@ describe('matchEmployees', () => {
   it('allows employee resigned after payroll week start', () => {
     const blocks = [makeBlock('Ravi Kumar')]
     const employees = [makeEmployee({ dateOfResignation: new Date('2025-03-10T00:00:00Z') })]
-    const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
     expect(result[0].matchStatus).toBe('MATCHED')
+  })
+
+  it('allows employee resigned during payroll week (on a day within the week)', () => {
+    const blocks = [makeBlock('Ravi Kumar')]
+    const employees = [makeEmployee({ dateOfResignation: new Date('2025-03-10T00:00:00Z') })]
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
+    expect(result[0].matchStatus).toBe('MATCHED')
+    expect(result[0].isBlocking).toBe(false)
+  })
+
+  it('allows employee resigned on the last day of payroll week', () => {
+    const blocks = [makeBlock('Ravi Kumar')]
+    const employees = [makeEmployee({ dateOfResignation: new Date('2025-03-12T00:00:00Z') })]
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
+    expect(result[0].matchStatus).toBe('MATCHED')
+    expect(result[0].isBlocking).toBe(false)
+  })
+
+  it('allows employee resigned after payroll week ends', () => {
+    const blocks = [makeBlock('Ravi Kumar')]
+    const employees = [makeEmployee({ dateOfResignation: new Date('2025-03-15T00:00:00Z') })]
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
+    expect(result[0].matchStatus).toBe('MATCHED')
+    expect(result[0].isBlocking).toBe(false)
   })
 
   it('matches case-insensitively by name', () => {
     const blocks = [makeBlock('ravi kumar')]
     const employees = [makeEmployee({ employeeName: 'Ravi Kumar' })]
-    const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
     expect(result[0].matchStatus).toBe('MATCHED')
   })
 
@@ -116,7 +141,7 @@ describe('matchEmployees', () => {
       makeEmployee({ id: 'uuid-1', employeeName: 'Ravi Kumar' }),
       makeEmployee({ id: 'uuid-2', employeeName: 'Priya Nair', employeeId: 'EMP-002' }),
     ]
-    const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+    const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
     expect(result[0].matchStatus).toBe('MATCHED')
     expect(result[1].matchStatus).toBe('UNMATCHED')
     expect(result[2].matchStatus).toBe('MATCHED')
@@ -127,7 +152,7 @@ describe('matchEmployees', () => {
       // "EMP-001" → trailing number 1 → matches sheet User ID 1
       const blocks = [makeBlock('Unknown Name', 1)]
       const employees = [makeEmployee({ id: 'uuid-1', employeeId: 'EMP-001', employeeName: 'Ravi Kumar' })]
-      const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+      const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
       expect(result[0].matchStatus).toBe('MATCHED')
       expect(result[0].employeeDbId).toBe('uuid-1')
     })
@@ -138,7 +163,7 @@ describe('matchEmployees', () => {
         makeEmployee({ id: 'uuid-1', employeeId: 'EMP-001', employeeName: 'Ravi Kumar' }),
         makeEmployee({ id: 'uuid-2', employeeId: 'EMP-002', employeeName: 'Priya Nair' }),
       ]
-      const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+      const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
       expect(result[0].matchStatus).toBe('MATCHED')
       expect(result[0].employeeDbId).toBe('uuid-2')
     })
@@ -146,7 +171,7 @@ describe('matchEmployees', () => {
     it('falls back to name match when User ID is not found in DB', () => {
       const blocks = [makeBlock('Ravi Kumar', 999)]
       const employees = [makeEmployee({ id: 'uuid-1', employeeId: 'EMP-001', employeeName: 'Ravi Kumar' })]
-      const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+      const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
       expect(result[0].matchStatus).toBe('MATCHED')
       expect(result[0].employeeDbId).toBe('uuid-1')
     })
@@ -154,7 +179,7 @@ describe('matchEmployees', () => {
     it('flags UNMATCHED when neither User ID nor name matches', () => {
       const blocks = [makeBlock('Unknown', 999)]
       const employees = [makeEmployee({ id: 'uuid-1', employeeId: 'EMP-001', employeeName: 'Ravi Kumar' })]
-      const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+      const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
       expect(result[0].matchStatus).toBe('UNMATCHED')
       expect(result[0].isBlocking).toBe(true)
     })
@@ -162,7 +187,7 @@ describe('matchEmployees', () => {
     it('matches User ID 71 to Employee ID with trailing 71', () => {
       const blocks = [makeBlock('', 71)]
       const employees = [makeEmployee({ id: 'uuid-71', employeeId: 'GUARD-071', employeeName: 'Last Guard' })]
-      const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+      const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
       expect(result[0].matchStatus).toBe('MATCHED')
       expect(result[0].employeeDbId).toBe('uuid-71')
     })
@@ -170,7 +195,7 @@ describe('matchEmployees', () => {
     it('falls back to name match when userIdFromSheet is undefined', () => {
       const blocks = [makeBlock('Ravi Kumar')]  // no User ID
       const employees = [makeEmployee()]
-      const result = matchEmployees(blocks, employees, payrollWeekStartDate)
+      const result = matchEmployees(blocks, employees, payrollWeekStartDate, payrollWeekEndDate)
       expect(result[0].matchStatus).toBe('MATCHED')
     })
   })

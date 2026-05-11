@@ -1,8 +1,8 @@
 import {
-  Users,
-  CurrencyInr,
-  Warning,
-  Clock,
+  UsersIcon,
+  CurrencyInrIcon,
+  WarningIcon,
+  ClockIcon,
 } from '@phosphor-icons/react/dist/ssr'
 import { DashboardCard } from '@/components/dashboard/DashboardCard'
 import { DashboardCardSkeleton } from '@/components/dashboard/DashboardCardSkeleton'
@@ -60,7 +60,7 @@ async function DashboardMetrics() {
         <DashboardCard
           label="Active Team Members"
           value={String(activeEmployees)}
-          icon={<Users size={20} weight="regular" />}
+          icon={<UsersIcon size={20} weight="regular" />}
           href="/employees"
           index={0}
           className="[--icon-color:theme(colors.emerald.500)]"
@@ -68,7 +68,7 @@ async function DashboardMetrics() {
         <DashboardCard
           label="Latest Payroll Total"
           value={payrollTotal === 0 ? '₹0.00' : formatINR(payrollTotal)}
-          icon={<CurrencyInr size={20} weight="regular" />}
+          icon={<CurrencyInrIcon size={20} weight="regular" />}
           href="/payroll"
           index={1}
         />
@@ -79,14 +79,14 @@ async function DashboardMetrics() {
         <DashboardCard
           label="Pending Attendance Flags"
           value={String(attendanceErrors)}
-          icon={<Warning size={20} weight="regular" className="text-amber-500" />}
+          icon={<WarningIcon size={20} weight="regular" className="text-amber-500" />}
           href="/attendance"
           index={2}
         />
         <DashboardCard
           label="Awaiting Adjustments"
           value={String(pendingApprovals)}
-          icon={<Clock size={20} weight="regular" />}
+          icon={<ClockIcon size={20} weight="regular" />}
           href="/adjustments"
           index={3}
         />

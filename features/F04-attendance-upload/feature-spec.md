@@ -48,24 +48,61 @@ AND the 2 unmatched employees are flagged as blocking errors
 AND payroll generation is blocked for this week
 ```
 
-### E2E-03: Attendance upload includes inactive employee
+### E2E-03: Attendance upload includes inactive employee — requires manual verification
 
 ```
 GIVEN employee "EMP-005" is inactive (isActive = false)
 AND the uploaded file contains attendance for "EMP-005"
 WHEN the user uploads the file
-THEN "EMP-005" is flagged as "Inactive employee — blocks payroll"
-AND payroll generation is blocked
+THEN the import preview shows "EMP-005" as "Inactive employee"
+AND a manual verification dialog appears with "EMP-005" listed
+AND "EMP-005" is NOT automatically blocking payroll
+AND payroll can only be finalized after the user approves or rejects "EMP-005"
 ```
 
-### E2E-04: Attendance upload includes employee resigned before payroll week
+### E2E-04: Attendance upload includes employee resigned before payroll week — requires manual verification
 
 ```
 GIVEN employee "EMP-008" has dateOfResignation = "2025-03-01"
 AND the payroll week is March 6–12, 2025
 WHEN the user uploads the file containing "EMP-008"
-THEN "EMP-008" is flagged as "Resigned before payroll week — blocks payroll"
-AND payroll generation is blocked
+THEN the import preview shows "EMP-008" as "Resigned before payroll week"
+AND a manual verification dialog appears with "EMP-008" listed
+AND "EMP-008" is NOT automatically blocking payroll
+AND payroll can only be finalized after the user approves or rejects "EMP-008"
+```
+
+### E2E-04b: Attendance upload includes employee resigned during payroll week
+
+```
+GIVEN employee "EMP-009" has dateOfResignation = "2025-03-10" (during the week)
+AND the payroll week is March 6–12, 2025
+WHEN the user uploads the file containing "EMP-009"
+THEN "EMP-009" is matched as a regular employee with status "MATCHED"
+AND NO manual verification dialog appears for "EMP-009"
+AND "EMP-009" is processed as normal payroll
+AND no additional approval is required
+```
+
+### E2E-04c: Manual verification dialog for inactive / resigned-before-week employees
+
+```
+GIVEN the import contains 1 inactive and 1 resigned-before-week employee
+WHEN the user uploads the file
+THEN a modal titled "Manual Verification Required" appears showing both employees:
+  - Name, Reason ("Inactive employee" or "Resigned before payroll week (2025-03-01)"), Total Reg Hours, Total OT Hours
+  - Action buttons: [Approve] [Reject]
+AND the user cannot finalize the upload until both employees have been approved or rejected
+
+GIVEN the manual verification dialog is showing
+WHEN the user clicks "Approve" for an employee
+THEN that employee is included in the final payroll (marked with "APPROVED")
+AND when the user clicks "Confirm Selections" (or similar), finalization proceeds
+
+GIVEN the manual verification dialog is showing
+WHEN the user clicks "Reject" for an employee
+THEN that employee is excluded from the final payroll (marked with "REJECTED")
+AND when the user clicks "Confirm Selections", finalization proceeds
 ```
 
 ### E2E-05: Blank hours are treated as 0

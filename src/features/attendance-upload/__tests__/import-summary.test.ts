@@ -32,8 +32,8 @@ describe('computeImportSummary', () => {
       ...Array(2).fill(null).map((_, i) =>
         makeRecord({ employeeName: `Unknown ${i}`, matchStatus: 'UNMATCHED', isBlocking: true, employeeDbId: null })
       ),
-      makeRecord({ matchStatus: 'INACTIVE', isBlocking: true }),
-      makeRecord({ matchStatus: 'RESIGNED_BEFORE_WEEK', isBlocking: true }),
+      makeRecord({ matchStatus: 'INACTIVE', isBlocking: false }),
+      makeRecord({ matchStatus: 'RESIGNED_BEFORE_WEEK', isBlocking: false }),
     ]
     const summary = computeImportSummary(records)
     expect(summary.total).toBe(19)
@@ -41,6 +41,7 @@ describe('computeImportSummary', () => {
     expect(summary.unmatched).toBe(2)
     expect(summary.inactive).toBe(1)
     expect(summary.resignedBeforeWeek).toBe(1)
+    expect(summary.needsVerification).toBe(2)
     expect(summary.isBlocked).toBe(true)
   })
 
@@ -77,6 +78,18 @@ describe('computeImportSummary', () => {
     const summary = computeImportSummary([])
     expect(summary.total).toBe(0)
     expect(summary.matched).toBe(0)
+    expect(summary.isBlocked).toBe(false)
+  })
+
+  it('isBlocked=false when only INACTIVE/RESIGNED_BEFORE_WEEK present (no hard blockers)', () => {
+    const records = [
+      makeRecord({ matchStatus: 'INACTIVE', isBlocking: false }),
+      makeRecord({ matchStatus: 'RESIGNED_BEFORE_WEEK', isBlocking: false }),
+    ]
+    const summary = computeImportSummary(records)
+    expect(summary.inactive).toBe(1)
+    expect(summary.resignedBeforeWeek).toBe(1)
+    expect(summary.needsVerification).toBe(2)
     expect(summary.isBlocked).toBe(false)
   })
 })

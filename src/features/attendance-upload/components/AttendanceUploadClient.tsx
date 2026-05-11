@@ -11,11 +11,13 @@ import {
 } from '@phosphor-icons/react'
 import { AttendanceDropzone } from './AttendanceDropzone'
 import { WeekSelectionDialog } from './WeekSelectionDialog'
+import { EmployeeVerificationDialog } from './EmployeeVerificationDialog'
 import {
   parseAttendanceWithDatesAction,
   finalizeAttendanceUploadAction,
 } from '@/features/attendance-upload/actions/attendance.actions'
 import type { AttendanceUploadRow } from '@/features/attendance-upload/actions/attendance.actions'
+import type { MatchedAttendanceRecord, PayrollWeekSource, ImportSummary, VerificationDecision } from '@/features/attendance-upload/types/attendance.types'
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -60,6 +62,17 @@ type DialogState =
       fileName: string
       fileType: string
     }
+  | {
+      type: 'verify_required'
+      records: MatchedAttendanceRecord[]
+      summary: ImportSummary
+      payrollWeekStartDate: string
+      payrollWeekEndDate: string
+      payrollWeekSource: PayrollWeekSource
+      tempFilePath: string
+      fileName: string
+      fileType: string
+    }
 
 // ─── AttendanceUploadClient ───────────────────────────────────────────────────
 
@@ -77,6 +90,22 @@ export function AttendanceUploadClient({ initialUploads }: AttendanceUploadClien
   const handleWeekRequired = useCallback(
     (tempFilePath: string, fileName: string, fileType: string) => {
       setDialog({ type: 'week_required', tempFilePath, fileName, fileType })
+    },
+    []
+  )
+
+  const handleVerificationRequired = useCallback(
+    (payload: {
+      records: MatchedAttendanceRecord[]
+      summary: ImportSummary
+      payrollWeekStartDate: string
+      payrollWeekEndDate: string
+      payrollWeekSource: PayrollWeekSource
+      tempFilePath: string
+      fileName: string
+      fileType: string
+    }) => {
+      setDialog({ type: 'verify_required', ...payload })
     },
     []
   )
@@ -101,11 +130,62 @@ export function AttendanceUploadClient({ initialUploads }: AttendanceUploadClien
         return
       }
 
+      // Check if verification is required
+      const needsVerification = result.data.records.some(
+        (r) => r.matchStatus === 'INACTIVE' || r.matchStatus === 'RESIGNED_BEFORE_WEEK'
+      )
+
+      if (needsVerification) {
+        setDialog({
+          type: 'verify_required',
+          records: result.data.records,
+          summary: result.data.summary,
+          payrollWeekStartDate: startDate,
+          payrollWeekEndDate: endDate,
+          payrollWeekSource: 'MANUAL',
+          tempFilePath,
+          fileName,
+          fileType,
+        })
+        return
+      }
+
       const finalResult = await finalizeAttendanceUploadAction({
         ...result.data,
         payrollWeekStartDate: startDate,
         payrollWeekEndDate: endDate,
         payrollWeekSource: 'MANUAL',
+      })
+
+      if (!finalResult.ok) {
+        setProcessingError(finalResult.error)
+        return
+      }
+
+      startTransition(() => {
+        router.push(`/attendance/${finalResult.data.uploadId}/preview`)
+      })
+    },
+    [dialog, router, startTransition]
+  )
+
+  const handleVerificationConfirm = useCallback(
+    async (decisions: Record<string, VerificationDecision>) => {
+      if (dialog.type !== 'verify_required') return
+      const { tempFilePath, fileName, fileType, payrollWeekStartDate, payrollWeekEndDate, payrollWeekSource, records, summary } = dialog
+      setDialog({ type: 'none' })
+      setProcessingError(null)
+
+      const finalResult = await finalizeAttendanceUploadAction({
+        tempFilePath,
+        fileName,
+        fileType,
+        payrollWeekStartDate,
+        payrollWeekEndDate,
+        payrollWeekSource,
+        records,
+        summary,
+        verificationDecisions: decisions,
       })
 
       if (!finalResult.ok) {
@@ -197,12 +277,23 @@ export function AttendanceUploadClient({ initialUploads }: AttendanceUploadClien
       )}
 
       {/* ── Dropzone ─────────────────────────────────────────────────────── */}
-      <AttendanceDropzone onWeekRequired={handleWeekRequired} />
+      <AttendanceDropzone onWeekRequired={handleWeekRequired} onVerificationRequired={handleVerificationRequired} />
 
       {/* ── Dialogs ──────────────────────────────────────────────────────── */}
       {dialog.type === 'week_required' && (
         <WeekSelectionDialog
           onConfirm={handleWeekConfirm}
+          onCancel={() => setDialog({ type: 'none' })}
+        />
+      )}
+
+      {dialog.type === 'verify_required' && (
+        <EmployeeVerificationDialog
+          isOpen={dialog.type === 'verify_required'}
+          employees={dialog.records.filter(
+            (r) => r.matchStatus === 'INACTIVE' || r.matchStatus === 'RESIGNED_BEFORE_WEEK'
+          )}
+          onConfirm={handleVerificationConfirm}
           onCancel={() => setDialog({ type: 'none' })}
         />
       )}

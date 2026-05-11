@@ -28,8 +28,9 @@ function fmtWeek(start: string, end: string): string {
 // ─── Status cell ──────────────────────────────────────────────────────────────
 
 type MatchStatus = 'MATCHED' | 'UNMATCHED' | 'INACTIVE' | 'RESIGNED_BEFORE_WEEK'
+type VerificationDecision = 'APPROVED' | 'REJECTED'
 
-function MatchStatusCell({ status }: { status: MatchStatus }) {
+function MatchStatusCell({ status, verificationDecision }: { status: MatchStatus; verificationDecision?: VerificationDecision | null }) {
   if (status === 'MATCHED') {
     return (
       <span className="inline-flex items-center gap-1.5 text-sm text-emerald-700">
@@ -48,17 +49,31 @@ function MatchStatusCell({ status }: { status: MatchStatus }) {
   }
   if (status === 'INACTIVE') {
     return (
-      <span className="inline-flex items-center gap-1.5 text-sm text-amber-600">
-        <WarningCircle size={14} className="text-amber-500" />
-        Inactive
-      </span>
+      <div className="inline-flex flex-col gap-1.5">
+        <span className="inline-flex items-center gap-1.5 text-sm text-amber-600">
+          <WarningCircle size={14} className="text-amber-500" />
+          Inactive
+        </span>
+        {verificationDecision && (
+          <span className={`text-xs px-2 py-0.5 rounded ${verificationDecision === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+            {verificationDecision === 'APPROVED' ? '✓ Approved' : '✗ Rejected'}
+          </span>
+        )}
+      </div>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1.5 text-sm text-amber-600">
-      <WarningCircle size={14} className="text-amber-500" />
-      Resigned
-    </span>
+    <div className="inline-flex flex-col gap-1.5">
+      <span className="inline-flex items-center gap-1.5 text-sm text-amber-600">
+        <WarningCircle size={14} className="text-amber-500" />
+        Resigned
+      </span>
+      {verificationDecision && (
+        <span className={`text-xs px-2 py-0.5 rounded ${verificationDecision === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+          {verificationDecision === 'APPROVED' ? '✓ Approved' : '✗ Rejected'}
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -73,6 +88,7 @@ interface PreviewRecord {
   sourceSheetName: string | null
   matchStatus?: MatchStatus
   isBlocking?: boolean
+  verificationDecision?: VerificationDecision | null
 }
 
 interface AttendancePreviewClientProps {
@@ -183,7 +199,7 @@ export function AttendancePreviewClient({
               <tr key={r.id} className="hover:bg-zinc-50/80 transition-colors">
                 <td className="py-3 pr-4 text-sm text-zinc-900">{r.employeeName}</td>
                 <td className="py-3 pr-4">
-                  <MatchStatusCell status={(r.matchStatus as MatchStatus) ?? 'MATCHED'} />
+                  <MatchStatusCell status={(r.matchStatus as MatchStatus) ?? 'MATCHED'} verificationDecision={r.verificationDecision} />
                 </td>
                 <td className="py-3 pr-4 font-mono tabular-nums text-sm text-zinc-800">
                   {r.totalRegularHours.toFixed(1)}

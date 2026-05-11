@@ -34,12 +34,15 @@ export function computeImportSummary(records: MatchedAttendanceRecord[]): Import
     }
   }
 
+  const needsVerification = inactive + resignedBeforeWeek
+
   return {
     total: records.length,
     matched,
     unmatched,
     inactive,
     resignedBeforeWeek,
+    needsVerification,
     errors,
     isBlocked,
   }

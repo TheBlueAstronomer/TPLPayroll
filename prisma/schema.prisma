@@ -97,6 +97,7 @@ model AttendanceRecord {
   overtimeHours            Decimal  @db.Decimal(5, 2)
   sourceSheetName          String?
   sourceEmployeeBlockIndex Int?
+  verificationDecision     String?  // 'APPROVED' | 'REJECTED' | null = pending
   createdAt                DateTime @default(now())
 
   attendanceUpload AttendanceUpload @relation(fields: [attendanceUploadId], references: [id])

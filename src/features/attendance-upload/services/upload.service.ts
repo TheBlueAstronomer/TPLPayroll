@@ -129,7 +129,7 @@ async function saveAttendanceRecords(
   const baseDate = new Date(payrollWeekStartISO + 'T00:00:00Z')
 
   const matchedRecords = records.filter(
-    (r) => r.matchStatus === 'MATCHED' && r.employeeDbId
+    (r) => (r.matchStatus === 'MATCHED' || r.matchStatus === 'INACTIVE' || r.matchStatus === 'RESIGNED_BEFORE_WEEK') && r.employeeDbId
   )
 
   if (matchedRecords.length === 0) return
@@ -146,6 +146,7 @@ async function saveAttendanceRecords(
         overtimeHours: dh.overtimeHours,
         sourceSheetName: record.sourceSheetName,
         sourceEmployeeBlockIndex: record.sourceEmployeeBlockIndex,
+        verificationDecision: record.verificationDecision ?? null,
       }
     })
   )

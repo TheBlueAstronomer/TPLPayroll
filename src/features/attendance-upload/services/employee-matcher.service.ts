@@ -19,7 +19,8 @@ function trailingNumber(employeeId: string): number | null {
 export function matchEmployees(
   blocks: ParsedAttendanceBlock[],
   employees: Employee[],
-  payrollWeekStartDate: Date
+  payrollWeekStartDate: Date,
+  payrollWeekEndDate: Date
 ): MatchedAttendanceRecord[] {
   // Primary index: trailing number of Employee ID → employee
   const employeeByUserId = new Map<number, Employee>()
@@ -50,12 +51,12 @@ export function matchEmployees(
       return { ...block, matchStatus: 'UNMATCHED' as MatchStatus, isBlocking: true, employeeDbId: null }
     }
 
-    // Inactive check
+    // Inactive employee — requires manual verification
     if (!employee.isActive) {
-      return { ...block, matchStatus: 'INACTIVE' as MatchStatus, isBlocking: true, employeeDbId: employee.id }
+      return { ...block, matchStatus: 'INACTIVE' as MatchStatus, isBlocking: false, employeeDbId: employee.id }
     }
 
-    // Resigned before payroll week starts
+    // Resigned before payroll week starts — requires manual verification
     if (
       employee.dateOfResignation &&
       employee.dateOfResignation < payrollWeekStartDate
@@ -63,11 +64,12 @@ export function matchEmployees(
       return {
         ...block,
         matchStatus: 'RESIGNED_BEFORE_WEEK' as MatchStatus,
-        isBlocking: true,
+        isBlocking: false,
         employeeDbId: employee.id,
       }
     }
 
+    // Resigned during or after payroll week — process normally
     return { ...block, matchStatus: 'MATCHED' as MatchStatus, isBlocking: false, employeeDbId: employee.id }
   })
 }

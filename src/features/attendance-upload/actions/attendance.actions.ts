@@ -20,6 +20,7 @@ import type {
   PayrollWeekSource,
   PayrollWeekDetectionResult,
   ImportSummary,
+  VerificationDecision,
 } from '@/features/attendance-upload/types/attendance.types'
 
 // ─── parseAttendanceFileAction ────────────────────────────────────────────────
@@ -95,7 +96,8 @@ export async function parseAttendanceFileAction(
   // Match employees
   const employees = await prisma.employee.findMany()
   const payrollWeekStart = new Date(payrollWeek.start + 'T00:00:00Z')
-  const records = matchEmployees(blocks, employees, payrollWeekStart)
+  const payrollWeekEnd = new Date(payrollWeek.end + 'T00:00:00Z')
+  const records = matchEmployees(blocks, employees, payrollWeekStart, payrollWeekEnd)
   const summary = computeImportSummary(records)
 
   return {
@@ -115,6 +117,7 @@ export interface FinalizeUploadInput {
   payrollWeekSource: PayrollWeekSource
   records: MatchedAttendanceRecord[]
   summary: ImportSummary
+  verificationDecisions?: Record<string, VerificationDecision> // employeeDbId → decision
 }
 
 export async function finalizeAttendanceUploadAction(
@@ -129,11 +132,19 @@ export async function finalizeAttendanceUploadAction(
     payrollWeekSource,
     records,
     summary,
+    verificationDecisions = {},
   } = input
 
   const status = summary.isBlocked ? 'ERRORS' : 'READY'
   const weekStart = new Date(payrollWeekStartDate + 'T00:00:00Z')
   const weekEnd = new Date(payrollWeekEndDate + 'T00:00:00Z')
+
+  // Merge verification decisions onto records
+  const recordsWithDecisions = records.map((r) =>
+    r.employeeDbId && verificationDecisions[r.employeeDbId]
+      ? { ...r, verificationDecision: verificationDecisions[r.employeeDbId] }
+      : r
+  )
 
   // Check for existing upload for this week
   const existing = await prisma.attendanceUpload.findFirst({
@@ -154,7 +165,7 @@ export async function finalizeAttendanceUploadAction(
       payrollWeekEndDate: weekEnd,
       payrollWeekSource,
       status,
-      records,
+      records: recordsWithDecisions,
       payrollWeekStartISO: payrollWeekStartDate,
     })
     return { ok: true, data: { uploadId: result.uploadId } }
@@ -168,7 +179,7 @@ export async function finalizeAttendanceUploadAction(
     payrollWeekEndDate: weekEnd,
     payrollWeekSource,
     status,
-    records,
+    records: recordsWithDecisions,
     payrollWeekStartISO: payrollWeekStartDate,
   })
   return { ok: true, data: { uploadId: result.uploadId } }
@@ -205,7 +216,8 @@ export async function parseAttendanceWithDatesAction(
   const { blocks } = parseAttendanceWorkbook(wb)
   const employees = await prisma.employee.findMany()
   const weekStart = new Date(payrollWeekStartDate + 'T00:00:00Z')
-  const records = matchEmployees(blocks, employees, weekStart)
+  const weekEnd = new Date(payrollWeekEndDate + 'T00:00:00Z')
+  const records = matchEmployees(blocks, employees, weekStart, weekEnd)
   const summary = computeImportSummary(records)
 
   return {
@@ -285,7 +297,8 @@ export async function getAttendanceUploadPreviewAction(
       const records = matchEmployees(
         blocks,
         employees,
-        upload.payrollWeekStartDate
+        upload.payrollWeekStartDate,
+        upload.payrollWeekEndDate
       )
 
       return {

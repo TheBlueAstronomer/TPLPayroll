@@ -40,10 +40,13 @@ export interface ParsedAttendanceBlock {
 
 export type MatchStatus = 'MATCHED' | 'UNMATCHED' | 'INACTIVE' | 'RESIGNED_BEFORE_WEEK'
 
+export type VerificationDecision = 'APPROVED' | 'REJECTED'
+
 export interface MatchedAttendanceRecord extends ParsedAttendanceBlock {
   matchStatus: MatchStatus
   isBlocking: boolean
   employeeDbId: string | null
+  verificationDecision?: VerificationDecision
 }
 
 // ─── Import summary ───────────────────────────────────────────────────────────
@@ -54,6 +57,7 @@ export interface ImportSummary {
   unmatched: number
   inactive: number
   resignedBeforeWeek: number
+  needsVerification: number
   errors: number
   isBlocked: boolean
 }
