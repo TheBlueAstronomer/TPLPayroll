@@ -1,0 +1,557 @@
+import prisma from '@/lib/prisma'
+import pdfmakeModule from 'pdfmake'
+import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces'
+import JSZip from 'jszip'
+import { ReportServiceError, type PayrollSlipData, type DailyAttendanceRow } from '@/features/payroll-reports/types/report.types'
+
+// ─── PDF printer setup ────────────────────────────────────────────────────────
+
+// pdfmake's @types covers the browser API; the server-side PdfPrinter constructor
+// is the default export in Node.js environments. We cast accordingly.
+type PdfPrinterDoc = NodeJS.EventEmitter & { end(): void }
+type PdfPrinterCtor = new (fonts: Record<string, unknown>) => {
+  createPdfKitDocument(docDef: TDocumentDefinitions): PdfPrinterDoc
+}
+const PdfPrinter = pdfmakeModule as unknown as PdfPrinterCtor
+
+const fonts = {
+  Helvetica: {
+    normal: 'Helvetica',
+    bold: 'Helvetica-Bold',
+    italics: 'Helvetica-Oblique',
+    bolditalics: 'Helvetica-BoldOblique',
+  },
+  Courier: {
+    normal: 'Courier',
+    bold: 'Courier-Bold',
+    italics: 'Courier-Oblique',
+    bolditalics: 'Courier-BoldOblique',
+  },
+}
+
+const printer = new PdfPrinter(fonts)
+
+function toPdfBuffer(docDef: TDocumentDefinitions): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = printer.createPdfKitDocument(docDef)
+    const chunks: Buffer[] = []
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk))
+    doc.on('end', () => resolve(Buffer.concat(chunks)))
+    doc.on('error', reject)
+    doc.end()
+  })
+}
+
+// ── Pure helpers (exported for unit tests) ───────────────────────────────────
+
+export function formatSlipDate(date: Date): string {
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = date.toLocaleString('en-US', { month: 'short' })
+  return `${day}${month}`
+}
+
+export function formatZipFileName(weekStart: Date, weekEnd: Date): string {
+  return `payroll_slips_${formatSlipDate(weekStart)}_${formatSlipDate(weekEnd)}.zip`
+}
+
+export function formatSlipPdfName(employeeCode: string, employeeName: string): string {
+  const safeName = employeeName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
+  return `${employeeCode}_${safeName}.pdf`
+}
+
+export function formatCurrencyPdf(amount: number): string {
+  const formatted = new Intl.NumberFormat('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount)
+  return `Rs.${formatted}`
+}
+
+export function formatHours(hours: number): string {
+  return hours.toFixed(2)
+}
+
+export function buildSlipData(params: {
+  runEmployee: {
+    id: string
+    payrollRunId: string
+    payrollRevisionId: string
+    employeeId: string
+    hourlyRateUsed: number | { toNumber(): number }
+    regularHours: number | { toNumber(): number }
+    overtimeHours: number | { toNumber(): number }
+    regularPay: number | { toNumber(): number }
+    overtimePay: number | { toNumber(): number }
+    additions: number | { toNumber(): number }
+    deductions: number | { toNumber(): number }
+    netPayable: number | { toNumber(): number }
+    employee: {
+      id: string
+      employeeId: string
+      employeeName: string
+      designation: string
+      site: string | null
+      gPay: string | null
+      bankAccount: string | null
+    }
+  }
+  weekStart: Date
+  weekEnd: Date
+  payrollRunId: string
+  payrollRevisionId: string
+  attendanceRecords: Array<{
+    employeeId: string
+    attendanceDate: Date
+    regularHours: number | { toNumber(): number }
+    overtimeHours: number | { toNumber(): number }
+  }>
+  generatedAt: Date
+}): PayrollSlipData {
+  const { runEmployee, weekStart, weekEnd, payrollRunId, payrollRevisionId, attendanceRecords, generatedAt } = params
+  const { employee } = runEmployee
+
+  const toNum = (val: number | { toNumber(): number }): number =>
+    typeof val === 'number' ? val : Number(val)
+
+  const employeeRecords = attendanceRecords
+    .filter((r) => r.employeeId === employee.id)
+    .sort((a, b) => a.attendanceDate.getTime() - b.attendanceDate.getTime())
+
+  const dailyAttendance: DailyAttendanceRow[] = employeeRecords.map((r) => {
+    const d = r.attendanceDate
+    const day = d.toLocaleString('en-US', { weekday: 'long' })
+    const date = `${d.getDate()} ${d.toLocaleString('en-US', { month: 'short' })}`
+    return {
+      day,
+      date,
+      regularHours: toNum(r.regularHours),
+      overtimeHours: toNum(r.overtimeHours),
+    }
+  })
+
+  const hourlyRateUsed = toNum(runEmployee.hourlyRateUsed)
+  const regularHours = toNum(runEmployee.regularHours)
+  const overtimeHours = toNum(runEmployee.overtimeHours)
+  const regularPay = toNum(runEmployee.regularPay)
+  const overtimePay = toNum(runEmployee.overtimePay)
+  const additions = toNum(runEmployee.additions)
+  const deductions = toNum(runEmployee.deductions)
+  const netPayable = toNum(runEmployee.netPayable)
+  const grossPay = regularPay + overtimePay
+
+  return {
+    employeeCode: employee.employeeId,
+    employeeName: employee.employeeName,
+    designation: employee.designation,
+    site: employee.site,
+    gPay: employee.gPay,
+    bankAccount: employee.bankAccount,
+    weekStart: weekStart.toISOString(),
+    weekEnd: weekEnd.toISOString(),
+    payrollRunId,
+    payrollRevisionId,
+    employeeDbId: employee.id,
+    dailyAttendance,
+    regularHours,
+    overtimeHours,
+    hourlyRateUsed,
+    regularPay,
+    overtimePay,
+    grossPay,
+    additions,
+    deductions,
+    netPayable,
+    generatedAt: generatedAt.toISOString(),
+  }
+}
+
+// ── PDF generation ───────────────────────────────────────────────────────────
+
+export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<Buffer> {
+  const run = await prisma.payrollRun.findUnique({
+    where: { id: payrollRunId },
+    include: {
+      revisions: { where: { isCurrent: true }, take: 1 },
+      runEmployees: {
+        include: {
+          employee: {
+            select: {
+              id: true,
+              employeeId: true,
+              employeeName: true,
+              designation: true,
+              site: true,
+              gPay: true,
+              bankAccount: true,
+            },
+          },
+        },
+        orderBy: { employee: { employeeId: 'asc' } },
+      },
+    },
+  })
+
+  if (!run) {
+    throw new ReportServiceError('PAYROLL_RUN_NOT_FOUND', `Payroll run ${payrollRunId} not found`)
+  }
+  if (run.status !== 'APPROVED') {
+    throw new ReportServiceError('PAYROLL_NOT_APPROVED', `Payroll run ${payrollRunId} is not approved`)
+  }
+
+  const weekStartStr = run.payrollWeekStartDate.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+  const weekEndStr = run.payrollWeekEndDate.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+  const generatedAtStr = new Date().toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+
+  const headerRow = [
+    { text: 'ID', style: 'tableHeader' },
+    { text: 'Employee', style: 'tableHeader' },
+    { text: 'Desig.', style: 'tableHeader' },
+    { text: 'Site', style: 'tableHeader' },
+    { text: 'GPay', style: 'tableHeader' },
+    { text: 'Bank Acct', style: 'tableHeader' },
+    { text: 'Reg Hrs', style: 'tableHeader' },
+    { text: 'OT Hrs', style: 'tableHeader' },
+    { text: 'Reg Pay', style: 'tableHeader' },
+    { text: 'OT Pay', style: 'tableHeader' },
+    { text: 'Add.', style: 'tableHeader' },
+    { text: 'Ded.', style: 'tableHeader' },
+    { text: 'Net Pay', style: 'tableHeader' },
+  ]
+
+  const dataRows = run.runEmployees.map((re) => [
+    { text: re.employee.employeeId, font: 'Courier' },
+    { text: re.employee.employeeName, font: 'Helvetica' },
+    { text: re.employee.designation, font: 'Helvetica' },
+    { text: re.employee.site ?? '-', font: 'Helvetica' },
+    { text: re.employee.gPay ?? '-', font: 'Courier' },
+    { text: re.employee.bankAccount ?? '-', font: 'Courier' },
+    { text: formatHours(Number(re.regularHours)), font: 'Courier', alignment: 'right' },
+    { text: formatHours(Number(re.overtimeHours)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.regularPay)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.overtimePay)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.additions)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.deductions)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.netPayable)), font: 'Courier', alignment: 'right' },
+  ])
+
+  const totalsRow = [
+    { text: 'TOTALS', colSpan: 6, style: 'totalsLabel', font: 'Helvetica' },
+    {}, {}, {}, {}, {},
+    { text: formatHours(run.runEmployees.reduce((s, r) => s + Number(r.regularHours), 0)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatHours(run.runEmployees.reduce((s, r) => s + Number(r.overtimeHours), 0)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalRegularPay)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalOvertimePay)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalAdditions)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalDeductions)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalNetPayable)), font: 'Courier', alignment: 'right', bold: true },
+  ]
+
+  const docDef: TDocumentDefinitions = {
+    pageOrientation: 'landscape',
+    defaultStyle: { font: 'Helvetica', fontSize: 8 },
+    styles: {
+      title: { fontSize: 14, bold: true, alignment: 'center', font: 'Helvetica' },
+      subtitle: { fontSize: 9, alignment: 'center', font: 'Helvetica', color: '#555555' },
+      tableHeader: { bold: true, font: 'Helvetica', fillColor: '#dddddd' },
+      totalsLabel: { bold: true, font: 'Helvetica' },
+    },
+    content: [
+      { text: 'PAYROLL SUMMARY', style: 'title', marginBottom: 4 },
+      { text: `Week: ${weekStartStr} – ${weekEndStr}`, style: 'subtitle' },
+      { text: `Generated: ${generatedAtStr}`, style: 'subtitle', marginBottom: 8 },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+          body: [headerRow, ...dataRows, totalsRow],
+        },
+        layout: 'lightHorizontalLines',
+      } as Content,
+    ],
+  }
+
+  return toPdfBuffer(docDef)
+}
+
+export async function generatePayrollSlipPdf(slip: PayrollSlipData): Promise<Buffer> {
+  const weekStartDate = new Date(slip.weekStart)
+  const weekEndDate = new Date(slip.weekEnd)
+  const generatedAtDate = new Date(slip.generatedAt)
+
+  const fmt = (d: Date) =>
+    d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  const attendanceTableBody = [
+    [
+      { text: 'Day', style: 'tableHeader' },
+      { text: 'Date', style: 'tableHeader' },
+      { text: 'Reg Hrs', style: 'tableHeader' },
+      { text: 'OT Hrs', style: 'tableHeader' },
+    ],
+    ...slip.dailyAttendance.map((row) => [
+      { text: row.day, font: 'Helvetica' },
+      { text: row.date, font: 'Helvetica' },
+      { text: formatHours(row.regularHours), font: 'Courier', alignment: 'right' },
+      { text: formatHours(row.overtimeHours), font: 'Courier', alignment: 'right' },
+    ]),
+    [
+      { text: 'TOTAL', colSpan: 2, bold: true, font: 'Helvetica' },
+      {},
+      { text: formatHours(slip.regularHours), font: 'Courier', alignment: 'right', bold: true },
+      { text: formatHours(slip.overtimeHours), font: 'Courier', alignment: 'right', bold: true },
+    ],
+  ]
+
+  const earningsTableBody = [
+    [
+      { text: 'Description', style: 'tableHeader' },
+      { text: 'Amount', style: 'tableHeader' },
+    ],
+    [
+      {
+        text: `Regular Pay (${formatHours(slip.regularHours)} hrs x Rs.${formatHours(slip.hourlyRateUsed)})`,
+        font: 'Helvetica',
+      },
+      { text: formatCurrencyPdf(slip.regularPay), font: 'Courier', alignment: 'right' },
+    ],
+    [
+      {
+        text: `OT Pay (${formatHours(slip.overtimeHours)} hrs x Rs.${formatHours(slip.hourlyRateUsed)})`,
+        font: 'Helvetica',
+      },
+      { text: formatCurrencyPdf(slip.overtimePay), font: 'Courier', alignment: 'right' },
+    ],
+    [
+      { text: 'Gross Wage', font: 'Helvetica', bold: true },
+      { text: formatCurrencyPdf(slip.grossPay), font: 'Courier', alignment: 'right', bold: true },
+    ],
+    [
+      { text: 'Additions', font: 'Helvetica' },
+      { text: formatCurrencyPdf(slip.additions), font: 'Courier', alignment: 'right' },
+    ],
+    [
+      { text: 'Deductions', font: 'Helvetica' },
+      { text: `(${formatCurrencyPdf(slip.deductions)})`, font: 'Courier', alignment: 'right' },
+    ],
+    [
+      { text: 'NET PAYABLE', font: 'Helvetica', bold: true, fontSize: 10 },
+      { text: formatCurrencyPdf(slip.netPayable), font: 'Courier', alignment: 'right', bold: true, fontSize: 10 },
+    ],
+  ]
+
+  const docDef: TDocumentDefinitions = {
+    defaultStyle: { font: 'Helvetica', fontSize: 9 },
+    styles: {
+      title: { fontSize: 14, bold: true, alignment: 'center', font: 'Helvetica' },
+      sectionHeader: { fontSize: 10, bold: true, font: 'Helvetica', marginTop: 10, marginBottom: 4 },
+      label: { font: 'Helvetica', color: '#555555' },
+      tableHeader: { bold: true, font: 'Helvetica', fillColor: '#dddddd' },
+    },
+    content: [
+      { text: 'WEEKLY PAYROLL SLIP', style: 'title', marginBottom: 10 },
+      {
+        columns: [
+          { width: '*', text: [{ text: 'Employee ID: ', style: 'label' }, { text: slip.employeeCode, font: 'Courier' }] },
+          { width: '*', text: [{ text: 'Name: ', style: 'label' }, { text: slip.employeeName, font: 'Helvetica', bold: true }] },
+        ],
+        marginBottom: 4,
+      },
+      {
+        columns: [
+          { width: '*', text: [{ text: 'Designation: ', style: 'label' }, { text: slip.designation }] },
+          { width: '*', text: [{ text: 'Site: ', style: 'label' }, { text: slip.site ?? '-' }] },
+        ],
+        marginBottom: 4,
+      },
+      {
+        columns: [
+          { width: '*', text: [{ text: 'GPay: ', style: 'label' }, { text: slip.gPay ?? '-', font: 'Courier' }] },
+          { width: '*', text: [{ text: 'Bank Account: ', style: 'label' }, { text: slip.bankAccount ?? '-', font: 'Courier' }] },
+        ],
+        marginBottom: 4,
+      },
+      {
+        text: [
+          { text: 'Payroll Week: ', style: 'label' },
+          { text: `${fmt(weekStartDate)} – ${fmt(weekEndDate)}`, font: 'Courier' },
+        ],
+        marginBottom: 10,
+      },
+      { text: 'ATTENDANCE', style: 'sectionHeader' },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['*', 'auto', 'auto', 'auto'],
+          body: attendanceTableBody,
+        },
+        layout: 'lightHorizontalLines',
+        marginBottom: 10,
+      } as Content,
+      { text: 'EARNINGS', style: 'sectionHeader' },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['*', 'auto'],
+          body: earningsTableBody,
+        },
+        layout: 'lightHorizontalLines',
+        marginBottom: 16,
+      } as Content,
+      {
+        text: [
+          { text: 'Generated: ', style: 'label' },
+          { text: generatedAtDate.toLocaleString('en-IN'), font: 'Courier', fontSize: 8 },
+        ],
+        fontSize: 8,
+        color: '#777777',
+      },
+    ],
+  }
+
+  return toPdfBuffer(docDef)
+}
+
+export async function generatePayrollSlipsZip(
+  payrollRunId: string,
+): Promise<{ buffer: Buffer; fileName: string }> {
+  const run = await prisma.payrollRun.findUnique({
+    where: { id: payrollRunId },
+    include: {
+      revisions: { where: { isCurrent: true }, take: 1 },
+      runEmployees: {
+        include: {
+          employee: {
+            select: {
+              id: true,
+              employeeId: true,
+              employeeName: true,
+              designation: true,
+              site: true,
+              gPay: true,
+              bankAccount: true,
+            },
+          },
+        },
+        orderBy: { employee: { employeeId: 'asc' } },
+      },
+    },
+  })
+
+  if (!run) {
+    throw new ReportServiceError('PAYROLL_RUN_NOT_FOUND', `Payroll run ${payrollRunId} not found`)
+  }
+  if (run.status !== 'APPROVED') {
+    throw new ReportServiceError('PAYROLL_NOT_APPROVED', `Payroll run ${payrollRunId} is not approved`)
+  }
+  if (run.runEmployees.length === 0) {
+    throw new ReportServiceError('NO_EMPLOYEES', `Payroll run ${payrollRunId} has no employees`)
+  }
+
+  const currentRevision = run.revisions[0]
+  const payrollRevisionId = currentRevision?.id ?? ''
+
+  const employeeIds = run.runEmployees.map((e) => e.employee.id)
+  const attendanceRecords = await prisma.attendanceRecord.findMany({
+    where: {
+      employeeId: { in: employeeIds },
+      attendanceDate: { gte: run.payrollWeekStartDate, lte: run.payrollWeekEndDate },
+    },
+    orderBy: [{ employeeId: 'asc' }, { attendanceDate: 'asc' }],
+  })
+
+  const generatedAt = new Date()
+  const weekStart = run.payrollWeekStartDate
+  const weekEnd = run.payrollWeekEndDate
+
+  const slips: PayrollSlipData[] = run.runEmployees.map((runEmployee) =>
+    buildSlipData({
+      runEmployee: {
+        id: runEmployee.id,
+        payrollRunId: runEmployee.payrollRunId,
+        payrollRevisionId: runEmployee.payrollRevisionId,
+        employeeId: runEmployee.employeeId,
+        hourlyRateUsed: Number(runEmployee.hourlyRateUsed),
+        regularHours: Number(runEmployee.regularHours),
+        overtimeHours: Number(runEmployee.overtimeHours),
+        regularPay: Number(runEmployee.regularPay),
+        overtimePay: Number(runEmployee.overtimePay),
+        additions: Number(runEmployee.additions),
+        deductions: Number(runEmployee.deductions),
+        netPayable: Number(runEmployee.netPayable),
+        employee: runEmployee.employee,
+      },
+      weekStart,
+      weekEnd,
+      payrollRunId,
+      payrollRevisionId,
+      attendanceRecords: attendanceRecords.map((r) => ({
+        employeeId: r.employeeId,
+        attendanceDate: r.attendanceDate,
+        regularHours: Number(r.regularHours),
+        overtimeHours: Number(r.overtimeHours),
+      })),
+      generatedAt,
+    }),
+  )
+
+  // Generate PDFs and build ZIP
+  const zip = new JSZip()
+  for (const slip of slips) {
+    const pdfBuffer = await generatePayrollSlipPdf(slip)
+    const fileName = formatSlipPdfName(slip.employeeCode, slip.employeeName)
+    zip.file(fileName, pdfBuffer)
+  }
+
+  // Save snapshots to DB
+  await saveInvoiceSnapshots(slips)
+
+  const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' }) as Buffer
+  const fileName = formatZipFileName(weekStart, weekEnd)
+
+  return { buffer: zipBuffer, fileName }
+}
+
+// ── Database operations ──────────────────────────────────────────────────────
+
+export async function saveInvoiceSnapshots(slips: PayrollSlipData[]): Promise<void> {
+  if (slips.length === 0) return
+
+  const payrollRunId = slips[0].payrollRunId
+  const payrollRevisionId = slips[0].payrollRevisionId
+
+  await prisma.$transaction([
+    prisma.invoiceSnapshot.deleteMany({
+      where: { payrollRunId, payrollRevisionId },
+    }),
+    prisma.invoiceSnapshot.createMany({
+      data: slips.map((slip) => ({
+        payrollRunId: slip.payrollRunId,
+        payrollRevisionId: slip.payrollRevisionId,
+        employeeId: slip.employeeDbId,
+        invoiceFormat: 'PDF',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        invoiceSnapshotJson: slip as any,
+        generatedAt: new Date(slip.generatedAt),
+      })),
+    }),
+  ])
+}
+
+export async function markInvoiceSnapshotsCleaned(payrollRunId: string): Promise<void> {
+  await prisma.invoiceSnapshot.updateMany({
+    where: { payrollRunId },
+    data: { temporaryFileDeletedAt: new Date() },
+  })
+}

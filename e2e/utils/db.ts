@@ -1,12 +1,16 @@
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+import 'dotenv/config'
+import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 
-const connectionString = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL || '';
+const connectionString = process.env.DIRECT_DATABASE_URL;
 
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+const pool = new Pool({
+  connectionString,
+})
+
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
 
 export async function cleanupDatabase() {
   try {
@@ -318,6 +322,172 @@ export async function seedPayrollTestData() {
     console.error('Payroll seed failed:', err);
     throw err;
   }
+}
+
+// ─── seedApprovedPayrollData ──────────────────────────────────────────────────
+// Seeds a complete approved payroll scenario for F07 E2E tests:
+//   - 2 employees with wage history and attendance records
+//   - 1 APPROVED PayrollRun + PayrollRevision + PayrollRunEmployee records
+//   - Attendance records for 7 days (for daily slip breakdown)
+
+export async function seedApprovedPayrollData(): Promise<{ payrollRunId: string }> {
+  await prisma.$connect();
+
+  const weekStart = new Date('2025-04-03T00:00:00.000Z');
+  const weekEnd   = new Date('2025-04-09T00:00:00.000Z');
+  const approvedAt = new Date('2025-04-10T08:00:00.000Z');
+
+  const emp1 = await prisma.employee.create({
+    data: {
+      employeeId: 'EMP-RPT-001',
+      employeeName: 'Meera Krishnan',
+      designation: 'Security Guard',
+      designationShort: 'Guard',
+      site: 'Main Gate',
+      gPay: '9988776655',
+      bankAccount: '123456789012',
+      isActive: true,
+      wageHistory: {
+        create: {
+          weeklySalary: 2500,
+          hourlyRate: 62.5,
+          effectiveFrom: new Date('2025-01-01T00:00:00.000Z'),
+          changeSource: 'SEED',
+        },
+      },
+    },
+  });
+
+  const emp2 = await prisma.employee.create({
+    data: {
+      employeeId: 'EMP-RPT-002',
+      employeeName: 'Vijay Kumar',
+      designation: 'Supervisor',
+      designationShort: 'Supv.',
+      site: 'Back Gate',
+      gPay: '9876543212',
+      bankAccount: '987654321098',
+      isActive: true,
+      wageHistory: {
+        create: {
+          weeklySalary: 3000,
+          hourlyRate: 75.0,
+          effectiveFrom: new Date('2025-01-01T00:00:00.000Z'),
+          changeSource: 'SEED',
+        },
+      },
+    },
+  });
+
+  // Attendance upload (READY) so the slip builder can find daily breakdowns
+  const upload = await prisma.attendanceUpload.create({
+    data: {
+      fileName: 'attendance-apr-wk1.xlsx',
+      fileType: 'xlsx',
+      payrollWeekStartDate: weekStart,
+      payrollWeekEndDate: weekEnd,
+      payrollWeekSource: 'SHEET_CONTENT',
+      status: 'READY',
+      isActiveForPayrollWeek: true,
+      sourceFilePath: '/tmp/attendance-apr-wk1.xlsx',
+    },
+  });
+
+  // emp1: reg=[8,8,6,0,8,8,8] ot=[2,0,0,0,3,1,0] → reg=46, ot=6
+  // emp2: reg=[8,8,8,8,8,8,8] ot=[0,0,0,0,0,0,0] → reg=56, ot=0
+  const attendanceDays = [
+    [{ reg: 8, ot: 2 }, { reg: 8, ot: 0 }, { reg: 6, ot: 0 }, { reg: 0, ot: 0 }, { reg: 8, ot: 3 }, { reg: 8, ot: 1 }, { reg: 8, ot: 0 }],
+    [{ reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }],
+  ];
+  const employees = [emp1, emp2];
+
+  const attendanceData = [];
+  for (let ei = 0; ei < employees.length; ei++) {
+    for (let day = 0; day < 7; day++) {
+      const date = new Date(weekStart);
+      date.setUTCDate(date.getUTCDate() + day);
+      attendanceData.push({
+        attendanceUploadId: upload.id,
+        employeeId: employees[ei].id,
+        attendanceDate: date,
+        regularHours: attendanceDays[ei][day].reg,
+        overtimeHours: attendanceDays[ei][day].ot,
+        sourceSheetName: 'Attendance',
+        sourceEmployeeBlockIndex: ei,
+      });
+    }
+  }
+  await prisma.attendanceRecord.createMany({ data: attendanceData });
+
+  // emp1: reg=46h × Rs.62.5 = 2875, ot=6h × Rs.62.5 = 375, ded=500 → net=2750
+  // emp2: reg=56h × Rs.75  = 4200, ot=0                    , ded=0   → net=4200
+  const run = await prisma.payrollRun.create({
+    data: {
+      payrollWeekStartDate: weekStart,
+      payrollWeekEndDate:   weekEnd,
+      status: 'APPROVED',
+      currentRevisionNumber: 1,
+      totalRegularPay:  7075,
+      totalOvertimePay: 375,
+      totalAdditions:   0,
+      totalDeductions:  500,
+      totalNetPayable:  6950,
+      approvedAt,
+    },
+  });
+
+  const revision = await prisma.payrollRevision.create({
+    data: {
+      payrollRunId: run.id,
+      revisionNumber: 1,
+      status: 'APPROVED',
+      isCurrent: true,
+      totalRegularPay:  7075,
+      totalOvertimePay: 375,
+      totalAdditions:   0,
+      totalDeductions:  500,
+      totalNetPayable:  6950,
+      approvedAt,
+    },
+  });
+
+  const payrollEmployeeData = [
+    { emp: emp1, weeklySalary: 2500, hourlyRate: 62.5, regularHours: 46, overtimeHours: 6, regularPay: 2875, overtimePay: 375, additions: 0, deductions: 500, netPayable: 2750 },
+    { emp: emp2, weeklySalary: 3000, hourlyRate: 75,   regularHours: 56, overtimeHours: 0, regularPay: 4200, overtimePay: 0,   additions: 0, deductions: 0,   netPayable: 4200 },
+  ];
+
+  await prisma.payrollRunEmployee.createMany({
+    data: payrollEmployeeData.map(pd => ({
+      payrollRunId:      run.id,
+      payrollRevisionId: revision.id,
+      employeeId:        pd.emp.id,
+      weeklySalaryUsed:  pd.weeklySalary,
+      hourlyRateUsed:    pd.hourlyRate,
+      regularHours:      pd.regularHours,
+      overtimeHours:     pd.overtimeHours,
+      regularPay:        pd.regularPay,
+      overtimePay:       pd.overtimePay,
+      additions:         pd.additions,
+      deductions:        pd.deductions,
+      netPayable:        pd.netPayable,
+    }))
+  });
+
+  return { payrollRunId: run.id };
+}
+
+// ─── DB verification helpers ──────────────────────────────────────────────────
+
+export async function getInvoiceSnapshotCount(payrollRunId: string): Promise<number> {
+  await prisma.$connect();
+  return prisma.invoiceSnapshot.count({ where: { payrollRunId } });
+}
+
+export async function getCleanedSnapshotCount(payrollRunId: string): Promise<number> {
+  await prisma.$connect();
+  return prisma.invoiceSnapshot.count({
+    where: { payrollRunId, temporaryFileDeletedAt: { not: null } },
+  });
 }
 
 export async function seedTestData() {

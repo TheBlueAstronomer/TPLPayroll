@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { CheckCircle, FileText, Package } from '@phosphor-icons/react'
+import { CheckCircle } from '@phosphor-icons/react'
 import type { ApprovePayrollResult } from '@/features/payroll-generation/types/payroll.types'
+import { ReportSection } from '@/features/payroll-reports/components/ReportSection'
 
 function fmt(amount: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -41,26 +42,12 @@ export function ApprovalConfirmationStep({ weekLabel, result }: Props) {
         </p>
       </div>
 
-      {/* ── Actions ──────────────────────────────────────────────────── */}
-      <div className="mt-8 flex items-center justify-center gap-3">
-        <button
-          type="button"
-          disabled
-          title="Coming in F07"
-          className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-400 transition-colors disabled:cursor-not-allowed"
-        >
-          <FileText size={16} />
-          Download PDF Summary
-        </button>
-        <button
-          type="button"
-          disabled
-          title="Coming in F08"
-          className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-400 transition-colors disabled:cursor-not-allowed"
-        >
-          <Package size={16} />
-          Download Payroll Slips
-        </button>
+      {/* ── Reports section (F07) ──────────────────────────────── */}
+      <div className="mt-8 mx-auto max-w-lg text-left">
+        <ReportSection
+          payrollRunId={result.payrollRunId}
+          employeeCount={result.employeeCount}
+        />
       </div>
 
       {/* ── Back link ────────────────────────────────────────────────── */}
