@@ -210,7 +210,19 @@ export function AttendancePreviewClient({
           <tbody className="divide-y divide-zinc-100">
             {records.map((r) => (
               <tr key={r.id} className="hover:bg-zinc-50/80 transition-colors">
-                <td className="py-3 pr-4 text-sm text-zinc-900">{r.employeeName}</td>
+                <td className="py-3 pr-4 text-sm text-zinc-900">
+                  {r.employeeId && r.employeeId !== '—' ? (
+                    <Link
+                      href={`/employees/${r.employeeId}`}
+                      className="hover:underline hover:text-zinc-700 transition-colors"
+                      aria-label={`View profile: ${r.employeeName}`}
+                    >
+                      {r.employeeName}
+                    </Link>
+                  ) : (
+                    <span>{r.employeeName}</span>
+                  )}
+                </td>
                 <td className="py-3 pr-4">
                   <MatchStatusCell status={(r.matchStatus as MatchStatus) ?? 'MATCHED'} verificationDecision={r.verificationDecision} />
                 </td>

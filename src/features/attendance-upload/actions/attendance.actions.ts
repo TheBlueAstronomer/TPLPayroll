@@ -412,7 +412,7 @@ export async function getAttendanceUploadPreviewAction(
   // Fallback to saved records if file is missing (will only show matched)
   const records = await prisma.attendanceRecord.findMany({
     where: { attendanceUploadId: uploadId },
-    include: { employee: { select: { employeeId: true, employeeName: true } } },
+    include: { employee: { select: { id: true, employeeId: true, employeeName: true } } },
     distinct: ['employeeId'],
     orderBy: { sourceSheetName: 'asc' },
   })
@@ -431,7 +431,7 @@ export async function getAttendanceUploadPreviewAction(
     return {
       id: first.id,
       employeeName: first.employee.employeeName,
-      employeeId: first.employee.employeeId,
+      employeeId: first.employee.id,
       totalRegularHours: Math.round(totalRegular * 100) / 100,
       totalOvertimeHours: Math.round(totalOT * 100) / 100,
       sourceSheetName: first.sourceSheetName,
