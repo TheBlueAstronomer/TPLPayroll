@@ -1,18 +1,12 @@
 import prisma from '@/lib/prisma'
-import pdfmakeModule from 'pdfmake'
+
 import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces'
 import JSZip from 'jszip'
 import { ReportServiceError, type PayrollSlipData, type DailyAttendanceRow } from '@/features/payroll-reports/types/report.types'
 
-// ─── PDF printer setup ────────────────────────────────────────────────────────
-
-// pdfmake's @types covers the browser API; the server-side PdfPrinter constructor
-// is the default export in Node.js environments. We cast accordingly.
-type PdfPrinterDoc = NodeJS.EventEmitter & { end(): void }
-type PdfPrinterCtor = new (fonts: Record<string, unknown>) => {
-  createPdfKitDocument(docDef: TDocumentDefinitions): PdfPrinterDoc
-}
-const PdfPrinter = pdfmakeModule as unknown as PdfPrinterCtor
+// pdfmake 0.3.x server API wrapper
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pdfmake = require('pdfmake')
 
 const fonts = {
   Helvetica: {
@@ -29,17 +23,11 @@ const fonts = {
   },
 }
 
-const printer = new PdfPrinter(fonts)
+pdfmake.setFonts(fonts)
 
 function toPdfBuffer(docDef: TDocumentDefinitions): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const doc = printer.createPdfKitDocument(docDef)
-    const chunks: Buffer[] = []
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk))
-    doc.on('end', () => resolve(Buffer.concat(chunks)))
-    doc.on('error', reject)
-    doc.end()
-  })
+  const doc = pdfmake.createPdf(docDef)
+  return doc.getBuffer()
 }
 
 // ── Pure helpers (exported for unit tests) ───────────────────────────────────
@@ -167,7 +155,7 @@ export function buildSlipData(params: {
 
 // ── PDF generation ───────────────────────────────────────────────────────────
 
-export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<Buffer> {
+export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{ buffer: Buffer; fileName: string }> {
   const run = await prisma.payrollRun.findUnique({
     where: { id: payrollRunId },
     include: {
@@ -282,7 +270,10 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<B
     ],
   }
 
-  return toPdfBuffer(docDef)
+  const buffer = await toPdfBuffer(docDef)
+  const fileName = `payroll_summary_${formatSlipDate(run.payrollWeekStartDate)}-${formatSlipDate(run.payrollWeekEndDate)}.pdf`
+
+  return { buffer, fileName }
 }
 
 export async function generatePayrollSlipPdf(slip: PayrollSlipData): Promise<Buffer> {

@@ -9,21 +9,22 @@ export async function GET(
   const { payrollRunId } = await params
 
   try {
-    const buffer = await generatePayrollSummaryPdf(payrollRunId)
+    const { buffer, fileName } = await generatePayrollSummaryPdf(payrollRunId)
 
     return new NextResponse(buffer as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="payroll_summary_${payrollRunId}.pdf"`,
+        'Content-Disposition': `attachment; filename="${fileName}"`,
         'Content-Length': String(buffer.length),
       },
     })
   } catch (e) {
+    console.error('PDF Generation Error:', e)
     if (e instanceof ReportServiceError) {
       const status = e.code === 'PAYROLL_RUN_NOT_FOUND' ? 404 : 400
       return NextResponse.json({ error: e.message, code: e.code }, { status })
     }
-    return NextResponse.json({ error: 'Report generation failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Report generation failed', message: e instanceof Error ? e.message : String(e), stack: e instanceof Error ? e.stack : undefined }, { status: 500 })
   }
 }
