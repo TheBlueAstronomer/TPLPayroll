@@ -1,6 +1,12 @@
 export interface DailyAttendanceRow {
   day: string       // "Thursday"
   date: string      // "6 Mar"
+  beforeNoonIn: string | null
+  beforeNoonOut: string | null
+  afternoonIn: string | null
+  afternoonOut: string | null
+  overtimeIn: string | null
+  overtimeOut: string | null
   regularHours: number
   overtimeHours: number
 }

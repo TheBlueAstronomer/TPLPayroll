@@ -182,12 +182,7 @@ describe('calculateRegularPay', () => {
     expect(result.regularPay).toBe(2875.0)
   })
 
-  it('caps hours above 8 to 8', () => {
-    // dailyHours = [8, 10, 6, 0, 8, 8, 8]
-    const result = calculateRegularPay([8, 10, 6, 0, 8, 8, 8], 62.5)
-    expect(result.regularHours).toBe(46) // 8+8+6+0+8+8+8 = 46
-    expect(result.regularPay).toBe(2875.0)
-  })
+
 
   it('returns zero for all-zero hours', () => {
     const result = calculateRegularPay([0, 0, 0, 0, 0, 0, 0], 62.5)

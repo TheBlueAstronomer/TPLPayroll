@@ -17,14 +17,15 @@ Calculate weekly payroll from attendance data and employee wages, allow the Payr
 ## Payroll Calculation Rules (from PRD Section 7)
 
 ```
-regularPay   = sum(min(regularHoursPerDay, 8) * hourlyRate)
+regularPay   = sum(regularHoursPerDay * hourlyRate)
 overtimePay  = sum(overtimeHoursPerDay * hourlyRate)
 grossPay     = regularPay + overtimePay
 netPayable   = grossPay + approvedAdditions - approvedDeductions
 ```
 
-- Regular hours capped at 8/day.
-- Overtime at same hourly rate (no multiplier).
+- Total Hours Worked Per Day = Regular Hours + Overtime Hours (from attendance sheet, handled during upload parsing).
+- Regular hours are capped at 8/day.
+- Overtime is calculated as hours worked beyond 8 hours per day.
 - All amounts in ₹ INR with paise (no rounding).
 
 ## PRD References

@@ -158,13 +158,14 @@ function makePayrollRun(overrides: Partial<{
 }
 
 function makeAttendanceRecords(employeeId = 'emp-uuid-1') {
+  const baseTimes = { beforeNoonIn: '09:00', beforeNoonOut: '13:00', afternoonIn: '14:00', afternoonOut: '18:00', overtimeIn: null, overtimeOut: null }
   return [
-    { employeeId, attendanceDate: new Date('2025-03-06'), regularHours: 8, overtimeHours: 2 },
-    { employeeId, attendanceDate: new Date('2025-03-07'), regularHours: 8, overtimeHours: 0 },
-    { employeeId, attendanceDate: new Date('2025-03-08'), regularHours: 8, overtimeHours: 0 },
-    { employeeId, attendanceDate: new Date('2025-03-09'), regularHours: 8, overtimeHours: 3 },
-    { employeeId, attendanceDate: new Date('2025-03-10'), regularHours: 6, overtimeHours: 0 },
-    { employeeId, attendanceDate: new Date('2025-03-11'), regularHours: 8, overtimeHours: 1 },
+    { employeeId, attendanceDate: new Date('2025-03-06'), regularHours: 8, overtimeHours: 2, ...baseTimes, overtimeIn: '18:00', overtimeOut: '20:00' },
+    { employeeId, attendanceDate: new Date('2025-03-07'), regularHours: 8, overtimeHours: 0, ...baseTimes },
+    { employeeId, attendanceDate: new Date('2025-03-08'), regularHours: 8, overtimeHours: 0, ...baseTimes },
+    { employeeId, attendanceDate: new Date('2025-03-09'), regularHours: 8, overtimeHours: 3, ...baseTimes, overtimeIn: '18:00', overtimeOut: '21:00' },
+    { employeeId, attendanceDate: new Date('2025-03-10'), regularHours: 6, overtimeHours: 0, ...baseTimes, afternoonOut: '16:00' },
+    { employeeId, attendanceDate: new Date('2025-03-11'), regularHours: 8, overtimeHours: 1, ...baseTimes, overtimeIn: '18:00', overtimeOut: '19:00' },
   ]
 }
 
@@ -182,8 +183,8 @@ function makeSlipData(overrides: Partial<PayrollSlipData> = {}): PayrollSlipData
     payrollRevisionId: 'rev-uuid-1',
     employeeDbId: 'emp-uuid-1',
     dailyAttendance: [
-      { day: 'Thursday', date: '6 Mar', regularHours: 8, overtimeHours: 2 },
-      { day: 'Friday', date: '7 Mar', regularHours: 8, overtimeHours: 0 },
+      { day: 'Thursday', date: '6 Mar', regularHours: 8, overtimeHours: 2, beforeNoonIn: '09:00', beforeNoonOut: '13:00', afternoonIn: '14:00', afternoonOut: '18:00', overtimeIn: '18:00', overtimeOut: '20:00' },
+      { day: 'Friday', date: '7 Mar', regularHours: 8, overtimeHours: 0, beforeNoonIn: '09:00', beforeNoonOut: '13:00', afternoonIn: '14:00', afternoonOut: '18:00', overtimeIn: null, overtimeOut: null },
     ],
     regularHours: 46,
     overtimeHours: 6,
@@ -279,6 +280,8 @@ describe('buildSlipData', () => {
     expect(slip.dailyAttendance).toHaveLength(6)
     expect(slip.dailyAttendance[0].day).toBe('Thursday')
     expect(slip.dailyAttendance[0].date).toBe('6 Mar')
+    expect(slip.dailyAttendance[0].beforeNoonIn).toBe('09:00')
+    expect(slip.dailyAttendance[0].overtimeOut).toBe('20:00')
     expect(slip.employeeDbId).toBe('emp-uuid-1')
     expect(slip.weekStart).toBe(WEEK_START.toISOString())
   })
@@ -327,8 +330,9 @@ describe('generatePayrollSummaryPdf', () => {
 
     const result = await generatePayrollSummaryPdf('run-uuid-1')
 
-    expect(result).toBeInstanceOf(Buffer)
-    expect(result.length).toBeGreaterThan(0)
+    expect(result.buffer).toBeInstanceOf(Buffer)
+    expect(result.buffer.length).toBeGreaterThan(0)
+    expect(result.fileName).toMatch(/^payroll_summary_/)
   })
 
   it('throws PAYROLL_RUN_NOT_FOUND when run does not exist', async () => {
@@ -366,9 +370,9 @@ describe('generatePayrollSlipPdf', () => {
   it('includes daily attendance rows from slip data', async () => {
     const slip = makeSlipData({
       dailyAttendance: [
-        { day: 'Thursday', date: '6 Mar', regularHours: 8, overtimeHours: 2 },
-        { day: 'Friday', date: '7 Mar', regularHours: 8, overtimeHours: 0 },
-        { day: 'Saturday', date: '8 Mar', regularHours: 8, overtimeHours: 0 },
+        { day: 'Thursday', date: '6 Mar', regularHours: 8, overtimeHours: 2, beforeNoonIn: '09:00', beforeNoonOut: '13:00', afternoonIn: '14:00', afternoonOut: '18:00', overtimeIn: '18:00', overtimeOut: '20:00' },
+        { day: 'Friday', date: '7 Mar', regularHours: 8, overtimeHours: 0, beforeNoonIn: '09:00', beforeNoonOut: '13:00', afternoonIn: '14:00', afternoonOut: '18:00', overtimeIn: null, overtimeOut: null },
+        { day: 'Saturday', date: '8 Mar', regularHours: 8, overtimeHours: 0, beforeNoonIn: '09:00', beforeNoonOut: '13:00', afternoonIn: '14:00', afternoonOut: '18:00', overtimeIn: null, overtimeOut: null },
       ],
     })
 
@@ -395,10 +399,17 @@ describe('generatePayrollSlipsZip', () => {
     expect(result.fileName).toBe('payroll_slips_06Mar_12Mar.zip')
   })
 
-  it('returns a buffer', async () => {
+  it('returns a buffer and filters by active upload', async () => {
     const result = await generatePayrollSlipsZip('run-uuid-1')
 
     expect(result.buffer).toBeInstanceOf(Buffer)
+    expect(prisma.attendanceRecord.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          attendanceUpload: { isActiveForPayrollWeek: true },
+        }),
+      }),
+    )
   })
 
   it('throws PAYROLL_RUN_NOT_FOUND when run does not exist', async () => {

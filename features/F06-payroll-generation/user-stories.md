@@ -99,8 +99,8 @@ TEST: getPendingAdjustmentsForWeek returns empty for no pending
 
 ### Acceptance Criteria
 
-- AC1: For each employee: regularPay = sum(min(dailyRegularHours, 8) * hourlyRate).
-- AC2: For each employee: overtimePay = sum(dailyOvertimeHours * hourlyRate).
+- AC1: For each employee: regularPay = sum(dailyRegularHours * hourlyRate).
+- AC2: For each employee: overtimePay = sum(dailyOvertimeHours * hourlyRate). (Note: daily hours are adjusted during parsing so that regular is max 8 and overtime is the excess).
 - AC3: grossPay = regularPay + overtimePay.
 - AC4: Deductions and additions come only from APPROVED adjustment applications for this week.
 - AC5: netPayable = grossPay + approvedAdditions - approvedDeductions.
@@ -110,8 +110,8 @@ TEST: getPendingAdjustmentsForWeek returns empty for no pending
 ### Unit Tests
 
 ```
-TEST: calculateRegularPay caps daily hours at 8
-  GIVEN dailyHours = [8, 10, 6, 0, 8, 8, 8] and hourlyRate = 62.50
+TEST: calculateRegularPay calculates regular pay based on pre-capped daily hours
+  GIVEN dailyHours = [8, 8, 6, 0, 8, 8, 8] and hourlyRate = 62.50
   WHEN calculateRegularPay() is called
   THEN regularHours = 8+8+6+0+8+8+8 = 46
   AND regularPay = 46 * 62.50 = 2875.00

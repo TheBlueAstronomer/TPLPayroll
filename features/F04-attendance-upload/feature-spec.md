@@ -105,12 +105,15 @@ THEN that employee is excluded from the final payroll (marked with "REJECTED")
 AND when the user clicks "Confirm Selections", finalization proceeds
 ```
 
-### E2E-05: Blank hours are treated as 0
+### E2E-05: Blank hours and new overtime calculation
 
 ```
 GIVEN an attendance row for "EMP-001" has blank regular hours on Monday and blank overtime on Tuesday
 WHEN the file is parsed
-THEN Monday regularHours = 0 and Tuesday overtimeHours = 0
+THEN blank cells are treated as 0
+AND the total hours for each day is calculated by summing all recorded "in/out" intervals
+AND regularHours = min(totalHours, 8)
+AND overtimeHours = max(0, totalHours - 8)
 AND no blocking error is raised for blank cells
 ```
 

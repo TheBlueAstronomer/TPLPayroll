@@ -92,6 +92,12 @@ export function buildSlipData(params: {
     attendanceDate: Date
     regularHours: number | { toNumber(): number }
     overtimeHours: number | { toNumber(): number }
+    beforeNoonIn: string | null
+    beforeNoonOut: string | null
+    afternoonIn: string | null
+    afternoonOut: string | null
+    overtimeIn: string | null
+    overtimeOut: string | null
   }>
   generatedAt: Date
 }): PayrollSlipData {
@@ -112,6 +118,12 @@ export function buildSlipData(params: {
     return {
       day,
       date,
+      beforeNoonIn: r.beforeNoonIn,
+      beforeNoonOut: r.beforeNoonOut,
+      afternoonIn: r.afternoonIn,
+      afternoonOut: r.afternoonOut,
+      overtimeIn: r.overtimeIn,
+      overtimeOut: r.overtimeOut,
       regularHours: toNum(r.regularHours),
       overtimeHours: toNum(r.overtimeHours),
     }
@@ -288,18 +300,30 @@ export async function generatePayrollSlipPdf(slip: PayrollSlipData): Promise<Buf
     [
       { text: 'Day', style: 'tableHeader' },
       { text: 'Date', style: 'tableHeader' },
+      { text: 'BN In', style: 'tableHeader' },
+      { text: 'BN Out', style: 'tableHeader' },
+      { text: 'AN In', style: 'tableHeader' },
+      { text: 'AN Out', style: 'tableHeader' },
+      { text: 'OT In', style: 'tableHeader' },
+      { text: 'OT Out', style: 'tableHeader' },
       { text: 'Reg Hrs', style: 'tableHeader' },
       { text: 'OT Hrs', style: 'tableHeader' },
     ],
     ...slip.dailyAttendance.map((row) => [
       { text: row.day, font: 'Helvetica' },
       { text: row.date, font: 'Helvetica' },
+      { text: row.beforeNoonIn ?? '-', font: 'Courier', alignment: 'center' },
+      { text: row.beforeNoonOut ?? '-', font: 'Courier', alignment: 'center' },
+      { text: row.afternoonIn ?? '-', font: 'Courier', alignment: 'center' },
+      { text: row.afternoonOut ?? '-', font: 'Courier', alignment: 'center' },
+      { text: row.overtimeIn ?? '-', font: 'Courier', alignment: 'center' },
+      { text: row.overtimeOut ?? '-', font: 'Courier', alignment: 'center' },
       { text: formatHours(row.regularHours), font: 'Courier', alignment: 'right' },
       { text: formatHours(row.overtimeHours), font: 'Courier', alignment: 'right' },
     ]),
     [
-      { text: 'TOTAL', colSpan: 2, bold: true, font: 'Helvetica' },
-      {},
+      { text: 'TOTAL', colSpan: 8, bold: true, font: 'Helvetica', alignment: 'right' },
+      {}, {}, {}, {}, {}, {}, {},
       { text: formatHours(slip.regularHours), font: 'Courier', alignment: 'right', bold: true },
       { text: formatHours(slip.overtimeHours), font: 'Courier', alignment: 'right', bold: true },
     ],
@@ -384,7 +408,7 @@ export async function generatePayrollSlipPdf(slip: PayrollSlipData): Promise<Buf
       {
         table: {
           headerRows: 1,
-          widths: ['*', 'auto', 'auto', 'auto'],
+          widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
           body: attendanceTableBody,
         },
         layout: 'lightHorizontalLines',
@@ -458,6 +482,7 @@ export async function generatePayrollSlipsZip(
     where: {
       employeeId: { in: employeeIds },
       attendanceDate: { gte: run.payrollWeekStartDate, lte: run.payrollWeekEndDate },
+      attendanceUpload: { isActiveForPayrollWeek: true },
     },
     orderBy: [{ employeeId: 'asc' }, { attendanceDate: 'asc' }],
   })
@@ -492,6 +517,12 @@ export async function generatePayrollSlipsZip(
         attendanceDate: r.attendanceDate,
         regularHours: Number(r.regularHours),
         overtimeHours: Number(r.overtimeHours),
+        beforeNoonIn: r.beforeNoonIn,
+        beforeNoonOut: r.beforeNoonOut,
+        afternoonIn: r.afternoonIn,
+        afternoonOut: r.afternoonOut,
+        overtimeIn: r.overtimeIn,
+        overtimeOut: r.overtimeOut,
       })),
       generatedAt,
     }),

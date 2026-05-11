@@ -95,6 +95,12 @@ model AttendanceRecord {
   attendanceDate           DateTime
   regularHours             Decimal  @db.Decimal(5, 2)
   overtimeHours            Decimal  @db.Decimal(5, 2)
+  beforeNoonIn             String?
+  beforeNoonOut            String?
+  afternoonIn              String?
+  afternoonOut             String?
+  overtimeIn               String?
+  overtimeOut              String?
   sourceSheetName          String?
   sourceEmployeeBlockIndex Int?
   verificationDecision     String?  // 'APPROVED' | 'REJECTED' | null = pending

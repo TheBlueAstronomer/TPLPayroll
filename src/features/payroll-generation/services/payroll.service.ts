@@ -17,7 +17,7 @@ export function calculateRegularPay(
   dailyRegularHours: number[],
   hourlyRate: number,
 ): { regularHours: number; regularPay: number } {
-  const regularHours = dailyRegularHours.reduce((sum, h) => sum + Math.min(h, 8), 0)
+  const regularHours = dailyRegularHours.reduce((sum, h) => sum + h, 0)
   const regularPay = regularHours * hourlyRate
   return { regularHours, regularPay }
 }

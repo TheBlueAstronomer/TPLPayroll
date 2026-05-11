@@ -50,6 +50,17 @@ function excelTimeToHours(val: unknown): number | null {
   return isNaN(n) ? null : n * 24
 }
 
+function formatExcelTime(val: unknown): string | null {
+  if (val === null || val === undefined) return null
+  const n = Number(val)
+  if (isNaN(n) || n < 0) return null
+  const fraction = n % 1
+  const totalMinutes = Math.round(fraction * 24 * 60)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
+
 // ─── Parse one employee section ───────────────────────────────────────────────
 
 function parseSection(
@@ -82,16 +93,30 @@ function parseSection(
     const otIn  = excelTimeToHours(row[base + OFF_OT_IN])
     const otOut = excelTimeToHours(row[base + OFF_OT_OUT])
 
-    let regularHours = 0
-    if (bnIn !== null && bnOut !== null) regularHours += bnOut - bnIn
-    if (anIn !== null && anOut !== null) regularHours += anOut - anIn
+    const bnInStr  = formatExcelTime(row[base + OFF_BN_IN])
+    const bnOutStr = formatExcelTime(row[base + OFF_BN_OUT])
+    const anInStr  = formatExcelTime(row[base + OFF_AN_IN])
+    const anOutStr = formatExcelTime(row[base + OFF_AN_OUT])
+    const otInStr  = formatExcelTime(row[base + OFF_OT_IN])
+    const otOutStr = formatExcelTime(row[base + OFF_OT_OUT])
 
-    let overtimeHours = 0
-    if (otIn !== null && otOut !== null) overtimeHours = otOut - otIn
+    let totalHours = 0
+    if (bnIn !== null && bnOut !== null) totalHours += bnOut - bnIn
+    if (anIn !== null && anOut !== null) totalHours += anOut - anIn
+    if (otIn !== null && otOut !== null) totalHours += otOut - otIn
+
+    const regularHours = Math.min(totalHours, 8)
+    const overtimeHours = Math.max(0, totalHours - 8)
 
     dailyHours.push({
       regularHours:  Math.round(regularHours  * 100) / 100,
       overtimeHours: Math.round(overtimeHours * 100) / 100,
+      beforeNoonIn: bnInStr,
+      beforeNoonOut: bnOutStr,
+      afternoonIn: anInStr,
+      afternoonOut: anOutStr,
+      overtimeIn: otInStr,
+      overtimeOut: otOutStr,
     })
   }
 

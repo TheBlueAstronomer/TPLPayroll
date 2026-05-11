@@ -89,9 +89,9 @@ TEST: detectPayrollWeek flags non-Thursday-to-Wednesday week
 
 - AC1: Every sheet in the workbook is iterated.
 - AC2: Up to 3 employee blocks per sheet are parsed.
-- AC3: Each block extracts: employee identifier/name, regular hours per day, overtime hours per day, site (when available).
-- AC4: Blank regular hour cells → 0.
-- AC5: Blank overtime hour cells → 0.
+- AC3: Each block extracts: employee identifier/name, daily hours, site (when available).
+- AC4: Total daily hours are calculated by summing all recorded "in/out" intervals (Before Noon, After Noon, Overtime).
+- AC5: For each day, regular hours = min(total daily hours, 8) and overtime hours = max(0, total daily hours - 8).
 - AC6: Each attendance record stores `sourceSheetName` and `sourceEmployeeBlockIndex`.
 
 ### Unit Tests

@@ -137,20 +137,31 @@ describe('employee identity extraction', () => {
 })
 
 describe('hours calculation', () => {
-  it('calculates regular hours as (BN_OUT-BN_IN + AN_OUT-AN_IN) × 24', () => {
-    // BN: 6h–9h = 3h, AN: 9.6h–13.2h = 3.6h → 6.6h regular
+  it('calculates total hours and sets regular hours (capped at 8)', () => {
+    // BN: 6h–9h = 3h, AN: 9.6h–13.2h = 3.6h → 6.6h total → 6.6h regular, 0h OT
     const day: TimeEntry = { bnIn: 6 / 24, bnOut: 9 / 24, anIn: 9.6 / 24, anOut: 13.2 / 24 }
     const wb = makeSheet([{ name: 'Emp', userId: 1, days: [day] }, null, null])
     const [block] = parseAttendanceWorkbook(wb).blocks
     expect(block.dailyHours[0].regularHours).toBeCloseTo(6.6, 1)
+    expect(block.dailyHours[0].overtimeHours).toBe(0)
   })
 
-  it('calculates overtime hours as (OT_OUT-OT_IN) × 24', () => {
-    // OT: 14h–18h = 4h
-    const day: TimeEntry = { otIn: 14 / 24, otOut: 18 / 24 }
+  it('calculates overtime hours as any hours beyond 8', () => {
+    // BN: 6h-10h = 4h, AN: 11h-16h = 5h → 9h total → 8h regular, 1h OT
+    const day: TimeEntry = { bnIn: 6 / 24, bnOut: 10 / 24, anIn: 11 / 24, anOut: 16 / 24 }
     const wb = makeSheet([{ name: 'Emp', userId: 1, days: [day] }, null, null])
     const [block] = parseAttendanceWorkbook(wb).blocks
-    expect(block.dailyHours[0].overtimeHours).toBeCloseTo(4.0, 1)
+    expect(block.dailyHours[0].regularHours).toBeCloseTo(8.0, 1)
+    expect(block.dailyHours[0].overtimeHours).toBeCloseTo(1.0, 1)
+  })
+
+  it('handles hours explicitly recorded in OT columns by combining them with regular hours', () => {
+    // BN: 8h-12h = 4h, AN: 13h-15h = 2h, OT: 16h-19h = 3h → 9h total → 8h regular, 1h OT
+    const day: TimeEntry = { bnIn: 8 / 24, bnOut: 12 / 24, anIn: 13 / 24, anOut: 15 / 24, otIn: 16 / 24, otOut: 19 / 24 }
+    const wb = makeSheet([{ name: 'Emp', userId: 1, days: [day] }, null, null])
+    const [block] = parseAttendanceWorkbook(wb).blocks
+    expect(block.dailyHours[0].regularHours).toBeCloseTo(8.0, 1)
+    expect(block.dailyHours[0].overtimeHours).toBeCloseTo(1.0, 1)
   })
 
   it('returns 0 for both hours on a day with no clock data (e.g. Sunday)', () => {
@@ -186,14 +197,15 @@ describe('hours calculation', () => {
   })
 
   it('accumulates totalOvertimeHours across all days', () => {
-    // 3 days × 2h OT each
-    const day: TimeEntry = { otIn: 14 / 24, otOut: 16 / 24 }
+    // 3 days × 10h total each = 8h regular, 2h OT each -> 6h OT total
+    const day: TimeEntry = { bnIn: 8 / 24, bnOut: 18 / 24 } // 10 hours
     const wb = makeSheet([
       { name: 'Emp', userId: 1, days: [day, day, day, {}, {}, {}, {}] },
       null, null,
     ])
     const [block] = parseAttendanceWorkbook(wb).blocks
     expect(block.totalOvertimeHours).toBeCloseTo(6.0, 0)
+    expect(block.totalRegularHours).toBeCloseTo(24.0, 0)
   })
 })
 
