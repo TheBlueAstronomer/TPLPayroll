@@ -31,15 +31,25 @@ function generatePayrollWeeks(): PayrollWeek[] {
   const daysToLastThursday = dayOfWeek >= 4 ? dayOfWeek - 4 : dayOfWeek + 3
   const lastThursday = new Date(today)
   lastThursday.setDate(today.getDate() - daysToLastThursday)
-  lastThursday.setHours(0, 0, 0, 0)
+
+  // Construct anchor at 00:00:00 UTC to match system standards
+  const isoStr = `${lastThursday.getFullYear()}-${String(lastThursday.getMonth() + 1).padStart(2, '0')}-${String(lastThursday.getDate()).padStart(2, '0')}`
+  const anchor = new Date(`${isoStr}T00:00:00Z`)
 
   for (let i = -11; i <= 4; i++) {
-    const start = new Date(lastThursday)
-    start.setDate(lastThursday.getDate() + i * 7)
+    const start = new Date(anchor)
+    start.setUTCDate(anchor.getUTCDate() + i * 7)
     const end = new Date(start)
-    end.setDate(start.getDate() + 6)
+    end.setUTCDate(start.getUTCDate() + 6)
+
     const fmt = (d: Date) =>
-      d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      d.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC',
+      })
+
     weeks.push({
       startDate: start,
       endDate: end,

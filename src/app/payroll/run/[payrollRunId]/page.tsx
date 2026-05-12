@@ -1,8 +1,13 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { CheckCircle } from '@phosphor-icons/react/dist/ssr'
+import { CheckCircle, PencilSimple, FileText, Package } from '@phosphor-icons/react/dist/ssr'
 import prisma from '@/lib/prisma'
 import { ReportSection } from '@/features/payroll-reports/components/ReportSection'
+import { RevisionHistoryTable } from '@/features/payroll-correction/components/RevisionHistoryTable'
+import {
+  getRevisionHistory,
+} from '@/features/payroll-correction/services/correction.service'
+import { beginPayrollCorrectionAction } from '@/features/payroll-correction/actions/correction.actions'
 
 interface Props {
   params: Promise<{ payrollRunId: string }>
@@ -31,6 +36,10 @@ export default async function PayrollRunPage({ params }: Props) {
   const run = await prisma.payrollRun.findUnique({
     where: { id: payrollRunId },
     include: {
+      revisions: {
+        where: { isCurrent: true },
+        take: 1,
+      },
       runEmployees: {
         include: {
           employee: {
@@ -49,10 +58,57 @@ export default async function PayrollRunPage({ params }: Props) {
     },
   })
 
-  if (!run || run.status !== 'APPROVED') notFound()
+  if (!run || (run.status !== 'APPROVED' && run.status !== 'REVISED')) notFound()
 
   const weekLabel = formatWeekRange(run.payrollWeekStartDate, run.payrollWeekEndDate)
-  const employeeCount = run.runEmployees.length
+  const currentRevision = run.revisions[0]
+  const revisionNumber = currentRevision?.revisionNumber ?? run.currentRevisionNumber
+
+  // Get current revision's employee records (use the latest revision)
+  let currentEmployees = run.runEmployees
+  if (currentRevision) {
+    const revisionEmployees = await prisma.payrollRunEmployee.findMany({
+      where: { payrollRevisionId: currentRevision.id },
+      include: {
+        employee: {
+          select: {
+            employeeId: true,
+            employeeName: true,
+            designation: true,
+            site: true,
+            gPay: true,
+            bankAccount: true,
+          },
+        },
+      },
+      orderBy: { employee: { employeeId: 'asc' } },
+    })
+    if (revisionEmployees.length > 0) {
+      currentEmployees = revisionEmployees
+    }
+  }
+
+  const employeeCount = currentEmployees.length
+
+  // Fetch revision history
+  const revisions = await getRevisionHistory(payrollRunId)
+
+  // Use current revision totals if available
+  const displayTotals = currentRevision
+    ? {
+        totalRegularPay: Number(currentRevision.totalRegularPay),
+        totalOvertimePay: Number(currentRevision.totalOvertimePay),
+        totalAdditions: Number(currentRevision.totalAdditions),
+        totalDeductions: Number(currentRevision.totalDeductions),
+        totalNetPayable: Number(currentRevision.totalNetPayable),
+      }
+    : {
+        totalRegularPay: Number(run.totalRegularPay),
+        totalOvertimePay: Number(run.totalOvertimePay),
+        totalAdditions: Number(run.totalAdditions),
+        totalDeductions: Number(run.totalDeductions),
+        totalNetPayable: Number(run.totalNetPayable),
+      }
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-12">
@@ -64,7 +120,7 @@ export default async function PayrollRunPage({ params }: Props) {
             Payroll — {weekLabel}
           </h1>
           <span className="mt-1 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-            Approved
+            Approved (Revision {revisionNumber})
           </span>
         </div>
       </div>
@@ -80,24 +136,36 @@ export default async function PayrollRunPage({ params }: Props) {
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Net Payable</p>
           <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-zinc-900">
-            ₹{formatCurrency(Number(run.totalNetPayable))}
+            ₹{formatCurrency(displayTotals.totalNetPayable)}
           </p>
         </div>
       </div>
 
-      {/* ── Reports section ─────────────────────────────────────────── */}
-      <div className="mt-8">
+      {/* ── Action bar ──────────────────────────────────────────────── */}
+      <div className="mt-6 flex gap-3">
         <ReportSection payrollRunId={payrollRunId} employeeCount={employeeCount} />
+        <form action={beginPayrollCorrectionAction.bind(null, payrollRunId)}>
+          <button
+            type="submit"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-50 active:scale-[0.98]"
+          >
+            <PencilSimple size={14} />
+            Correct Payroll
+          </button>
+        </form>
       </div>
+
+      {/* ── Revision History ────────────────────────────────────────── */}
+      <RevisionHistoryTable revisions={revisions} />
 
       {/* ── Payroll Summary table ────────────────────────────────────── */}
       <section className="border-t border-zinc-200/60 pt-8 mt-8">
-        <p className="text-sm font-medium text-zinc-900 mb-4">Payroll Summary</p>
+        <p className="text-sm font-medium text-zinc-900 mb-4">Current Payroll Summary</p>
         <div className="overflow-x-auto">
           <table className="w-full text-xs font-mono tabular-nums">
             <thead>
               <tr className="border-b border-zinc-200">
-                {['ID', 'Employee', 'Desig.', 'Site', 'Reg Hrs', 'OT Hrs', 'Reg Pay', 'OT Pay', 'Add.', 'Ded.', 'Net Pay'].map(
+                {['ID', 'Employee', 'GPay', 'Bank', 'Net Pay'].map(
                   (h) => (
                     <th
                       key={h}
@@ -110,18 +178,12 @@ export default async function PayrollRunPage({ params }: Props) {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {run.runEmployees.map((re) => (
+              {currentEmployees.map((re) => (
                 <tr key={re.id} className="hover:bg-zinc-50/50">
                   <td className="py-2 pr-4 text-zinc-700">{re.employee.employeeId}</td>
                   <td className="py-2 pr-4 font-sans text-zinc-900">{re.employee.employeeName}</td>
-                  <td className="py-2 pr-4 font-sans text-zinc-600">{re.employee.designation}</td>
-                  <td className="py-2 pr-4 font-sans text-zinc-500">{re.employee.site ?? '—'}</td>
-                  <td className="py-2 pr-4 text-right text-zinc-700">{Number(re.regularHours).toFixed(2)}</td>
-                  <td className="py-2 pr-4 text-right text-zinc-700">{Number(re.overtimeHours).toFixed(2)}</td>
-                  <td className="py-2 pr-4 text-right text-zinc-700">₹{formatCurrency(Number(re.regularPay))}</td>
-                  <td className="py-2 pr-4 text-right text-zinc-700">₹{formatCurrency(Number(re.overtimePay))}</td>
-                  <td className="py-2 pr-4 text-right text-emerald-700">+₹{formatCurrency(Number(re.additions))}</td>
-                  <td className="py-2 pr-4 text-right text-rose-700">-₹{formatCurrency(Number(re.deductions))}</td>
+                  <td className="py-2 pr-4 text-zinc-500">{re.employee.gPay ?? '—'}</td>
+                  <td className="py-2 pr-4 text-zinc-500">{re.employee.bankAccount ?? '—'}</td>
                   <td className="py-2 text-right font-semibold text-zinc-900">₹{formatCurrency(Number(re.netPayable))}</td>
                 </tr>
               ))}
@@ -131,26 +193,8 @@ export default async function PayrollRunPage({ params }: Props) {
                 <td colSpan={4} className="py-2 pr-4 text-xs font-medium uppercase tracking-wider text-zinc-400">
                   Totals
                 </td>
-                <td className="py-2 pr-4 text-right font-semibold text-zinc-900">
-                  {run.runEmployees.reduce((s, r) => s + Number(r.regularHours), 0).toFixed(2)}
-                </td>
-                <td className="py-2 pr-4 text-right font-semibold text-zinc-900">
-                  {run.runEmployees.reduce((s, r) => s + Number(r.overtimeHours), 0).toFixed(2)}
-                </td>
-                <td className="py-2 pr-4 text-right font-semibold text-zinc-900">
-                  ₹{formatCurrency(Number(run.totalRegularPay))}
-                </td>
-                <td className="py-2 pr-4 text-right font-semibold text-zinc-900">
-                  ₹{formatCurrency(Number(run.totalOvertimePay))}
-                </td>
-                <td className="py-2 pr-4 text-right font-semibold text-emerald-700">
-                  +₹{formatCurrency(Number(run.totalAdditions))}
-                </td>
-                <td className="py-2 pr-4 text-right font-semibold text-rose-700">
-                  -₹{formatCurrency(Number(run.totalDeductions))}
-                </td>
                 <td className="py-2 text-right font-bold text-zinc-900">
-                  ₹{formatCurrency(Number(run.totalNetPayable))}
+                  ₹{formatCurrency(displayTotals.totalNetPayable)}
                 </td>
               </tr>
             </tfoot>

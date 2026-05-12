@@ -22,16 +22,8 @@ function fmtHours(h: number) {
 const HEADERS = [
   'ID',
   'Name',
-  'Desig.',
-  'Site',
   'GPay',
   'Bank Acct.',
-  'Reg Hrs',
-  'OT Hrs',
-  'Reg Pay',
-  'OT Pay',
-  'Additions',
-  'Deductions',
   'Net Payable',
 ]
 
@@ -45,34 +37,10 @@ function EmployeeRow({ row }: { row: EmployeePayrollRow }) {
         <span className="text-sm font-medium text-zinc-900">{row.employeeName}</span>
       </td>
       <td className="px-4 py-3">
-        <span className="text-sm text-zinc-600">{row.designationShort ?? row.designation}</span>
-      </td>
-      <td className="px-4 py-3">
-        <span className="text-sm text-zinc-500">{row.site ?? '—'}</span>
-      </td>
-      <td className="px-4 py-3">
         <span className="font-mono text-xs text-zinc-500">{row.gPay ?? '—'}</span>
       </td>
       <td className="px-4 py-3">
         <span className="font-mono text-xs text-zinc-500">{row.bankAccount ?? '—'}</span>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <span className="font-mono tabular-nums text-sm text-zinc-800">{fmtHours(row.regularHours)}</span>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <span className="font-mono tabular-nums text-sm text-zinc-800">{fmtHours(row.overtimeHours)}</span>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <span className="font-mono tabular-nums text-sm text-zinc-800">₹{fmt(row.regularPay)}</span>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <span className="font-mono tabular-nums text-sm text-zinc-800">₹{fmt(row.overtimePay)}</span>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <span className="font-mono tabular-nums text-sm text-emerald-700">₹{fmt(row.additions)}</span>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <span className="font-mono tabular-nums text-sm text-rose-600">₹{fmt(row.deductions)}</span>
       </td>
       <td className="px-4 py-3 text-right">
         <span className="font-mono tabular-nums text-sm font-semibold text-zinc-900">
@@ -178,7 +146,7 @@ export function PayrollSummaryStep({ weekLabel, summary, onBack, onApprove }: Pr
                   <th
                     key={h}
                     className={`whitespace-nowrap px-4 py-3 text-xs font-medium uppercase tracking-wider text-zinc-400 ${
-                      ['Reg Hrs', 'OT Hrs', 'Reg Pay', 'OT Pay', 'Additions', 'Deductions', 'Net Payable'].includes(h)
+                      ['Net Payable'].includes(h)
                         ? 'text-right'
                         : 'text-left'
                     }`}
@@ -196,26 +164,8 @@ export function PayrollSummaryStep({ weekLabel, summary, onBack, onApprove }: Pr
             {/* ── Totals row ─────────────────────────────────────────── */}
             <tfoot>
               <tr className="border-t-2 border-zinc-300 bg-zinc-50 font-semibold">
-                <td className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500" colSpan={6}>
+                <td className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500" colSpan={4}>
                   Total
-                </td>
-                <td className="px-4 py-3 text-right font-mono tabular-nums text-sm text-zinc-800">
-                  {fmtHours(totals.totalRegularHours)}
-                </td>
-                <td className="px-4 py-3 text-right font-mono tabular-nums text-sm text-zinc-800">
-                  {fmtHours(totals.totalOvertimeHours)}
-                </td>
-                <td className="px-4 py-3 text-right font-mono tabular-nums text-sm text-zinc-800">
-                  ₹{fmt(totals.totalRegularPay)}
-                </td>
-                <td className="px-4 py-3 text-right font-mono tabular-nums text-sm text-zinc-800">
-                  ₹{fmt(totals.totalOvertimePay)}
-                </td>
-                <td className="px-4 py-3 text-right font-mono tabular-nums text-sm text-emerald-700">
-                  ₹{fmt(totals.totalAdditions)}
-                </td>
-                <td className="px-4 py-3 text-right font-mono tabular-nums text-sm text-rose-600">
-                  ₹{fmt(totals.totalDeductions)}
                 </td>
                 <td className="px-4 py-3 text-right font-mono tabular-nums text-sm font-bold text-zinc-900">
                   ₹{fmt(totals.totalNetPayable)}

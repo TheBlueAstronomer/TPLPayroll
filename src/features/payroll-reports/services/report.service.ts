@@ -217,44 +217,22 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{
   const headerRow = [
     { text: 'ID', style: 'tableHeader' },
     { text: 'Employee', style: 'tableHeader' },
-    { text: 'Desig.', style: 'tableHeader' },
-    { text: 'Site', style: 'tableHeader' },
     { text: 'GPay', style: 'tableHeader' },
     { text: 'Bank Acct', style: 'tableHeader' },
-    { text: 'Reg Hrs', style: 'tableHeader' },
-    { text: 'OT Hrs', style: 'tableHeader' },
-    { text: 'Reg Pay', style: 'tableHeader' },
-    { text: 'OT Pay', style: 'tableHeader' },
-    { text: 'Add.', style: 'tableHeader' },
-    { text: 'Ded.', style: 'tableHeader' },
     { text: 'Net Pay', style: 'tableHeader' },
   ]
 
   const dataRows = run.runEmployees.map((re) => [
     { text: re.employee.employeeId, font: 'Courier' },
     { text: re.employee.employeeName, font: 'Helvetica' },
-    { text: re.employee.designation, font: 'Helvetica' },
-    { text: re.employee.site ?? '-', font: 'Helvetica' },
     { text: re.employee.gPay ?? '-', font: 'Courier' },
     { text: re.employee.bankAccount ?? '-', font: 'Courier' },
-    { text: formatHours(Number(re.regularHours)), font: 'Courier', alignment: 'right' },
-    { text: formatHours(Number(re.overtimeHours)), font: 'Courier', alignment: 'right' },
-    { text: formatCurrencyPdf(Number(re.regularPay)), font: 'Courier', alignment: 'right' },
-    { text: formatCurrencyPdf(Number(re.overtimePay)), font: 'Courier', alignment: 'right' },
-    { text: formatCurrencyPdf(Number(re.additions)), font: 'Courier', alignment: 'right' },
-    { text: formatCurrencyPdf(Number(re.deductions)), font: 'Courier', alignment: 'right' },
     { text: formatCurrencyPdf(Number(re.netPayable)), font: 'Courier', alignment: 'right' },
   ])
 
   const totalsRow = [
-    { text: 'TOTALS', colSpan: 6, style: 'totalsLabel', font: 'Helvetica' },
-    {}, {}, {}, {}, {},
-    { text: formatHours(run.runEmployees.reduce((s, r) => s + Number(r.regularHours), 0)), font: 'Courier', alignment: 'right', bold: true },
-    { text: formatHours(run.runEmployees.reduce((s, r) => s + Number(r.overtimeHours), 0)), font: 'Courier', alignment: 'right', bold: true },
-    { text: formatCurrencyPdf(Number(run.totalRegularPay)), font: 'Courier', alignment: 'right', bold: true },
-    { text: formatCurrencyPdf(Number(run.totalOvertimePay)), font: 'Courier', alignment: 'right', bold: true },
-    { text: formatCurrencyPdf(Number(run.totalAdditions)), font: 'Courier', alignment: 'right', bold: true },
-    { text: formatCurrencyPdf(Number(run.totalDeductions)), font: 'Courier', alignment: 'right', bold: true },
+    { text: 'TOTALS', colSpan: 4, style: 'totalsLabel', font: 'Helvetica' },
+    {}, {}, {},
     { text: formatCurrencyPdf(Number(run.totalNetPayable)), font: 'Courier', alignment: 'right', bold: true },
   ]
 
@@ -274,7 +252,7 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{
       {
         table: {
           headerRows: 1,
-          widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+          widths: ['auto', '*', 'auto', 'auto', 'auto'],
           body: [headerRow, ...dataRows, totalsRow],
         },
         layout: 'lightHorizontalLines',
