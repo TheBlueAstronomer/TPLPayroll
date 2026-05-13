@@ -4,31 +4,40 @@ import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces'
 import JSZip from 'jszip'
 import { ReportServiceError, type PayrollSlipData, type DailyAttendanceRow } from '@/features/payroll-reports/types/report.types'
 
-// pdfmake 0.3.x server API wrapper
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pdfmake = require('pdfmake')
+let fontsConfigured = false
 
-const fonts = {
-  Helvetica: {
-    normal: 'Helvetica',
-    bold: 'Helvetica-Bold',
-    italics: 'Helvetica-Oblique',
-    bolditalics: 'Helvetica-BoldOblique',
-  },
-  Courier: {
-    normal: 'Courier',
-    bold: 'Courier-Bold',
-    italics: 'Courier-Oblique',
-    bolditalics: 'Courier-BoldOblique',
-  },
+function configureFonts() {
+  if (fontsConfigured) return
+  
+  const fonts = {
+    Helvetica: {
+      normal: 'Helvetica',
+      bold: 'Helvetica-Bold',
+      italics: 'Helvetica-Oblique',
+      bolditalics: 'Helvetica-BoldOblique',
+    },
+    Courier: {
+      normal: 'Courier',
+      bold: 'Courier-Bold',
+      italics: 'Courier-Oblique',
+      bolditalics: 'Courier-BoldOblique',
+    },
+  }
+  
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const pdfmake = require('pdfmake')
+  pdfmake.setFonts(fonts)
+  fontsConfigured = true
 }
 
-pdfmake.setFonts(fonts)
-
-function toPdfBuffer(docDef: TDocumentDefinitions): Promise<Buffer> {
+async function toPdfBuffer(docDef: TDocumentDefinitions): Promise<Buffer> {
+  configureFonts()
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const pdfmake = require('pdfmake')
   const doc = pdfmake.createPdf(docDef)
   return doc.getBuffer()
 }
+
 
 // ── Pure helpers (exported for unit tests) ───────────────────────────────────
 
