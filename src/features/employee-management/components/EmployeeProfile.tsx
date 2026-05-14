@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, PencilSimple } from '@phosphor-icons/react/dist/ssr'
+import { ArrowLeft, PencilSimple, ClockCounterClockwise } from '@phosphor-icons/react/dist/ssr'
 import { StatusBadge } from './StatusBadge'
 import { WageHistoryTable } from './WageHistoryTable'
 import { DeactivateDialog } from './DeactivateDialog'
@@ -93,6 +93,13 @@ export function EmployeeProfile({ employee, wageHistory }: EmployeeProfileProps)
 
         {/* Actions */}
         <div className="flex items-center gap-3 shrink-0">
+          <Link
+            href={`/history?search=${employee.employeeId}`}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-200/60 rounded-xl hover:bg-zinc-50 transition-colors duration-200 active:scale-[0.98]"
+          >
+            <ClockCounterClockwise size={15} />
+            Payroll History
+          </Link>
           <Link
             href={`/employees/${employee.id}/edit`}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-200/60 rounded-xl hover:bg-zinc-50 transition-colors duration-200 active:scale-[0.98]"
