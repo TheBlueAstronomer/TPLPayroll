@@ -8,6 +8,7 @@ import {
   getRevisionHistory,
 } from '@/features/payroll-correction/services/correction.service'
 import { beginPayrollCorrectionAction } from '@/features/payroll-correction/actions/correction.actions'
+import { AppShell } from '@/components/layout/AppShell'
 
 interface Props {
   params: Promise<{ payrollRunId: string }>
@@ -111,106 +112,108 @@ export default async function PayrollRunPage({ params }: Props) {
       }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-12">
-      {/* ── Header ──────────────────────────────────────────────────── */}
-      <div className="flex items-start gap-3 mb-2">
-        <CheckCircle size={28} weight="fill" className="text-emerald-500 mt-0.5 shrink-0" />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-            Payroll — {weekLabel}
-          </h1>
-          <span className="mt-1 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-            Approved (Revision {revisionNumber})
-          </span>
+    <AppShell>
+      <main className="mx-auto max-w-4xl px-4 py-12">
+        {/* ── Header ──────────────────────────────────────────────────── */}
+        <div className="flex items-start gap-3 mb-2">
+          <CheckCircle size={28} weight="fill" className="text-emerald-500 mt-0.5 shrink-0" />
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+              Payroll — {weekLabel}
+            </h1>
+            <span className="mt-1 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+              Approved (Revision {revisionNumber})
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* ── Stats ───────────────────────────────────────────────────── */}
-      <div className="mt-6 flex gap-8">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Employees</p>
-          <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-zinc-900">
-            {employeeCount}
-          </p>
+        {/* ── Stats ───────────────────────────────────────────────────── */}
+        <div className="mt-6 flex gap-8">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Employees</p>
+            <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-zinc-900">
+              {employeeCount}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Net Payable</p>
+            <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-zinc-900">
+              ₹{formatCurrency(displayTotals.totalNetPayable)}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Net Payable</p>
-          <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-zinc-900">
-            ₹{formatCurrency(displayTotals.totalNetPayable)}
-          </p>
+
+        {/* ── Action bar ──────────────────────────────────────────────── */}
+        <div className="mt-6 flex gap-3">
+          <ReportSection payrollRunId={payrollRunId} employeeCount={employeeCount} />
+          <form action={beginPayrollCorrectionAction.bind(null, payrollRunId)}>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-50 active:scale-[0.98]"
+            >
+              <PencilSimple size={14} />
+              Correct Payroll
+            </button>
+          </form>
         </div>
-      </div>
 
-      {/* ── Action bar ──────────────────────────────────────────────── */}
-      <div className="mt-6 flex gap-3">
-        <ReportSection payrollRunId={payrollRunId} employeeCount={employeeCount} />
-        <form action={beginPayrollCorrectionAction.bind(null, payrollRunId)}>
-          <button
-            type="submit"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-50 active:scale-[0.98]"
-          >
-            <PencilSimple size={14} />
-            Correct Payroll
-          </button>
-        </form>
-      </div>
+        {/* ── Revision History ────────────────────────────────────────── */}
+        <RevisionHistoryTable revisions={revisions} />
 
-      {/* ── Revision History ────────────────────────────────────────── */}
-      <RevisionHistoryTable revisions={revisions} />
-
-      {/* ── Payroll Summary table ────────────────────────────────────── */}
-      <section className="border-t border-zinc-200/60 pt-8 mt-8">
-        <p className="text-sm font-medium text-zinc-900 mb-4">Current Payroll Summary</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs font-mono tabular-nums">
-            <thead>
-              <tr className="border-b border-zinc-200">
-                {['ID', 'Employee', 'GPay', 'Bank', 'Net Pay'].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-zinc-400 last:text-right"
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {currentEmployees.map((re) => (
-                <tr key={re.id} className="hover:bg-zinc-50/50">
-                  <td className="py-2 pr-4 text-zinc-700">{re.employee.employeeId}</td>
-                  <td className="py-2 pr-4 font-sans text-zinc-900">{re.employee.employeeName}</td>
-                  <td className="py-2 pr-4 text-zinc-500">{re.employee.gPay ?? '—'}</td>
-                  <td className="py-2 pr-4 text-zinc-500">{re.employee.bankAccount ?? '—'}</td>
-                  <td className="py-2 text-right font-semibold text-zinc-900">₹{formatCurrency(Number(re.netPayable))}</td>
+        {/* ── Payroll Summary table ────────────────────────────────────── */}
+        <section className="border-t border-zinc-200/60 pt-8 mt-8">
+          <p className="text-sm font-medium text-zinc-900 mb-4">Current Payroll Summary</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs font-mono tabular-nums">
+              <thead>
+                <tr className="border-b border-zinc-200">
+                  {['ID', 'Employee', 'GPay', 'Bank', 'Net Pay'].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-zinc-400 last:text-right"
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t border-zinc-200">
-                <td colSpan={4} className="py-2 pr-4 text-xs font-medium uppercase tracking-wider text-zinc-400">
-                  Totals
-                </td>
-                <td className="py-2 text-right font-bold text-zinc-900">
-                  ₹{formatCurrency(displayTotals.totalNetPayable)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {currentEmployees.map((re) => (
+                  <tr key={re.id} className="hover:bg-zinc-50/50">
+                    <td className="py-2 pr-4 text-zinc-700">{re.employee.employeeId}</td>
+                    <td className="py-2 pr-4 font-sans text-zinc-900">{re.employee.employeeName}</td>
+                    <td className="py-2 pr-4 text-zinc-500">{re.employee.gPay ?? '—'}</td>
+                    <td className="py-2 pr-4 text-zinc-500">{re.employee.bankAccount ?? '—'}</td>
+                    <td className="py-2 text-right font-semibold text-zinc-900">₹{formatCurrency(Number(re.netPayable))}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-zinc-200">
+                  <td colSpan={4} className="py-2 pr-4 text-xs font-medium uppercase tracking-wider text-zinc-400">
+                    Totals
+                  </td>
+                  <td className="py-2 text-right font-bold text-zinc-900">
+                    ₹{formatCurrency(displayTotals.totalNetPayable)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
 
-      {/* ── Back link ────────────────────────────────────────────────── */}
-      <div className="mt-8">
-        <Link
-          href="/payroll"
-          className="text-sm text-zinc-500 underline-offset-2 transition-colors hover:text-zinc-700 hover:underline"
-        >
-          ← Back to Payroll
-        </Link>
-      </div>
-    </main>
+        {/* ── Back link ────────────────────────────────────────────────── */}
+        <div className="mt-8">
+          <Link
+            href="/payroll"
+            className="text-sm text-zinc-500 underline-offset-2 transition-colors hover:text-zinc-700 hover:underline"
+          >
+            ← Back to Payroll
+          </Link>
+        </div>
+      </main>
+    </AppShell>
   )
 }

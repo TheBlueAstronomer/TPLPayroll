@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import prisma from '@/lib/prisma'
 import { getRevisionEmployees, getRevisionHistory } from '@/features/payroll-correction/services/correction.service'
 import { RevisedPreview } from '@/features/payroll-correction/components/RevisedPreview'
+import { AppShell } from '@/components/layout/AppShell'
 
 interface Props {
   params: Promise<{ payrollRunId: string }>
@@ -70,14 +71,16 @@ export default async function RevisedPreviewPage({ params }: Props) {
     : null
 
   return (
-    <RevisedPreview
-      payrollRunId={payrollRunId}
-      revisionId={currentRevision.id}
-      revisionNumber={currentRevision.revisionNumber}
-      weekLabel={weekLabel}
-      employees={employees}
-      totals={totals}
-      previousTotals={previousTotals}
-    />
+    <AppShell>
+      <RevisedPreview
+        payrollRunId={payrollRunId}
+        revisionId={currentRevision.id}
+        revisionNumber={currentRevision.revisionNumber}
+        weekLabel={weekLabel}
+        employees={employees}
+        totals={totals}
+        previousTotals={previousTotals}
+      />
+    </AppShell>
   )
 }

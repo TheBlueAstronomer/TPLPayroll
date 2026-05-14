@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { initiateCorrection } from '@/features/payroll-correction/services/correction.service'
 import { CorrectionFlow } from '@/features/payroll-correction/components/CorrectionFlow'
 import { CorrectionServiceError } from '@/features/payroll-correction/types/correction.types'
+import { AppShell } from '@/components/layout/AppShell'
 
 interface Props {
   params: Promise<{ payrollRunId: string }>
@@ -28,14 +29,16 @@ export default async function PayrollCorrectionPage({ params }: Props) {
       if (e.code === 'PAYROLL_RUN_NOT_FOUND') notFound()
       if (e.code === 'CANNOT_CORRECT_UNAPPROVED_PAYROLL') {
         return (
-          <main className="mx-auto max-w-4xl px-4 py-12">
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-              Cannot Correct Payroll
-            </h1>
-            <p className="mt-2 text-sm text-zinc-500">
-              This payroll run has not been approved yet and cannot be corrected.
-            </p>
-          </main>
+          <AppShell>
+            <main className="mx-auto max-w-4xl px-4 py-12">
+              <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+                Cannot Correct Payroll
+              </h1>
+              <p className="mt-2 text-sm text-zinc-500">
+                This payroll run has not been approved yet and cannot be corrected.
+              </p>
+            </main>
+          </AppShell>
         )
       }
     }
@@ -44,5 +47,9 @@ export default async function PayrollCorrectionPage({ params }: Props) {
 
   const weekLabel = `Week ${formatWeekRange(data.weekStart, data.weekEnd)}`
 
-  return <CorrectionFlow data={data} weekLabel={weekLabel} />
+  return (
+    <AppShell>
+      <CorrectionFlow data={data} weekLabel={weekLabel} />
+    </AppShell>
+  )
 }
