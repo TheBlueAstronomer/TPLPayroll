@@ -276,3 +276,19 @@ model EmployeeDocument {
 
   employee Employee @relation(fields: [employeeId], references: [id])
 }
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model Settings {
+  id                  String    @id @default("singleton")
+  payrollWeekStartDay DayOfWeek @default(THURSDAY)
+  updatedAt           DateTime  @updatedAt
+}
