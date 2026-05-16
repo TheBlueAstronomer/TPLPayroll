@@ -5,7 +5,7 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { validateImportFile, parseImportFile, executeImport } from '@/features/employee-import-export/services/import.service'
 import { ImportExportServiceError } from '@/features/employee-import-export/types/import-export.types'
-import type { ParseImportResult, ExecuteImportResult } from '@/features/employee-import-export/types/import-export.types'
+import type { ParseImportResult, ExecuteImportResult, ValidImportRow } from '@/features/employee-import-export/types/import-export.types'
 
 // ─── ActionResult type (mirrors employee-management pattern) ─────────────────
 
@@ -48,12 +48,13 @@ export async function parseImportFileAction(
 
 export async function executeImportAction(
   tempPath: string,
-  fileName: string
+  fileName: string,
+  fixedRows: ValidImportRow[] = []
 ): Promise<ActionResult<ExecuteImportResult>> {
   try {
     const { readFile } = await import('fs/promises')
     const buffer = await readFile(tempPath)
-    const result = await executeImport(buffer, fileName, tempPath)
+    const result = await executeImport(buffer, fileName, tempPath, fixedRows)
     return { ok: true, data: result }
   } catch (err) {
     if (err instanceof ImportExportServiceError) {

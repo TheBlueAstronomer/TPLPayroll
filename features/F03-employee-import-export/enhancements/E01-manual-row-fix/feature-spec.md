@@ -1,6 +1,6 @@
 # E01 — Manual Row Fix for Invalid Import Rows
 
-> **Status: 🔲 PLANNED**
+> **Status: ✅ IMPLEMENTED**
 > **Parent Feature:** F03 — Employee Import / Export
 
 ## Goal

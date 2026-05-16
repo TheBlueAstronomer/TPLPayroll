@@ -6,11 +6,16 @@ import {
   getEmployeeById,
   getEmployeeWageHistory,
   updateEmployee,
+  bulkUpdateStatus,
+  bulkUpdateHourlyRate,
 } from '@/features/employee-management/services/employee.service'
 import {
   EmployeeServiceError,
   type CreateEmployeeInput,
   type UpdateEmployeeInput,
+  type BulkStatusUpdateInput,
+  type BulkHourlyRateUpdateInput,
+  type BulkOperationResult,
   type EmployeeListOptions,
   type PaginatedEmployeeList,
   type EmployeeRecord,
@@ -100,6 +105,32 @@ export async function getEmployeeWageHistoryAction(
   try {
     const history = await getEmployeeWageHistory(employeeId)
     return ok(history)
+  } catch (e) {
+    return handleError(e)
+  }
+}
+
+// ─── bulkUpdateStatusAction ───────────────────────────────────────────────────
+
+export async function bulkUpdateStatusAction(
+  input: BulkStatusUpdateInput
+): Promise<ActionResult<BulkOperationResult>> {
+  try {
+    const result = await bulkUpdateStatus(input)
+    return ok(result)
+  } catch (e) {
+    return handleError(e)
+  }
+}
+
+// ─── bulkUpdateHourlyRateAction ───────────────────────────────────────────────
+
+export async function bulkUpdateHourlyRateAction(
+  input: BulkHourlyRateUpdateInput
+): Promise<ActionResult<BulkOperationResult>> {
+  try {
+    const result = await bulkUpdateHourlyRate(input)
+    return ok(result)
   } catch (e) {
     return handleError(e)
   }

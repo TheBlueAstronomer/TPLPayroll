@@ -35,6 +35,34 @@ export const UpdateEmployeeSchema = CreateEmployeeSchema.partial().omit({
 
 export type UpdateEmployeeInput = z.infer<typeof UpdateEmployeeSchema>
 
+// ─── Bulk action schemas ──────────────────────────────────────────────────────
+
+export const BulkStatusUpdateSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1, 'At least one employee must be selected'),
+  status: z.enum(['RESIGNED', 'INACTIVE']),
+  dateOfResignation: z.date().optional(),
+}).refine(
+  (data) => data.status !== 'RESIGNED' || data.dateOfResignation != null,
+  { message: 'Date of Resignation is required', path: ['dateOfResignation'] },
+)
+
+export type BulkStatusUpdateInput = z.infer<typeof BulkStatusUpdateSchema>
+
+export const BulkHourlyRateUpdateSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1, 'At least one employee must be selected'),
+  newHourlyRate: z.number().gt(0, 'Hourly rate must be greater than 0'),
+  effectiveFrom: z.date().optional(),
+})
+
+export type BulkHourlyRateUpdateInput = z.infer<typeof BulkHourlyRateUpdateSchema>
+
+export interface BulkOperationResult {
+  succeeded: number
+  skipped: number
+  failed: number
+  errors: { employeeId: string; error: string }[]
+}
+
 // ─── List / pagination ────────────────────────────────────────────────────────
 
 export interface EmployeeListOptions {

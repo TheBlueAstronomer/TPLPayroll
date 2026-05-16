@@ -2,9 +2,14 @@ import prisma from '@/lib/prisma'
 import {
   CreateEmployeeSchema,
   UpdateEmployeeSchema,
+  BulkStatusUpdateSchema,
+  BulkHourlyRateUpdateSchema,
   EmployeeServiceError,
   type CreateEmployeeInput,
   type UpdateEmployeeInput,
+  type BulkStatusUpdateInput,
+  type BulkHourlyRateUpdateInput,
+  type BulkOperationResult,
   type EmployeeListOptions,
   type PaginatedEmployeeList,
   type EmployeeListItem,
@@ -358,4 +363,181 @@ export async function updateEmployee(
   })
 
   return updated as EmployeeRecord
+}
+
+// ─── bulkUpdateStatus ─────────────────────────────────────────────────────────
+
+export async function bulkUpdateStatus(input: BulkStatusUpdateInput): Promise<BulkOperationResult> {
+  const parsed = BulkStatusUpdateSchema.safeParse(input)
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues?.[0]
+    throw new EmployeeServiceError(
+      'VALIDATION_ERROR',
+      firstIssue?.message ?? 'Invalid bulk status update data'
+    )
+  }
+
+  const result: BulkOperationResult = { succeeded: 0, skipped: 0, failed: 0, errors: [] }
+
+  for (const id of parsed.data.ids) {
+    try {
+      // Fetch employee
+      const employee = await prisma.employee.findUnique({ where: { id } })
+      if (!employee) {
+        result.failed++
+        result.errors.push({ employeeId: id, error: `Employee with id "${id}" not found` })
+        continue
+      }
+
+      if (parsed.data.status === 'INACTIVE') {
+        // Skip already-inactive employees
+        if (!employee.isActive) {
+          result.skipped++
+          continue
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await tx.employee.update({
+            where: { id },
+            data: { isActive: false },
+          })
+          await tx.auditLog.create({
+            data: {
+              actionType: 'UPDATE',
+              entityType: 'EMPLOYEE',
+              entityId: id,
+              detailsJson: {
+                bulkAction: 'MARK_INACTIVE',
+                employeeId: employee.employeeId,
+                employeeName: employee.employeeName,
+                changeSource: 'BULK',
+              },
+            },
+          })
+        })
+      } else {
+        // RESIGNED
+        await prisma.$transaction(async (tx) => {
+          await tx.employee.update({
+            where: { id },
+            data: { dateOfResignation: parsed.data.dateOfResignation! },
+          })
+          await tx.auditLog.create({
+            data: {
+              actionType: 'UPDATE',
+              entityType: 'EMPLOYEE',
+              entityId: id,
+              detailsJson: {
+                bulkAction: 'MARK_RESIGNED',
+                employeeId: employee.employeeId,
+                employeeName: employee.employeeName,
+                dateOfResignation: parsed.data.dateOfResignation,
+                changeSource: 'BULK',
+              },
+            },
+          })
+        })
+      }
+
+      result.succeeded++
+    } catch (error) {
+      result.failed++
+      result.errors.push({
+        employeeId: id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
+  }
+
+  return result
+}
+
+// ─── bulkUpdateHourlyRate ─────────────────────────────────────────────────────
+
+export async function bulkUpdateHourlyRate(input: BulkHourlyRateUpdateInput): Promise<BulkOperationResult> {
+  const parsed = BulkHourlyRateUpdateSchema.safeParse(input)
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues?.[0]
+    throw new EmployeeServiceError(
+      'VALIDATION_ERROR',
+      firstIssue?.message ?? 'Invalid bulk hourly rate update data'
+    )
+  }
+
+  const effectiveDate = parsed.data.effectiveFrom ?? new Date()
+  const result: BulkOperationResult = { succeeded: 0, skipped: 0, failed: 0, errors: [] }
+
+  for (const id of parsed.data.ids) {
+    try {
+      // Fetch employee
+      const employee = await prisma.employee.findUnique({ where: { id } })
+      if (!employee) {
+        result.failed++
+        result.errors.push({ employeeId: id, error: `Employee with id "${id}" not found` })
+        continue
+      }
+
+      // Fetch current wage history
+      const currentWageEntries = await prisma.employeeWageHistory.findMany({
+        where: { employeeId: id },
+        orderBy: { effectiveFrom: 'desc' },
+        take: 1,
+      })
+      const currentWage = currentWageEntries[0]
+
+      // Skip if rate already matches
+      if (currentWage && Number(currentWage.hourlyRate) === parsed.data.newHourlyRate) {
+        result.skipped++
+        continue
+      }
+
+      await prisma.$transaction(async (tx) => {
+        // Close previous open wage history entry
+        await tx.employeeWageHistory.updateMany({
+          where: { employeeId: id, effectiveTo: null },
+          data: { effectiveTo: effectiveDate },
+        })
+
+        // Create new wage history entry
+        const newWageEntry = await tx.employeeWageHistory.create({
+          data: {
+            employeeId: id,
+            weeklySalary: currentWage ? Number(currentWage.weeklySalary) : 0,
+            hourlyRate: parsed.data.newHourlyRate,
+            effectiveFrom: effectiveDate,
+            effectiveTo: null,
+            changeSource: 'BULK',
+          },
+        })
+
+        // Create audit log
+        await tx.auditLog.create({
+          data: {
+            actionType: 'UPDATE',
+            entityType: 'WAGE_HISTORY',
+            entityId: newWageEntry?.id ?? '',
+            detailsJson: {
+              bulkAction: 'CHANGE_HOURLY_RATE',
+              employeeId: employee.employeeId,
+              employeeName: employee.employeeName,
+              oldHourlyRate: currentWage ? Number(currentWage.hourlyRate) : null,
+              newHourlyRate: parsed.data.newHourlyRate,
+              effectiveFrom: effectiveDate,
+              changeSource: 'BULK',
+            },
+          },
+        })
+      })
+
+      result.succeeded++
+    } catch (error) {
+      result.failed++
+      result.errors.push({
+        employeeId: id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
+  }
+
+  return result
 }

@@ -1,15 +1,20 @@
 'use client'
 
-import { useState, useCallback, useTransition, useEffect } from 'react'
+import { useState, useCallback, useTransition, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { MagnifyingGlass, UsersThree, WarningCircle, Plus, CaretLeft, CaretRight, UploadSimple, DownloadSimple, CaretDown, SpinnerGap } from '@phosphor-icons/react'
 import { StatusBadge } from './StatusBadge'
 import { SkeletonRows } from './SkeletonRows'
+import { BulkActionToolbar } from './BulkActionToolbar'
+import { BulkStatusDialog } from './BulkStatusDialog'
+import { BulkInactiveDialog } from './BulkInactiveDialog'
+import { BulkRateDialog } from './BulkRateDialog'
 import { ImportDialog } from '@/features/employee-import-export/components/ImportDialog'
 import { getEmployeeListAction } from '@/features/employee-management/actions/employee.actions'
 import type { EmployeeListItem, EmployeeStatus } from '@/features/employee-management/types/employee.types'
 
 type StatusFilter = 'ALL' | EmployeeStatus
+type BulkDialog = 'resigned' | 'inactive' | 'rate' | null
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: 'ALL', label: 'All employees' },
@@ -19,6 +24,7 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
 ]
 
 const PAGE_SIZE = 10
+const COL_COUNT = 6 // checkbox + 5 data columns
 
 export function EmployeeListTable() {
   const router = useRouter()
@@ -34,6 +40,25 @@ export function EmployeeListTable() {
   const [showImportMenu, setShowImportMenu] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
 
+  // ── Bulk action state ──────────────────────────────────────────────────────
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [openDialog, setOpenDialog] = useState<BulkDialog>(null)
+  const headerCheckboxRef = useRef<HTMLInputElement>(null)
+
+  // Sync indeterminate state on the header checkbox
+  useEffect(() => {
+    if (!headerCheckboxRef.current) return
+    const someSelected = selectedIds.size > 0
+    const allSelected = employees.length > 0 && selectedIds.size === employees.length
+    headerCheckboxRef.current.indeterminate = someSelected && !allSelected
+  }, [selectedIds, employees])
+
+  // Clear selections when search, status filter, or page changes
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [search, status, page])
+
+  // ── Data fetching ─────────────────────────────────────────────────────────
   const fetchEmployees = useCallback(
     async (opts: { page: number; search: string; status: StatusFilter }) => {
       setLoadState('loading')
@@ -73,6 +98,48 @@ export function EmployeeListTable() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
 
+  // ── Selection handlers ────────────────────────────────────────────────────
+  const toggleEmployee = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }, [])
+
+  const toggleAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === employees.length) {
+        return new Set()
+      }
+      return new Set(employees.map((e) => e.id))
+    })
+  }, [employees])
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set())
+  }, [])
+
+  // ── Bulk action callbacks ─────────────────────────────────────────────────
+  const handleBulkComplete = useCallback(() => {
+    setOpenDialog(null)
+    setSelectedIds(new Set())
+    startTransition(() => {
+      fetchEmployees({ page, search, status })
+    })
+  }, [page, search, status, fetchEmployees])
+
+  const handleBulkClose = useCallback(() => {
+    setOpenDialog(null)
+  }, [])
+
+  const selectedEmployees = employees.filter((e) => selectedIds.has(e.id))
+
+  // ── Export ────────────────────────────────────────────────────────────────
   const handleExport = useCallback(async () => {
     setIsExporting(true)
     try {
@@ -96,6 +163,8 @@ export function EmployeeListTable() {
   const showing = employees.length > 0
     ? `Showing ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, totalCount)} of ${totalCount}`
     : ''
+
+  const allSelected = employees.length > 0 && selectedIds.size === employees.length
 
   return (
     <>
@@ -192,6 +261,19 @@ export function EmployeeListTable() {
         <table className="w-full">
           <thead>
             <tr className="bg-zinc-50/50">
+              {/* Checkbox header */}
+              <th className="w-12 px-4 py-3 text-center">
+                <input
+                  ref={headerCheckboxRef}
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  disabled={employees.length === 0}
+                  className="w-4 h-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500/20 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Select all employees on this page"
+                  id="bulk-select-all"
+                />
+              </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
                 ID
               </th>
@@ -215,7 +297,7 @@ export function EmployeeListTable() {
               <SkeletonRows count={PAGE_SIZE} />
             ) : loadState === 'error' ? (
               <tr>
-                <td colSpan={5} className="px-4 py-16 text-center">
+                <td colSpan={COL_COUNT} className="px-4 py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <WarningCircle size={40} className="text-zinc-300" />
                     <p className="text-sm font-medium text-zinc-600">Failed to load employees</p>
@@ -230,7 +312,7 @@ export function EmployeeListTable() {
               </tr>
             ) : employees.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-20 text-center">
+                <td colSpan={COL_COUNT} className="px-4 py-20 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <UsersThree size={48} className="text-zinc-200" />
                     <p className="text-lg font-medium text-zinc-600">No team members yet</p>
@@ -246,34 +328,53 @@ export function EmployeeListTable() {
                 </td>
               </tr>
             ) : (
-              employees.map((emp, index) => (
-                <tr
-                  key={emp.id}
-                  onClick={() => router.push(`/employees/${emp.id}`)}
-                  className="cursor-pointer hover:bg-zinc-50/80 transition-colors duration-200"
-                  style={{
-                    opacity: 0,
-                    animation: `fadeSlideIn 0.3s ease forwards`,
-                    animationDelay: `${index * 60}ms`,
-                  }}
-                >
-                  <td className="px-4 py-3">
-                    <span className="font-mono text-xs text-zinc-500">{emp.employeeId}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm font-medium text-zinc-900">{emp.employeeName}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-zinc-600">{emp.designation}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-zinc-600">{emp.site ?? '—'}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={emp.status} />
-                  </td>
-                </tr>
-              ))
+              employees.map((emp, index) => {
+                const isSelected = selectedIds.has(emp.id)
+                return (
+                  <tr
+                    key={emp.id}
+                    onClick={() => router.push(`/employees/${emp.id}`)}
+                    className={`cursor-pointer transition-colors duration-150 ${
+                      isSelected
+                        ? 'bg-emerald-50/40 hover:bg-emerald-50/60'
+                        : 'hover:bg-zinc-50/80'
+                    }`}
+                    style={{
+                      opacity: 0,
+                      animation: `fadeSlideIn 0.3s ease forwards`,
+                      animationDelay: `${index * 60}ms`,
+                    }}
+                  >
+                    {/* Row checkbox */}
+                    <td className="w-12 px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleEmployee(emp.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500/20 cursor-pointer"
+                        aria-label={`Select ${emp.employeeName}`}
+                        data-employee-id={emp.employeeId}
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-xs text-zinc-500">{emp.employeeId}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm font-medium text-zinc-900">{emp.employeeName}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-zinc-600">{emp.designation}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-zinc-600">{emp.site ?? '—'}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={emp.status} />
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
@@ -281,7 +382,7 @@ export function EmployeeListTable() {
 
       {/* ── Pagination ──────────────────────────────────────────────────── */}
       {loadState === 'loaded' && totalCount > 0 && (
-        <div className="flex items-center justify-between pt-2">
+        <div className={`flex items-center justify-between pt-2 ${selectedIds.size > 0 ? 'pb-20' : ''}`}>
           <p className="text-sm text-zinc-500">{showing}</p>
           <div className="flex items-center gap-1">
             <button
@@ -330,6 +431,40 @@ export function EmployeeListTable() {
         }
       `}</style>
     </div>
+
+    {/* ── Floating bulk-action toolbar ──────────────────────────────────── */}
+    <BulkActionToolbar
+      selectedCount={selectedIds.size}
+      onMarkResigned={() => setOpenDialog('resigned')}
+      onMarkInactive={() => setOpenDialog('inactive')}
+      onChangeHourlyRate={() => setOpenDialog('rate')}
+      onClear={clearSelection}
+    />
+
+    {/* ── Bulk action dialogs ──────────────────────────────────────────── */}
+    {openDialog === 'resigned' && (
+      <BulkStatusDialog
+        employees={selectedEmployees}
+        onClose={handleBulkClose}
+        onComplete={handleBulkComplete}
+      />
+    )}
+
+    {openDialog === 'inactive' && (
+      <BulkInactiveDialog
+        employees={selectedEmployees}
+        onClose={handleBulkClose}
+        onComplete={handleBulkComplete}
+      />
+    )}
+
+    {openDialog === 'rate' && (
+      <BulkRateDialog
+        employees={selectedEmployees}
+        onClose={handleBulkClose}
+        onComplete={handleBulkComplete}
+      />
+    )}
 
     {/* ── Import dialog ─────────────────────────────────────────────────── */}
     {showImportDialog && (

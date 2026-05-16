@@ -76,7 +76,9 @@ interface RawRow {
   data: Record<string, unknown>
 }
 
-function validateAndParseRow(raw: RawRow): { valid: ImportRowData } | { invalid: { errors: ImportRowErrorCode[] } } {
+function validateAndParseRow(raw: RawRow):
+  | { valid: ImportRowData }
+  | { invalid: { errors: ImportRowErrorCode[]; partialData: Partial<ImportRowData> } } {
   const errors: ImportRowErrorCode[] = []
   const d = raw.data
 
@@ -120,7 +122,28 @@ function validateAndParseRow(raw: RawRow): { valid: ImportRowData } | { invalid:
   }
 
   if (errors.length > 0) {
-    return { invalid: { errors } }
+    const partialData: Partial<ImportRowData> = {
+      serialNumber: str(d[IMPORT_COLUMNS.serialNumber]),
+      ...(employeeId ? { employeeId } : {}),
+      ...(employeeName ? { employeeName } : {}),
+      nationalId: str(d[IMPORT_COLUMNS.nationalId]),
+      ...(designation ? { designation } : {}),
+      dateOfJoining: parseExcelDate(d[IMPORT_COLUMNS.dateOfJoining]),
+      aadhaarId: str(d[IMPORT_COLUMNS.aadhaarId]),
+      policeVerificationId: str(d[IMPORT_COLUMNS.policeVerificationId]),
+      ...(salary !== null ? { salary } : {}),
+      ...(hourlyRate !== null ? { hourlyRate } : {}),
+      phone: str(d[IMPORT_COLUMNS.phone]),
+      dateOfBirth: parseExcelDate(d[IMPORT_COLUMNS.dateOfBirth]),
+      healthCardId: str(d[IMPORT_COLUMNS.healthCardId]),
+      gPay: str(d[IMPORT_COLUMNS.gPay]),
+      bankAccount: str(d[IMPORT_COLUMNS.bankAccount]),
+      dateOfResignation: parseExcelDate(d[IMPORT_COLUMNS.dateOfResignation]),
+      site: str(d[IMPORT_COLUMNS.site]),
+      ...(isActive !== null ? { isActive } : {}),
+      designationShort: str(d[IMPORT_COLUMNS.designationShort]),
+    }
+    return { invalid: { errors, partialData } }
   }
 
   return {
@@ -177,6 +200,7 @@ export async function parseImportFile(buffer: Buffer): Promise<ParseImportResult
         employeeId: str(row[IMPORT_COLUMNS.employeeId]),
         employeeName: str(row[IMPORT_COLUMNS.employeeName]),
         errors: result.invalid.errors,
+        partialData: result.invalid.partialData,
       })
       return
     }
@@ -338,9 +362,13 @@ async function applyRowToDb(
 export async function executeImport(
   buffer: Buffer,
   fileName: string,
-  filePath: string
+  filePath: string,
+  fixedRows: ValidImportRow[] = []
 ): Promise<ExecuteImportResult> {
-  const { validRows, invalidRows, duplicateIdRows } = await parseImportFile(buffer)
+  const { validRows: parsedValidRows, invalidRows, duplicateIdRows } = await parseImportFile(buffer)
+  const allValidRows = [...parsedValidRows, ...fixedRows]
+
+  const rejectedRowCount = Math.max(0, invalidRows.length - fixedRows.length)
 
   const batch = await prisma.employeeImportBatch.create({
     data: {
@@ -350,7 +378,7 @@ export async function executeImport(
       importedRowCount: 0,
       createdEmployeeCount: 0,
       updatedEmployeeCount: 0,
-      rejectedRowCount: invalidRows.length,
+      rejectedRowCount: rejectedRowCount,
       duplicateEmployeeIdRowCount: duplicateIdRows.length,
     },
   })
@@ -362,7 +390,7 @@ export async function executeImport(
 
   await prisma.$transaction(async (tx) => {
     // Process first occurrences
-    for (const row of validRows) {
+    for (const row of allValidRows) {
       const r = await applyRowToDb(tx, row.data, row.action, batch.id, today, processedInFile)
       if (r.created) createdCount++
       if (r.updated) updatedCount++
@@ -394,7 +422,7 @@ export async function executeImport(
     importedRowCount: createdCount + updatedCount,
     createdEmployeeCount: createdCount,
     updatedEmployeeCount: updatedCount,
-    rejectedRowCount: invalidRows.length,
+    rejectedRowCount,
     duplicateEmployeeIdRowCount: duplicateIdRows.length,
   }
 }

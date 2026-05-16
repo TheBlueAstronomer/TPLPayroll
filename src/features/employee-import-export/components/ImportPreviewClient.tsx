@@ -10,8 +10,10 @@ import {
   XCircle,
   WarningCircle,
   UsersThree,
+  ArrowSquareOut,
 } from '@phosphor-icons/react'
 import { executeImportAction } from '@/features/employee-import-export/actions/import-export.actions'
+import { FixInvalidRowDialog } from './FixInvalidRowDialog'
 import type {
   ParseImportResult,
   ValidImportRow,
@@ -119,7 +121,14 @@ function ValidRowsTable({ rows }: { rows: ValidImportRow[] }) {
                 <span className="text-sm text-zinc-600">{row.data.designation}</span>
               </td>
               <td className="px-4 py-3">
-                <ActionBadge action={row.action} />
+                <div className="flex items-center gap-1.5">
+                  <ActionBadge action={row.action} />
+                  {row.source === 'fixed' && (
+                    <span className="inline-block bg-emerald-50 text-emerald-700 rounded-full text-xs px-2 py-0.5 font-medium">
+                      Fixed ✓
+                    </span>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
@@ -129,7 +138,13 @@ function ValidRowsTable({ rows }: { rows: ValidImportRow[] }) {
   )
 }
 
-function InvalidRowsTable({ rows }: { rows: InvalidImportRow[] }) {
+function InvalidRowsTable({
+  rows,
+  onFixRow,
+}: {
+  rows: InvalidImportRow[]
+  onFixRow: (row: InvalidImportRow) => void
+}) {
   const errorLabels: Record<string, string> = {
     MISSING_EMPLOYEE_ID: 'Missing Employee ID',
     MISSING_EMPLOYEE_NAME: 'Missing Employee Name',
@@ -145,8 +160,8 @@ function InvalidRowsTable({ rows }: { rows: InvalidImportRow[] }) {
   if (rows.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-16 text-center">
-        <CheckCircle size={36} className="text-emerald-300" />
-        <p className="text-sm text-zinc-500">No invalid rows — all data is valid.</p>
+        <CheckCircle size={20} className="text-emerald-400 mx-auto" />
+        <p className="text-sm text-zinc-400">All invalid rows have been corrected.</p>
       </div>
     )
   }
@@ -168,6 +183,9 @@ function InvalidRowsTable({ rows }: { rows: InvalidImportRow[] }) {
             <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
               Errors
             </th>
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
+              Fix
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-100">
@@ -183,9 +201,20 @@ function InvalidRowsTable({ rows }: { rows: InvalidImportRow[] }) {
                 <span className="text-sm text-zinc-600">{row.employeeName ?? '—'}</span>
               </td>
               <td className="px-4 py-3">
-                <span className="text-xs text-rose-600">
-                  {row.errors.map((e) => errorLabels[e] ?? e).join(', ')}
-                </span>
+                <div className="flex flex-col gap-0.5">
+                  {row.errors.map((e) => (
+                    <span key={e} className="text-xs text-rose-600">{errorLabels[e] ?? e}</span>
+                  ))}
+                </div>
+              </td>
+              <td className="px-4 py-3">
+                <button
+                  onClick={() => onFixRow(row)}
+                  className="inline-flex items-center gap-1 text-xs font-medium border border-zinc-200 rounded-lg px-2.5 py-1 text-zinc-600 hover:border-emerald-400 hover:text-emerald-700 transition-colors"
+                >
+                  Fix
+                  <ArrowSquareOut size={12} />
+                </button>
               </td>
             </tr>
           ))}
@@ -328,6 +357,12 @@ export function ImportPreviewClient() {
   const [importResult, setImportResult] = useState<ExecuteImportResult | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
 
+  // Lifted row state
+  const [validRows, setValidRows] = useState<ValidImportRow[]>([])
+  const [invalidRows, setInvalidRows] = useState<InvalidImportRow[]>([])
+  const [fixingRow, setFixingRow] = useState<InvalidImportRow | null>(null)
+  const [existingEmployeeIds, setExistingEmployeeIds] = useState<Set<string>>(new Set())
+
   // Load data from sessionStorage on mount
   useEffect(() => {
     const raw = sessionStorage.getItem('importPreviewData')
@@ -338,17 +373,38 @@ export function ImportPreviewClient() {
     try {
       const data = JSON.parse(raw) as StoredPreviewData
       setPreviewData(data)
+      setValidRows(data.parseResult.validRows)
+      setInvalidRows(data.parseResult.invalidRows)
+      // Build existingEmployeeIds from validRows that have action=UPDATE
+      const updateIds = new Set(
+        data.parseResult.validRows
+          .filter((r) => r.action === 'UPDATE')
+          .map((r) => r.data.employeeId)
+      )
+      setExistingEmployeeIds(updateIds)
     } catch {
       router.replace('/employees')
     }
   }, [router])
 
+  const handleRowFixed = useCallback((fixedRow: ValidImportRow) => {
+    setInvalidRows((prev) => prev.filter((r) => r.rowNumber !== fixedRow.rowNumber))
+    setValidRows((prev) => [...prev, fixedRow])
+    setFixingRow(null)
+    // If the fixed row is an UPDATE, add to existingEmployeeIds for future fixes
+    if (fixedRow.action === 'UPDATE') {
+      setExistingEmployeeIds((prev) => new Set([...prev, fixedRow.data.employeeId]))
+    }
+  }, [])
+
   const handleConfirm = useCallback(() => {
     if (!previewData) return
     setImportError(null)
 
+    const fixedRows = validRows.filter((r) => r.source === 'fixed')
+
     startTransition(async () => {
-      const result = await executeImportAction(previewData.tempPath, previewData.fileName)
+      const result = await executeImportAction(previewData.tempPath, previewData.fileName, fixedRows)
       if (!result.ok) {
         setImportError(result.error)
         return
@@ -356,7 +412,7 @@ export function ImportPreviewClient() {
       sessionStorage.removeItem('importPreviewData')
       setImportResult(result.data)
     })
-  }, [previewData])
+  }, [previewData, validRows])
 
   const handleCancel = useCallback(() => {
     sessionStorage.removeItem('importPreviewData')
@@ -372,12 +428,12 @@ export function ImportPreviewClient() {
   }
 
   const { parseResult, fileName } = previewData
-  const newCount = parseResult.validRows.filter((r) => r.action === 'CREATE').length
-  const updateCount = parseResult.validRows.filter((r) => r.action === 'UPDATE').length
+  const newCount = validRows.filter((r) => r.action === 'CREATE').length
+  const updateCount = validRows.filter((r) => r.action === 'UPDATE').length
 
   const tabs: { key: TabKey; label: string; count: number }[] = [
-    { key: 'valid', label: 'Valid Rows', count: parseResult.validRows.length },
-    { key: 'invalid', label: 'Invalid Rows', count: parseResult.invalidRows.length },
+    { key: 'valid', label: 'Valid Rows', count: validRows.length },
+    { key: 'invalid', label: 'Invalid Rows', count: invalidRows.length },
     { key: 'duplicates', label: 'Duplicates', count: parseResult.duplicateIdRows.length },
   ]
 
@@ -400,8 +456,8 @@ export function ImportPreviewClient() {
         {/* ── Summary strip ───────────────────────────────────────────── */}
         <div className="border-t border-b border-zinc-200/60 py-4 flex items-center divide-x divide-zinc-200 overflow-x-auto">
           <StatBlock label="Total Rows" value={parseResult.totalRows} />
-          <StatBlock label="Valid" value={parseResult.validRows.length} />
-          <StatBlock label="Invalid" value={parseResult.invalidRows.length} highlight={parseResult.invalidRows.length > 0} />
+          <StatBlock label="Valid" value={validRows.length} />
+          <StatBlock label="Invalid" value={invalidRows.length} highlight={invalidRows.length > 0} />
           <StatBlock label="Duplicates" value={parseResult.duplicateIdRows.length} />
           <StatBlock label="New" value={newCount} />
           <StatBlock label="Updates" value={updateCount} />
@@ -443,8 +499,15 @@ export function ImportPreviewClient() {
 
         {/* ── Tab content ─────────────────────────────────────────────── */}
         <div role="tabpanel">
-          {activeTab === 'valid' && <ValidRowsTable rows={parseResult.validRows} />}
-          {activeTab === 'invalid' && <InvalidRowsTable rows={parseResult.invalidRows} />}
+          {activeTab === 'valid' && (
+            <ValidRowsTable rows={validRows} />
+          )}
+          {activeTab === 'invalid' && (
+            <InvalidRowsTable
+              rows={invalidRows}
+              onFixRow={setFixingRow}
+            />
+          )}
           {activeTab === 'duplicates' && <DuplicatesTable rows={parseResult.duplicateIdRows} />}
         </div>
 
@@ -467,7 +530,7 @@ export function ImportPreviewClient() {
           </button>
           <button
             onClick={handleConfirm}
-            disabled={isPending || parseResult.validRows.length === 0}
+            disabled={isPending || validRows.length === 0}
             className="relative inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-5 py-2 rounded-xl transition-colors active:scale-[0.98] overflow-hidden"
           >
             {isPending ? (
@@ -477,11 +540,22 @@ export function ImportPreviewClient() {
                 <span className="absolute inset-0 -translate-x-full animate-[shimmer_1.2s_ease_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
               </>
             ) : (
-              `Confirm Import (${parseResult.validRows.length + parseResult.duplicateIdRows.length} rows)`
+              `Confirm Import (${validRows.length + parseResult.duplicateIdRows.length} rows)`
             )}
           </button>
         </div>
       </div>
+
+      {/* ── Fix dialog ──────────────────────────────────────────────── */}
+      {fixingRow && (
+        <FixInvalidRowDialog
+          open={fixingRow !== null}
+          onOpenChange={(open) => { if (!open) setFixingRow(null) }}
+          invalidRow={fixingRow}
+          existingEmployeeIds={existingEmployeeIds}
+          onRowFixed={handleRowFixed}
+        />
+      )}
 
       {/* ── Result dialog (post-confirm) ─────────────────────────────── */}
       {importResult && (

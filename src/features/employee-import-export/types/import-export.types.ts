@@ -71,6 +71,7 @@ export interface ValidImportRow {
   rowNumber: number
   action: ImportRowAction
   data: ImportRowData
+  source?: 'fixed'  // present only for user-fixed rows; absent for originally-valid rows
 }
 
 export interface InvalidImportRow {
@@ -78,6 +79,16 @@ export interface InvalidImportRow {
   employeeId: string | null
   employeeName: string | null
   errors: ImportRowErrorCode[]
+  partialData: Partial<ImportRowData>  // whatever fields were successfully parsed from the source row
+}
+
+export interface FixRowFormValues {
+  employeeId?: string
+  employeeName?: string
+  designation?: string
+  salary?: string       // string from input, parsed to number in applyRowFix
+  hourlyRate?: string   // string from input
+  isActive?: 'true' | 'false'  // radio button value
 }
 
 export interface DuplicateImportRow {
