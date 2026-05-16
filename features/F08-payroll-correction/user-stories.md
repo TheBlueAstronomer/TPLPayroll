@@ -1,8 +1,10 @@
 # F08 — Payroll Correction: User Stories
 
+> **Status: ✅ DONE** — All 5 user stories fully implemented.
+
 ---
 
-## US-08.1: Initiate payroll correction
+## US-08.1: Initiate payroll correction ✅
 
 **As a** Payroll Owner
 **I want to** open an approved payroll and initiate a correction
@@ -31,7 +33,7 @@ TEST: initiateCorrection is blocked for non-approved runs
 
 ---
 
-## US-08.2: Modify adjustments in correction
+## US-08.2: Modify adjustments in correction ✅
 
 **As a** Payroll Owner
 **I want to** add, remove, or change adjustments during a payroll correction
@@ -62,7 +64,7 @@ TEST: approveSkippedAdjustment in correction
 
 ---
 
-## US-08.3: Recalculate and create new revision
+## US-08.3: Recalculate and create new revision ✅
 
 **As a** Payroll Owner
 **I want to** the app to recalculate payroll with corrected data and create a new revision
@@ -105,7 +107,7 @@ TEST: createRevision allows null correction reason
 
 ---
 
-## US-08.4: Preview and approve revised payroll
+## US-08.4: Preview and approve revised payroll ✅
 
 **As a** Payroll Owner
 **I want to** review the revised payroll summary before approving it
@@ -129,7 +131,7 @@ TEST: approveRevision sets status and timestamp
 
 ---
 
-## US-08.5: View revision history
+## US-08.5: View revision history ✅
 
 **As a** Payroll Owner
 **I want to** see all revisions for a payroll run

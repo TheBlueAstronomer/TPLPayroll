@@ -1,8 +1,10 @@
 # F06 — Payroll Generation: User Stories
 
+> **Status: ✅ DONE** — All 6 user stories fully implemented.
+
 ---
 
-## US-06.1: Select payroll week
+## US-06.1: Select payroll week ✅
 
 **As a** Payroll Owner
 **I want to** select a payroll week to generate payroll for
@@ -32,7 +34,7 @@ TEST: getAvailablePayrollWeeks marks weeks with blocking errors
 
 ---
 
-## US-06.2: Verify attendance readiness
+## US-06.2: Verify attendance readiness ✅
 
 **As a** Payroll Owner
 **I want to** the app to check that attendance has no blocking errors before proceeding
@@ -60,7 +62,7 @@ TEST: checkAttendanceReadiness returns READY when clean
 
 ---
 
-## US-06.3: Review and approve/skip weekly adjustments
+## US-06.3: Review and approve/skip weekly adjustments ✅
 
 **As a** Payroll Owner
 **I want to** review all pending adjustments for the selected week and decide which to apply
@@ -91,7 +93,7 @@ TEST: getPendingAdjustmentsForWeek returns empty for no pending
 
 ---
 
-## US-06.4: Calculate payroll
+## US-06.4: Calculate payroll ✅
 
 **As a** Payroll Owner
 **I want to** the app to calculate payroll using attendance data, hourly rates, and approved adjustments
@@ -140,7 +142,7 @@ TEST: calculatePayroll retains paise precision
 
 ---
 
-## US-06.5: Preview payroll summary
+## US-06.5: Preview payroll summary ✅
 
 **As a** Payroll Owner
 **I want to** see an in-app summary of the calculated payroll before approving
@@ -165,7 +167,7 @@ TEST: formatPayrollSummary returns correct structure
 
 ---
 
-## US-06.6: Approve payroll
+## US-06.6: Approve payroll ✅
 
 **As a** Payroll Owner
 **I want to** approve the payroll summary to lock it as the official payroll for the week

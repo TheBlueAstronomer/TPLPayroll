@@ -1,5 +1,7 @@
 # F01 — Dashboard
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Provide the Payroll Owner with a single landing page that surfaces key operational totals and alerts so they can immediately identify what needs attention without navigating to individual workflows.

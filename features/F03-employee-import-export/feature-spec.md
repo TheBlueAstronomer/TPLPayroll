@@ -1,5 +1,7 @@
 # F03 — Employee Import / Export
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Allow the Payroll Owner to bulk-import employee master data from an Excel file (`.xlsx`) and export the current employee database to Excel, enabling fast initial setup and ongoing data portability.

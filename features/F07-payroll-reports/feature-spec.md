@@ -1,5 +1,7 @@
 # F07 — Payroll Reports & Slips
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Generate PDF payroll summary reports and per-employee payroll slips after payroll approval, package all slips into a downloadable ZIP file, and delete temporary generated files after download/generation once data is saved.

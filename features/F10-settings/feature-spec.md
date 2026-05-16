@@ -1,5 +1,7 @@
 # F10 — Settings
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Provide a simple settings page that allows the Payroll Owner to configure the payroll week start day, with fixed defaults for currency display and document expiry threshold.

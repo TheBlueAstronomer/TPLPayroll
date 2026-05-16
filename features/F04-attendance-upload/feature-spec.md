@@ -1,5 +1,7 @@
 # F04 — Attendance Upload
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Allow the Payroll Owner to upload weekly attendance Excel files, parse multi-sheet/multi-block employee attendance data, match employees to the master database, and surface all blocking errors on-screen before allowing payroll generation.

@@ -1,8 +1,10 @@
 # F03 — Employee Import / Export: User Stories
 
+> **Status: ✅ DONE** — All 5 user stories fully implemented.
+
 ---
 
-## US-03.1: Upload employee master Excel file
+## US-03.1: Upload employee master Excel file ✅
 
 **As a** Payroll Owner
 **I want to** upload an `.xlsx` file containing employee master data
@@ -36,7 +38,7 @@ TEST: validateImportFile accepts valid xlsx with correct sheet
 
 ---
 
-## US-03.2: Preview import results before confirmation
+## US-03.2: Preview import results before confirmation ✅
 
 **As a** Payroll Owner
 **I want to** see a preview of what will be imported — valid rows, invalid rows, duplicates, and updates
@@ -72,7 +74,7 @@ TEST: parseImportFile detects existing employees for update
 
 ---
 
-## US-03.3: Confirm and execute employee import
+## US-03.3: Confirm and execute employee import ✅
 
 **As a** Payroll Owner
 **I want to** confirm the import to save valid employees to the database
@@ -136,7 +138,7 @@ TEST: executeImport creates import batch record
 
 ---
 
-## US-03.4: Map Active column values
+## US-03.4: Map Active column values ✅
 
 **As a** Payroll Owner
 **I want to** the import to correctly interpret "Active" and "Inactive" text values from the Excel column
@@ -166,7 +168,7 @@ TEST: mapActiveValue rejects blank value
 
 ---
 
-## US-03.5: Export employee master to Excel
+## US-03.5: Export employee master to Excel ✅
 
 **As a** Payroll Owner
 **I want to** download the current employee database as an `.xlsx` file

@@ -1,5 +1,7 @@
 # F09 — Payroll History
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Allow the Payroll Owner to look up historical payroll data by employee and payroll week — displaying stored calculations in the app without generating downloadable reports.

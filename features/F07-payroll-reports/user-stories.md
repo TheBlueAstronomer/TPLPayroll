@@ -1,8 +1,10 @@
 # F07 — Payroll Reports & Slips: User Stories
 
+> **Status: ✅ DONE** — All 5 user stories fully implemented.
+
 ---
 
-## US-07.1: Generate PDF payroll summary report
+## US-07.1: Generate PDF payroll summary report ✅
 
 **As a** Payroll Owner
 **I want to** generate a PDF summary of the approved weekly payroll
@@ -38,7 +40,7 @@ TEST: generatePayrollSummaryPdf formats amounts correctly
 
 ---
 
-## US-07.2: Generate individual employee payroll slips
+## US-07.2: Generate individual employee payroll slips ✅
 
 **As a** Payroll Owner
 **I want to** generate a PDF payroll slip for each employee in the approved payroll
@@ -78,7 +80,7 @@ TEST: generatePayrollSlip creates InvoiceSnapshot
 
 ---
 
-## US-07.3: Package payroll slips into ZIP
+## US-07.3: Package payroll slips into ZIP ✅
 
 **As a** Payroll Owner
 **I want to** download all payroll slips as a single ZIP file
@@ -112,7 +114,7 @@ TEST: generatePayrollSlipsZip names PDFs meaningfully
 
 ---
 
-## US-07.4: Delete temporary generated files
+## US-07.4: Delete temporary generated files ✅
 
 **As a** Payroll Owner
 **I want to** temporary report files to be automatically cleaned up
@@ -141,7 +143,7 @@ TEST: cleanupTemporaryFiles sets temporaryFileDeletedAt
 
 ---
 
-## US-07.5: Regenerate reports from stored data
+## US-07.5: Regenerate reports from stored data ✅
 
 **As a** Payroll Owner
 **I want to** be able to regenerate reports from stored payroll data

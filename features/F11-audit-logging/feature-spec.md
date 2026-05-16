@@ -1,5 +1,7 @@
 # F11 — Audit Logging
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Automatically log employee creation, employee updates, and wage changes to provide a traceable audit trail for compliance and data integrity.

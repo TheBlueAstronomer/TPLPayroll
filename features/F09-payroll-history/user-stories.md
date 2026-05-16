@@ -1,8 +1,10 @@
 # F09 — Payroll History: User Stories
 
+> **Status: ✅ DONE** — All 4 user stories fully implemented.
+
 ---
 
-## US-09.1: Search payroll history by employee
+## US-09.1: Search payroll history by employee ✅
 
 **As a** Payroll Owner
 **I want to** search payroll history by employee name or ID
@@ -35,7 +37,7 @@ TEST: searchPayrollHistory returns empty for unknown employee
 
 ---
 
-## US-09.2: Search payroll history by payroll week
+## US-09.2: Search payroll history by payroll week ✅
 
 **As a** Payroll Owner
 **I want to** select a payroll week to see all employee records for that week
@@ -63,7 +65,7 @@ TEST: getPayrollHistoryByWeek uses current revision
 
 ---
 
-## US-09.3: View detailed payroll record
+## US-09.3: View detailed payroll record ✅
 
 **As a** Payroll Owner
 **I want to** view the detailed payroll record for a specific employee and week
@@ -91,7 +93,7 @@ TEST: getPayrollRecordDetail includes itemized adjustments
 
 ---
 
-## US-09.4: Access history from employee profile
+## US-09.4: Access history from employee profile ✅
 
 **As a** Payroll Owner
 **I want to** navigate to payroll history from an employee's profile

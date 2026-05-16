@@ -1,8 +1,10 @@
 # F04 — Attendance Upload: User Stories
 
+> **Status: ✅ DONE** — All 7 user stories fully implemented.
+
 ---
 
-## US-04.1: Upload attendance Excel file
+## US-04.1: Upload attendance Excel file ✅
 
 **As a** Payroll Owner
 **I want to** upload a weekly attendance Excel file
@@ -37,7 +39,7 @@ TEST: validateAttendanceFile rejects .csv
 
 ---
 
-## US-04.2: Detect payroll week dates
+## US-04.2: Detect payroll week dates ✅
 
 **As a** Payroll Owner
 **I want to** the app to automatically detect the payroll week from the attendance file
@@ -79,7 +81,7 @@ TEST: detectPayrollWeek flags non-Thursday-to-Wednesday week
 
 ---
 
-## US-04.3: Parse multi-sheet, multi-block attendance
+## US-04.3: Parse multi-sheet, multi-block attendance ✅
 
 **As a** Payroll Owner
 **I want to** the parser to handle workbooks with multiple sheets and multiple employee blocks per sheet
@@ -125,7 +127,7 @@ TEST: parseAttendanceBlock extracts employee name and site
 
 ---
 
-## US-04.4: Match attendance to employee master
+## US-04.4: Match attendance to employee master ✅
 
 **As a** Payroll Owner
 **I want to** the app to match uploaded attendance records to the employee master database
@@ -180,7 +182,7 @@ TEST: matchEmployees allows employee resigned after week
 
 ---
 
-## US-04.5: View attendance import preview
+## US-04.5: View attendance import preview ✅
 
 **As a** Payroll Owner
 **I want to** see a detailed preview of the attendance import results
@@ -216,7 +218,7 @@ TEST: computeImportSummary unblocked when all matched
 
 ---
 
-## US-04.6: Replace attendance upload for same week
+## US-04.6: Replace attendance upload for same week ✅
 
 **As a** Payroll Owner
 **I want to** upload a corrected attendance file for a week that already has one
@@ -250,7 +252,7 @@ TEST: replaceAttendanceUpload sets new upload as active
 
 ---
 
-## US-04.7: Manual verification of inactive and resigned-before-week employees
+## US-04.7: Manual verification of inactive and resigned-before-week employees ✅
 
 **As a** Payroll Owner
 **I want to** manually approve or reject payroll processing for employees who are inactive or resigned before the payroll week

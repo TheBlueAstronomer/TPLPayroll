@@ -1,5 +1,7 @@
 # F02 — Employee Management
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Allow the Payroll Owner to maintain a complete employee master database — creating, viewing, editing, searching, and deactivating employee records — so that employees are accurately represented for attendance matching and payroll generation.

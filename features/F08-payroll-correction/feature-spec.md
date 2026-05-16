@@ -1,5 +1,7 @@
 # F08 — Payroll Correction
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Allow the Payroll Owner to make corrections to an already-approved payroll run by creating a new revision — preserving the previous calculation data for audit while making the latest revision the current payable version.

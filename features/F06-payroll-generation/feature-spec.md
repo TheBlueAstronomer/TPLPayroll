@@ -1,5 +1,7 @@
 # F06 — Payroll Generation
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Calculate weekly payroll from attendance data and employee wages, allow the Payroll Owner to review a summary preview, review and approve applicable adjustments, and approve the final payroll — making it eligible for report and payroll slip generation.

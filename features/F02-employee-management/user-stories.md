@@ -1,8 +1,10 @@
 # F02 — Employee Management: User Stories
 
+> **Status: ✅ DONE** — All 8 user stories fully implemented.
+
 ---
 
-## US-02.1: Add a new employee
+## US-02.1: Add a new employee ✅
 
 **As a** Payroll Owner
 **I want to** add a new employee to the master database
@@ -50,7 +52,7 @@ TEST: createEmployee creates audit log
 
 ---
 
-## US-02.2: View employee list
+## US-02.2: View employee list ✅
 
 **As a** Payroll Owner
 **I want to** see a list of all employees
@@ -85,7 +87,7 @@ TEST: getEmployeeList returns correct status indicators
 
 ---
 
-## US-02.3: Search employees
+## US-02.3: Search employees ✅
 
 **As a** Payroll Owner
 **I want to** search employees by name or Employee ID
@@ -119,7 +121,7 @@ TEST: searchEmployees returns empty when no match
 
 ---
 
-## US-02.4: Filter employees by status
+## US-02.4: Filter employees by status ✅
 
 **As a** Payroll Owner
 **I want to** filter the employee list by Active, Inactive, or Resigned status
@@ -148,7 +150,7 @@ TEST: filterEmployees with status RESIGNED returns only resigned employees
 
 ---
 
-## US-02.5: View employee profile
+## US-02.5: View employee profile ✅
 
 **As a** Payroll Owner
 **I want to** view the full details of a single employee, including wage history
@@ -178,7 +180,7 @@ TEST: getEmployeeWageHistory returns sorted history
 
 ---
 
-## US-02.6: Edit employee details
+## US-02.6: Edit employee details ✅
 
 **As a** Payroll Owner
 **I want to** update an employee's details
@@ -220,7 +222,7 @@ TEST: updateEmployee does NOT create wage history if wages unchanged
 
 ---
 
-## US-02.7: Deactivate / Reactivate employee
+## US-02.7: Deactivate / Reactivate employee ✅
 
 **As a** Payroll Owner
 **I want to** mark an employee as inactive or reactivate them
@@ -249,7 +251,7 @@ TEST: reactivateEmployee sets isActive to true
 
 ---
 
-## US-02.8: Set Date of Resignation
+## US-02.8: Set Date of Resignation ✅
 
 **As a** Payroll Owner
 **I want to** record an employee's resignation date

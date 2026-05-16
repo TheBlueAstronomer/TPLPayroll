@@ -1,8 +1,10 @@
 # F11 — Audit Logging: User Stories
 
+> **Status: ✅ DONE** — All 4 user stories fully implemented.
+
 ---
 
-## US-11.1: Log employee creation
+## US-11.1: Log employee creation ✅
 
 **As a** system
 **I want to** automatically create an audit log when an employee is created
@@ -33,7 +35,7 @@ TEST: createAuditLog stores initial field values
 
 ---
 
-## US-11.2: Log employee updates
+## US-11.2: Log employee updates ✅
 
 **As a** system
 **I want to** create an audit log when an employee's details are updated
@@ -69,7 +71,7 @@ TEST: createUpdateAuditLog includes changeSource for imports
 
 ---
 
-## US-11.3: Log wage changes
+## US-11.3: Log wage changes ✅
 
 **As a** system
 **I want to** create a specific audit log when Salary or Hourly Rate changes
@@ -99,7 +101,7 @@ TEST: createWageChangeAuditLog includes effectiveFrom
 
 ---
 
-## US-11.4: View audit logs
+## US-11.4: View audit logs ✅
 
 **As a** Payroll Owner
 **I want to** view the audit log in the app

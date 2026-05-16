@@ -1,8 +1,10 @@
 # F05 — Payroll Adjustments: User Stories
 
+> **Status: ✅ DONE** — All 6 user stories fully implemented.
+
 ---
 
-## US-05.1: Create a one-time adjustment
+## US-05.1: Create a one-time adjustment ✅
 
 **As a** Payroll Owner
 **I want to** create a one-time deduction or addition for an employee for a specific payroll week
@@ -38,7 +40,7 @@ TEST: createOneTimeAdjustment accepts decimal amounts
 
 ---
 
-## US-05.2: Create a recurring adjustment
+## US-05.2: Create a recurring adjustment ✅
 
 **As a** Payroll Owner
 **I want to** create a recurring deduction or addition with a specific end condition
@@ -77,7 +79,7 @@ TEST: createRecurringAdjustment with total balance
 
 ---
 
-## US-05.3: View adjustments list
+## US-05.3: View adjustments list ✅
 
 **As a** Payroll Owner
 **I want to** see all adjustments across all employees
@@ -111,7 +113,7 @@ TEST: getAdjustmentsList filters by type
 
 ---
 
-## US-05.4: Approve adjustment during weekly review
+## US-05.4: Approve adjustment during weekly review ✅
 
 **As a** Payroll Owner
 **I want to** approve a pending adjustment so it is applied to the current week's payroll
@@ -148,7 +150,7 @@ TEST: approveAdjustmentApplication completes exhausted balance
 
 ---
 
-## US-05.5: Skip adjustment during weekly review
+## US-05.5: Skip adjustment during weekly review ✅
 
 **As a** Payroll Owner
 **I want to** skip a pending adjustment so it carries forward to the next week
@@ -180,7 +182,7 @@ TEST: skipAdjustmentApplication carries forward one-time adjustment
 
 ---
 
-## US-05.6: View adjustment detail
+## US-05.6: View adjustment detail ✅
 
 **As a** Payroll Owner
 **I want to** view the full history of a specific adjustment

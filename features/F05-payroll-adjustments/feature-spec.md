@@ -1,5 +1,7 @@
 # F05 — Payroll Adjustments
 
+> **Status: ✅ DONE**
+
 ## Goal
 
 Allow the Payroll Owner to create and manage deductions and additions for employees — both one-time and recurring — so that payroll calculations accurately reflect advances, bonuses, penalties, and other financial adjustments.

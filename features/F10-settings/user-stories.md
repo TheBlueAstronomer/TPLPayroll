@@ -1,8 +1,10 @@
 # F10 — Settings: User Stories
 
+> **Status: ✅ DONE** — All 3 user stories fully implemented.
+
 ---
 
-## US-10.1: View application settings
+## US-10.1: View application settings ✅
 
 **As a** Payroll Owner
 **I want to** view the current application settings
@@ -31,7 +33,7 @@ TEST: getSettings returns defaults when no settings exist
 
 ---
 
-## US-10.2: Update payroll week start day
+## US-10.2: Update payroll week start day ✅
 
 **As a** Payroll Owner
 **I want to** change the payroll week start day
@@ -65,7 +67,7 @@ TEST: getPayrollWeekStartDay returns updated value
 
 ---
 
-## US-10.3: Payroll week start day used in payroll workflow
+## US-10.3: Payroll week start day used in payroll workflow ✅
 
 **As a** Payroll Owner
 **I want to** the payroll week start day setting to affect how the app determines standard payroll weeks

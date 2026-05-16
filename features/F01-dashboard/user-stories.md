@@ -1,8 +1,10 @@
 # F01 — Dashboard: User Stories
 
+> **Status: ✅ DONE** — All 5 user stories fully implemented.
+
 ---
 
-## US-01.1: View active employee count
+## US-01.1: View active employee count ✅
 
 **As a** Payroll Owner
 **I want to** see the current number of active employees on the Dashboard
@@ -36,7 +38,7 @@ TEST: countActiveEmployees excludes inactive employees
 
 ---
 
-## US-01.2: View latest payroll total
+## US-01.2: View latest payroll total ✅
 
 **As a** Payroll Owner
 **I want to** see the net payable total from the most recent approved payroll run
@@ -70,7 +72,7 @@ TEST: getLatestPayrollTotal uses the current revision total
 
 ---
 
-## US-01.3: View pending attendance errors
+## US-01.3: View pending attendance errors ✅
 
 **As a** Payroll Owner
 **I want to** see how many attendance uploads have unresolved blocking errors
@@ -98,7 +100,7 @@ TEST: countPendingAttendanceErrors returns 0 when all uploads are clean
 
 ---
 
-## US-01.4: View pending adjustment approvals
+## US-01.4: View pending adjustment approvals ✅
 
 **As a** Payroll Owner
 **I want to** see how many payroll adjustments await weekly approval
@@ -125,7 +127,7 @@ TEST: countPendingAdjustmentApprovals returns 0 when none pending
 
 ---
 
-## US-01.5: Navigate from Dashboard card to relevant workflow
+## US-01.5: Navigate from Dashboard card to relevant workflow ✅
 
 **As a** Payroll Owner
 **I want to** click a Dashboard card and be taken to the relevant page
