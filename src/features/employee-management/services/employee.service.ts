@@ -120,7 +120,27 @@ export async function createEmployee(input: CreateEmployeeInput): Promise<Employ
         actionType: 'CREATE',
         entityType: 'EMPLOYEE',
         entityId: created.id,
-        detailsJson: { employeeId: created.employeeId, employeeName: created.employeeName },
+        detailsJson: {
+          employeeId: created.employeeId,
+          employeeName: created.employeeName,
+          designation: created.designation,
+          designationShort: created.designationShort ?? null,
+          nationalId: created.nationalId ?? null,
+          aadhaarId: created.aadhaarId ?? null,
+          policeVerificationId: created.policeVerificationId ?? null,
+          phone: created.phone ?? null,
+          dateOfBirth: created.dateOfBirth ?? null,
+          dateOfJoining: created.dateOfJoining ?? null,
+          site: created.site ?? null,
+          healthCardId: created.healthCardId ?? null,
+          gPay: created.gPay ?? null,
+          bankAccount: created.bankAccount ?? null,
+          dateOfResignation: created.dateOfResignation ?? null,
+          isActive: created.isActive,
+          salary: parsed.data.salary,
+          hourlyRate: parsed.data.hourlyRate,
+          changeSource: 'MANUAL',
+        },
       },
     })
 
@@ -236,6 +256,30 @@ export async function updateEmployee(
 
   const today = new Date()
 
+  const nonWageFields = [
+    'employeeName', 'designation', 'designationShort', 'nationalId', 'aadhaarId',
+    'policeVerificationId', 'phone', 'dateOfBirth', 'dateOfJoining', 'site',
+    'healthCardId', 'gPay', 'bankAccount', 'dateOfResignation', 'isActive',
+  ] as const
+
+  const changedFields: Record<string, { old: unknown; new: unknown }> = {}
+
+  for (const field of nonWageFields) {
+    const newValue = parsed.data[field]
+    if (newValue === undefined) continue
+    const oldVal = existing[field]
+    if (String(oldVal) !== String(newValue)) {
+      changedFields[field] = { old: oldVal, new: newValue }
+    }
+  }
+
+  if (salaryChanged && currentWage) {
+    changedFields.salary = { old: Number(currentWage.weeklySalary), new: newSalary }
+  }
+  if (hourlyChanged && currentWage) {
+    changedFields.hourlyRate = { old: Number(currentWage.hourlyRate), new: newHourlyRate }
+  }
+
   const updated = await prisma.$transaction(async (tx) => {
     // 1. Update the employee record
     const updatedEmployee = await tx.employee.update({
@@ -268,7 +312,7 @@ export async function updateEmployee(
       })
 
       // Create new wage history entry
-      await tx.employeeWageHistory.create({
+      const newWageHistory = await tx.employeeWageHistory.create({
         data: {
           employeeId: id,
           weeklySalary: newSalary ?? Number(currentWage.weeklySalary),
@@ -276,6 +320,23 @@ export async function updateEmployee(
           effectiveFrom: today,
           effectiveTo: null,
           changeSource: 'MANUAL',
+        },
+      })
+
+      await tx.auditLog.create({
+        data: {
+          actionType: 'UPDATE',
+          entityType: 'WAGE_HISTORY',
+          entityId: newWageHistory?.id ?? '',
+          detailsJson: {
+            employeeId: id,
+            oldSalary: Number(currentWage.weeklySalary),
+            newSalary: newSalary ?? Number(currentWage.weeklySalary),
+            oldHourlyRate: Number(currentWage.hourlyRate),
+            newHourlyRate: newHourlyRate ?? Number(currentWage.hourlyRate),
+            effectiveFrom: today,
+            changeSource: 'MANUAL',
+          },
         },
       })
     }
@@ -286,7 +347,10 @@ export async function updateEmployee(
         actionType: 'UPDATE',
         entityType: 'EMPLOYEE',
         entityId: id,
-        detailsJson: { changes: parsed.data },
+        detailsJson: {
+          changedFields,
+          changeSource: 'MANUAL',
+        },
       },
     })
 
