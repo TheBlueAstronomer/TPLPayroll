@@ -6,6 +6,9 @@ import {
 } from '@/features/payroll-adjustments/services/adjustment.service'
 import { AdjustmentServiceError } from '@/features/payroll-adjustments/types/adjustment.types'
 
+export const dynamic = 'force-dynamic'
+
+
 interface Props {
   params: Promise<{ id: string }>
 }

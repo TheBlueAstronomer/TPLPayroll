@@ -4,6 +4,9 @@ import { CorrectionFlow } from '@/features/payroll-correction/components/Correct
 import { CorrectionServiceError } from '@/features/payroll-correction/types/correction.types'
 import { AppShell } from '@/components/layout/AppShell'
 
+export const dynamic = 'force-dynamic'
+
+
 interface Props {
   params: Promise<{ payrollRunId: string }>
 }

@@ -4,6 +4,9 @@ import { EmployeeForm } from '@/features/employee-management/components/Employee
 import { getEmployeeById, getEmployeeWageHistory } from '@/features/employee-management/services/employee.service'
 import { EmployeeServiceError } from '@/features/employee-management/types/employee.types'
 
+export const dynamic = 'force-dynamic'
+
+
 interface EditEmployeePageProps {
   params: Promise<{ id: string }>
 }

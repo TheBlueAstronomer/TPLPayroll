@@ -16,6 +16,9 @@ import {
 } from '@/services/dashboard.service'
 import { Suspense } from 'react'
 
+export const dynamic = 'force-dynamic'
+
+
 export const metadata = {
   title: 'Dashboard — TPL Payroll',
   description: 'Overview of key operational metrics for the current payroll period.',

@@ -38,7 +38,7 @@ export function CorrectionFlow({ data, weekLabel }: CorrectionFlowProps) {
   const [error, setError] = useState<string | null>(null)
 
   // Local override of application statuses based on live user actions
-  const [appStatusOverrides, setAppStatusOverrides] = useState<Record<string, 'APPROVED' | 'SKIPPED'>>({})
+  const [appStatusOverrides, setAppStatusOverrides] = useState<Partial<Record<string, 'APPROVED' | 'SKIPPED'>>>({})
 
   const correctionOptions: { type: CorrectionType; label: string; description: string }[] = [
     { type: 'ADJUSTMENTS', label: 'Adjustments', description: 'Modify deductions or additions' },
@@ -105,7 +105,7 @@ export function CorrectionFlow({ data, weekLabel }: CorrectionFlowProps) {
   // Compute effective listing including local changes
   const displayedAdjustments = data.adjustmentApplications.map((a) => ({
     ...a,
-    effectiveStatus: appStatusOverrides[a.applicationId] || a.approvalStatus,
+    effectiveStatus: appStatusOverrides[a.applicationId] ?? a.approvalStatus,
   }))
 
   return (

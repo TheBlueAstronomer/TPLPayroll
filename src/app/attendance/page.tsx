@@ -4,6 +4,9 @@ import type { InitialDialogState } from '@/features/attendance-upload/components
 import { getAttendanceUploadsAction } from '@/features/attendance-upload/actions/attendance.actions'
 import { resumeAttendanceUploadSessionAction } from '@/features/attendance-upload/actions/session.actions'
 
+export const dynamic = 'force-dynamic'
+
+
 export const metadata = {
   title: 'Attendance Upload — TPL Payroll',
 }

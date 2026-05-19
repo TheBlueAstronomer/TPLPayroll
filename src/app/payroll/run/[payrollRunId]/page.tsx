@@ -10,6 +10,9 @@ import {
 import { beginPayrollCorrectionAction } from '@/features/payroll-correction/actions/correction.actions'
 import { AppShell } from '@/components/layout/AppShell'
 
+export const dynamic = 'force-dynamic'
+
+
 interface Props {
   params: Promise<{ payrollRunId: string }>
 }

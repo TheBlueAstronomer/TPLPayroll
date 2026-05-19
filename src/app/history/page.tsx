@@ -9,6 +9,8 @@ import {
   getApprovedPayrollWeeks
 } from '@/features/payroll-history/services/payroll-history.service'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Payroll History — TPL Payroll',
   description: 'View historical payroll data',

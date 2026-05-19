@@ -2,6 +2,9 @@ import { Suspense } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { PayrollWeekList } from '@/features/payroll-generation/components/PayrollWeekList'
 
+export const dynamic = 'force-dynamic'
+
+
 export const metadata = {
   title: 'Payroll Generation — TPL Payroll',
 }

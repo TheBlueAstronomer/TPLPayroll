@@ -4,6 +4,9 @@ import { AppShell } from '@/components/layout/AppShell'
 import { PayrollRecordDetailView } from '@/features/payroll-history/components/PayrollRecordDetailView'
 import { getPayrollRecordDetail } from '@/features/payroll-history/services/payroll-history.service'
 
+export const dynamic = 'force-dynamic'
+
+
 interface PageProps {
   params: Promise<{ recordId: string }>
 }

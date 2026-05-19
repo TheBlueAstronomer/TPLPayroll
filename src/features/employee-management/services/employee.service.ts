@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
 import {
   CreateEmployeeSchema,
   UpdateEmployeeSchema,
@@ -355,7 +356,7 @@ export async function updateEmployee(
         detailsJson: {
           changedFields,
           changeSource: 'MANUAL',
-        },
+        } as Prisma.InputJsonValue,
       },
     })
 

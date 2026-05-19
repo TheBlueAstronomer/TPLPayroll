@@ -4,6 +4,9 @@ import { getRevisionEmployees, getRevisionHistory } from '@/features/payroll-cor
 import { RevisedPreview } from '@/features/payroll-correction/components/RevisedPreview'
 import { AppShell } from '@/components/layout/AppShell'
 
+export const dynamic = 'force-dynamic'
+
+
 interface Props {
   params: Promise<{ payrollRunId: string }>
 }

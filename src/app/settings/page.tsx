@@ -3,6 +3,9 @@ import { SettingsForm } from '@/features/settings/components/SettingsForm'
 import { getSettingsAction } from '@/features/settings/actions/settings.actions'
 import type { AppSettings } from '@/features/settings/types/settings.types'
 
+export const dynamic = 'force-dynamic'
+
+
 export const metadata = { title: 'Settings — TPL Payroll' }
 
 const DEFAULT_SETTINGS: AppSettings = {
