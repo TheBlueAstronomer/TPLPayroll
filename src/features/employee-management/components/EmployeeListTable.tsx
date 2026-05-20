@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useTransition, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { MagnifyingGlass, UsersThree, WarningCircle, Plus, CaretLeft, CaretRight, UploadSimple, DownloadSimple, CaretDown, SpinnerGap } from '@phosphor-icons/react'
+import { MagnifyingGlass, UsersThree, WarningCircle, Plus, CaretLeft, CaretRight, UploadSimple, DownloadSimple, CaretDown, CaretUp, SpinnerGap } from '@phosphor-icons/react'
+import { computePageRange } from '../utils/computePageRange'
 import { StatusBadge } from './StatusBadge'
 import { SkeletonRows } from './SkeletonRows'
 import { BulkActionToolbar } from './BulkActionToolbar'
@@ -10,8 +11,8 @@ import { BulkStatusDialog } from './BulkStatusDialog'
 import { BulkInactiveDialog } from './BulkInactiveDialog'
 import { BulkRateDialog } from './BulkRateDialog'
 import { ImportDialog } from '@/features/employee-import-export/components/ImportDialog'
-import { getEmployeeListAction } from '@/features/employee-management/actions/employee.actions'
-import type { EmployeeListItem, EmployeeStatus } from '@/features/employee-management/types/employee.types'
+import { getEmployeeListAction, getDistinctDesignationsAction, getDistinctSitesAction } from '@/features/employee-management/actions/employee.actions'
+import type { EmployeeListItem, EmployeeStatus, SortableField } from '@/features/employee-management/types/employee.types'
 
 type StatusFilter = 'ALL' | EmployeeStatus
 type BulkDialog = 'resigned' | 'inactive' | 'rate' | null
@@ -35,6 +36,15 @@ export function EmployeeListTable() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusFilter>('ALL')
+  const [designation, setDesignation] = useState('ALL')
+  const [site, setSite] = useState('ALL')
+  
+  const [designations, setDesignations] = useState<string[]>([])
+  const [sites, setSites] = useState<string[]>([])
+  
+  const [sortBy, setSortBy] = useState<SortableField>('employeeName')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+
   const [loadState, setLoadState] = useState<'loading' | 'loaded' | 'error'>('loading')
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [showImportMenu, setShowImportMenu] = useState(false)
@@ -46,6 +56,19 @@ export function EmployeeListTable() {
   const headerCheckboxRef = useRef<HTMLInputElement>(null)
 
   // Sync indeterminate state on the header checkbox
+  // Fetch distinct filters
+  useEffect(() => {
+    async function fetchFilters() {
+      const [desigRes, siteRes] = await Promise.all([
+        getDistinctDesignationsAction(),
+        getDistinctSitesAction(),
+      ])
+      if (desigRes.ok) setDesignations(desigRes.data)
+      if (siteRes.ok) setSites(siteRes.data)
+    }
+    fetchFilters()
+  }, [])
+
   useEffect(() => {
     if (!headerCheckboxRef.current) return
     const someSelected = selectedIds.size > 0
@@ -56,17 +79,21 @@ export function EmployeeListTable() {
   // Clear selections when search, status filter, or page changes
   useEffect(() => {
     setSelectedIds(new Set())
-  }, [search, status, page])
+  }, [search, status, designation, site, sortBy, sortOrder, page])
 
   // ── Data fetching ─────────────────────────────────────────────────────────
   const fetchEmployees = useCallback(
-    async (opts: { page: number; search: string; status: StatusFilter }) => {
+    async (opts: { page: number; search: string; status: StatusFilter; designation: string; site: string; sortBy: SortableField; sortOrder: 'asc'|'desc' }) => {
       setLoadState('loading')
       const result = await getEmployeeListAction({
         page: opts.page,
         limit: PAGE_SIZE,
         search: opts.search || undefined,
         status: opts.status === 'ALL' ? undefined : opts.status,
+        designation: opts.designation === 'ALL' ? undefined : opts.designation,
+        site: opts.site === 'ALL' ? undefined : opts.site,
+        sortBy: opts.sortBy,
+        sortOrder: opts.sortOrder,
       })
       if (result.ok) {
         setEmployees(result.data.employees)
@@ -83,17 +110,17 @@ export function EmployeeListTable() {
   useEffect(() => {
     const timer = setTimeout(() => {
       startTransition(() => {
-        fetchEmployees({ page: 1, search, status })
+        fetchEmployees({ page: 1, search, status, designation, site, sortBy, sortOrder })
         setPage(1)
       })
     }, 300)
     return () => clearTimeout(timer)
-  }, [search, status, fetchEmployees])
+  }, [search, status, designation, site, sortBy, sortOrder, fetchEmployees])
 
   // Page change (immediate)
   useEffect(() => {
     startTransition(() => {
-      fetchEmployees({ page, search, status })
+      fetchEmployees({ page, search, status, designation, site, sortBy, sortOrder })
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
@@ -129,15 +156,45 @@ export function EmployeeListTable() {
     setOpenDialog(null)
     setSelectedIds(new Set())
     startTransition(() => {
-      fetchEmployees({ page, search, status })
+      fetchEmployees({ page, search, status, designation, site, sortBy, sortOrder })
     })
-  }, [page, search, status, fetchEmployees])
+  }, [page, search, status, designation, site, sortBy, sortOrder, fetchEmployees])
 
   const handleBulkClose = useCallback(() => {
     setOpenDialog(null)
   }, [])
 
   const selectedEmployees = employees.filter((e) => selectedIds.has(e.id))
+
+  // ── Sort handlers ─────────────────────────────────────────────────────────
+  const handleSort = (column: SortableField) => {
+    setPage(1)
+    if (sortBy === column) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(column)
+      setSortOrder('asc')
+    }
+  }
+
+  const renderSortHeader = (label: string, field: SortableField) => {
+    const isActive = sortBy === field
+    return (
+      <th className="px-4 py-3 text-left">
+        <button
+          onClick={() => handleSort(field)}
+          className={`inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors duration-200 active:scale-[0.98] ${
+            isActive ? 'text-zinc-700' : 'text-zinc-400 hover:text-zinc-500'
+          }`}
+        >
+          {label}
+          {isActive && (
+            sortOrder === 'asc' ? <CaretUp size={12} className="text-emerald-600" /> : <CaretDown size={12} className="text-emerald-600" />
+          )}
+        </button>
+      </th>
+    )
+  }
 
   // ── Export ────────────────────────────────────────────────────────────────
   const handleExport = useCallback(async () => {
@@ -224,7 +281,7 @@ export function EmployeeListTable() {
       </div>
 
       {/* ── Filter bar ──────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
         {/* Search */}
         <div className="relative flex-1">
           <MagnifyingGlass
@@ -241,12 +298,38 @@ export function EmployeeListTable() {
           />
         </div>
 
+        {/* Designation filter */}
+        <select
+          id="employee-designation-filter"
+          value={designation}
+          onChange={(e) => { setDesignation(e.target.value); setPage(1) }}
+          className="w-full md:w-[180px] px-3 py-2 text-sm rounded-xl border border-zinc-200/60 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-zinc-900 transition-colors duration-200"
+        >
+          <option value="ALL">All Designations</option>
+          {designations.map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
+
+        {/* Site filter */}
+        <select
+          id="employee-site-filter"
+          value={site}
+          onChange={(e) => { setSite(e.target.value); setPage(1) }}
+          className="w-full md:w-[180px] px-3 py-2 text-sm rounded-xl border border-zinc-200/60 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-zinc-900 transition-colors duration-200"
+        >
+          <option value="ALL">All Sites</option>
+          {sites.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+
         {/* Status filter */}
         <select
           id="employee-status-filter"
           value={status}
           onChange={(e) => { setStatus(e.target.value as StatusFilter); setPage(1) }}
-          className="w-[180px] px-3 py-2 text-sm rounded-xl border border-zinc-200/60 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-zinc-900 transition-colors duration-200"
+          className="w-full md:w-[180px] px-3 py-2 text-sm rounded-xl border border-zinc-200/60 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-zinc-900 transition-colors duration-200"
         >
           {STATUS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -274,21 +357,11 @@ export function EmployeeListTable() {
                   id="bulk-select-all"
                 />
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                ID
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                Name
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                Designation
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                Site
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                Status
-              </th>
+              {renderSortHeader('ID', 'employeeId')}
+              {renderSortHeader('Name', 'employeeName')}
+              {renderSortHeader('Designation', 'designation')}
+              {renderSortHeader('Site', 'site')}
+              {renderSortHeader('Status', 'status')}
             </tr>
           </thead>
 
@@ -302,7 +375,7 @@ export function EmployeeListTable() {
                     <WarningCircle size={40} className="text-zinc-300" />
                     <p className="text-sm font-medium text-zinc-600">Failed to load employees</p>
                     <button
-                      onClick={() => fetchEmployees({ page, search, status })}
+                      onClick={() => fetchEmployees({ page, search, status, designation, site, sortBy, sortOrder })}
                       className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
                     >
                       Try again
@@ -394,12 +467,22 @@ export function EmployeeListTable() {
               <CaretLeft size={16} />
             </button>
 
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const p = i + 1
+            {computePageRange(page, totalPages).map((p, i) => {
+              if (p === 'ellipsis') {
+                return (
+                  <span
+                    key={`ellipsis-${i}`}
+                    className="w-8 h-8 inline-flex items-center justify-center text-sm text-zinc-300 cursor-default select-none"
+                    aria-hidden="true"
+                  >
+                    ...
+                  </span>
+                )
+              }
               return (
                 <button
                   key={p}
-                  onClick={() => setPage(p)}
+                  onClick={() => setPage(p as number)}
                   className={`w-8 h-8 text-sm rounded-lg font-medium transition-colors ${
                     p === page
                       ? 'bg-emerald-50 text-emerald-700'
