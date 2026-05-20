@@ -65,11 +65,17 @@ export interface BulkOperationResult {
 
 // ─── List / pagination ────────────────────────────────────────────────────────
 
+export type SortableField = 'employeeId' | 'employeeName' | 'designation' | 'site' | 'status'
+
 export interface EmployeeListOptions {
   page?: number
   limit?: number
   search?: string
   status?: EmployeeStatus | 'ALL'
+  sortBy?: SortableField
+  sortOrder?: 'asc' | 'desc'
+  designation?: string
+  site?: string
 }
 
 export interface EmployeeListItem {

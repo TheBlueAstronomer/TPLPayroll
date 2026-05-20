@@ -56,6 +56,14 @@ function buildWhereClause(options: EmployeeListOptions) {
     ]
   }
 
+  if (options.designation && options.designation !== 'ALL') {
+    where.designation = options.designation
+  }
+
+  if (options.site && options.site !== 'ALL') {
+    where.site = options.site
+  }
+
   return where
 }
 
@@ -165,11 +173,24 @@ export async function getEmployeeList(options: EmployeeListOptions): Promise<Pag
 
   const where = buildWhereClause(options)
 
+  const orderDirection = options.sortOrder === 'desc' ? 'desc' : 'asc'
+  let orderBy: Prisma.EmployeeOrderByWithRelationInput | Prisma.EmployeeOrderByWithRelationInput[] = { employeeName: 'asc' }
+
+  if (options.sortBy) {
+    if (options.sortBy === 'status') {
+      orderBy = orderDirection === 'asc' 
+        ? [{ dateOfResignation: 'asc' }, { isActive: 'desc' }]
+        : [{ dateOfResignation: 'desc' }, { isActive: 'asc' }]
+    } else {
+      orderBy = { [options.sortBy]: orderDirection }
+    }
+  }
+
   const [totalCount, rows] = await Promise.all([
     prisma.employee.count({ where }),
     prisma.employee.findMany({
       where,
-      orderBy: { employeeName: 'asc' },
+      orderBy,
       skip,
       take: limit,
       select: {
@@ -541,4 +562,26 @@ export async function bulkUpdateHourlyRate(input: BulkHourlyRateUpdateInput): Pr
   }
 
   return result
+}
+
+// ─── Filters (Distinct Values) ────────────────────────────────────────────────
+
+export async function getDistinctDesignations(): Promise<string[]> {
+  const result = await prisma.employee.findMany({
+    select: { designation: true },
+    distinct: ['designation'],
+    where: { designation: { not: '' } },
+    orderBy: { designation: 'asc' },
+  })
+  return result.map(r => r.designation).filter(Boolean) as string[]
+}
+
+export async function getDistinctSites(): Promise<string[]> {
+  const result = await prisma.employee.findMany({
+    select: { site: true },
+    distinct: ['site'],
+    where: { site: { not: null } },
+    orderBy: { site: 'asc' },
+  })
+  return result.map(r => r.site).filter(Boolean) as string[]
 }

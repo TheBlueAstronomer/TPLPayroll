@@ -30,6 +30,8 @@ import {
   getEmployeeById,
   getEmployeeWageHistory,
   updateEmployee,
+  getDistinctDesignations,
+  getDistinctSites,
 } from '@/features/employee-management/services/employee.service'
 import { EmployeeServiceError } from '@/features/employee-management/types/employee.types'
 
@@ -652,5 +654,179 @@ describe('updateEmployee — resignation date', () => {
     const result = await updateEmployee('uuid-1', { dateOfResignation: new Date('2025-06-15') })
 
     expect(result.dateOfResignation).toEqual(new Date('2025-06-15'))
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-E02.1 - US-E02.2: Sorting
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('getEmployeeList — sorting', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(prisma.employee.count).mockResolvedValue(0)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue([])
+  })
+
+  it('sorts by employeeId ascending when sortBy=employeeId, sortOrder=asc', async () => {
+    await getEmployeeList({ sortBy: 'employeeId', sortOrder: 'asc' })
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: { employeeId: 'asc' } })
+    )
+  })
+
+  it('sorts by designation descending', async () => {
+    await getEmployeeList({ sortBy: 'designation', sortOrder: 'desc' })
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: { designation: 'desc' } })
+    )
+  })
+
+  it('defaults to employeeName ascending when no sort specified', async () => {
+    await getEmployeeList({})
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: { employeeName: 'asc' } })
+    )
+  })
+
+  it('sorts by site ascending', async () => {
+    await getEmployeeList({ sortBy: 'site', sortOrder: 'asc' })
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: { site: 'asc' } })
+    )
+  })
+
+  it('sorts by status ascending: ACTIVE before INACTIVE before RESIGNED', async () => {
+    await getEmployeeList({ sortBy: 'status', sortOrder: 'asc' })
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [
+          { dateOfResignation: 'asc' },
+          { isActive: 'desc' }
+        ]
+      })
+    )
+  })
+
+  it('sorts by status descending: RESIGNED before INACTIVE before ACTIVE', async () => {
+    await getEmployeeList({ sortBy: 'status', sortOrder: 'desc' })
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [
+          { dateOfResignation: 'desc' },
+          { isActive: 'asc' }
+        ]
+      })
+    )
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-E02.5 - US-E02.6: Distinct filter values
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('getDistinctDesignations', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns sorted unique designation strings', async () => {
+    vi.mocked(prisma.employee.findMany).mockResolvedValue([
+      { designation: 'Guard' } as any,
+      { designation: 'Manager' } as any,
+      { designation: 'Supervisor' } as any,
+    ])
+    const result = await getDistinctDesignations()
+    expect(result).toEqual(['Guard', 'Manager', 'Supervisor'])
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: { designation: true },
+        distinct: ['designation'],
+        orderBy: { designation: 'asc' },
+      })
+    )
+  })
+})
+
+describe('getDistinctSites', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns sorted unique non-null site strings', async () => {
+    vi.mocked(prisma.employee.findMany).mockResolvedValue([
+      { site: 'North Gate' } as any,
+      { site: 'South Gate' } as any,
+    ])
+    const result = await getDistinctSites()
+    expect(result).toEqual(['North Gate', 'South Gate'])
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: { site: true },
+        distinct: ['site'],
+        where: { site: { not: null } },
+        orderBy: { site: 'asc' },
+      })
+    )
+  })
+
+  it('returns empty array when all sites are null', async () => {
+    vi.mocked(prisma.employee.findMany).mockResolvedValue([
+      { site: null } as any,
+      { site: null } as any,
+    ])
+    const result = await getDistinctSites()
+    expect(result).toEqual([])
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-E02.7 - US-E02.9: Filtering
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('getEmployeeList — filtering', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(prisma.employee.count).mockResolvedValue(0)
+    vi.mocked(prisma.employee.findMany).mockResolvedValue([])
+  })
+
+  it('filters by designation', async () => {
+    await getEmployeeList({ designation: 'Guard' })
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ designation: 'Guard' })
+      })
+    )
+  })
+
+  it('filters by site', async () => {
+    await getEmployeeList({ site: 'North Gate' })
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ site: 'North Gate' })
+      })
+    )
+  })
+
+  it('designation + site + status + search all combine in the where clause', async () => {
+    await getEmployeeList({
+      designation: 'Guard',
+      site: 'North Gate',
+      status: 'ACTIVE',
+      search: 'Ravi'
+    })
+    expect(prisma.employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          designation: 'Guard',
+          site: 'North Gate',
+          isActive: true,
+          OR: expect.arrayContaining([
+            expect.objectContaining({ employeeName: expect.any(Object) })
+          ])
+        })
+      })
+    )
   })
 })

@@ -8,6 +8,8 @@ import {
   updateEmployee,
   bulkUpdateStatus,
   bulkUpdateHourlyRate,
+  getDistinctDesignations,
+  getDistinctSites,
 } from '@/features/employee-management/services/employee.service'
 import {
   EmployeeServiceError,
@@ -78,6 +80,26 @@ export async function getEmployeeListAction(
 ): Promise<ActionResult<PaginatedEmployeeList>> {
   try {
     const list = await getEmployeeList(options)
+    return ok(list)
+  } catch (e) {
+    return handleError(e)
+  }
+}
+
+// ─── Filter Distinct Values ───────────────────────────────────────────────────
+
+export async function getDistinctDesignationsAction(): Promise<ActionResult<string[]>> {
+  try {
+    const list = await getDistinctDesignations()
+    return ok(list)
+  } catch (e) {
+    return handleError(e)
+  }
+}
+
+export async function getDistinctSitesAction(): Promise<ActionResult<string[]>> {
+  try {
+    const list = await getDistinctSites()
     return ok(list)
   } catch (e) {
     return handleError(e)
