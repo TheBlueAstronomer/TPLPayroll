@@ -1,4 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+
+vi.mock('fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('fs')>()
+  return {
+    ...actual,
+    default: { ...actual, existsSync: vi.fn(), unlinkSync: vi.fn() },
+    existsSync: vi.fn(),
+    unlinkSync: vi.fn(),
+  }
+})
+
 import { replaceAttendanceUpload } from './upload.service'
 import prisma from '@/lib/prisma'
 import * as fs from 'fs'
@@ -47,8 +58,8 @@ describe('upload.service - replaceAttendanceUpload', () => {
     }
 
     // Mock fs calls
-    const existsSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(true)
-    const unlinkSpy = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {})
+    const existsSpy = vi.mocked(fs.existsSync).mockReturnValue(true)
+    const unlinkSpy = vi.mocked(fs.unlinkSync).mockImplementation(() => {})
 
     // Mock Prisma Transaction
     // We need to mock the $transaction method and the functions inside it
@@ -114,8 +125,8 @@ describe('upload.service - replaceAttendanceUpload', () => {
       payrollWeekStartISO: '2025-05-01',
     }
 
-    const existsSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(false)
-    const unlinkSpy = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {})
+    const existsSpy = vi.mocked(fs.existsSync).mockReturnValue(false)
+    const unlinkSpy = vi.mocked(fs.unlinkSync).mockImplementation(() => {})
     
     const mockTx = {
       attendanceUpload: {

@@ -6,9 +6,10 @@ const connectionString = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE
 
 const pool = new Pool({
   connectionString,
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  max: 2,
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 10000,
+  ssl: connectionString.includes('supabase') ? { rejectUnauthorized: false } : undefined,
 })
 
 const adapter = new PrismaPg(pool)
