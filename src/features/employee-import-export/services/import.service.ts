@@ -295,7 +295,8 @@ export async function executeImport(
             },
             select: { id: true, employeeId: true },
           })
-        )
+        ),
+        { timeout: 30000 } // 30 seconds to handle large bulk imports
       )
 
       results.forEach((created, i) => {
@@ -372,7 +373,8 @@ export async function executeImport(
                 employeeImportBatchId: batch.id,
               },
             })
-          })
+          }),
+        { timeout: 30000 } // 30 seconds to handle large bulk imports
       )
       updatedCount = existingEmployees.length
 
