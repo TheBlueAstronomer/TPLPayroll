@@ -112,7 +112,7 @@ function setupSessionStorage(overrides: Partial<ParseImportResult> = {}): ParseI
 
   sessionStorage.setItem(
     'importPreviewData',
-    JSON.stringify({ parseResult, tempPath: '/tmp/test.xlsx', fileName: 'test.xlsx' })
+    JSON.stringify({ parseResult, fileBase64: 'mock-base64', fileName: 'test.xlsx' })
   )
 
   return parseResult

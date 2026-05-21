@@ -26,7 +26,7 @@ import type {
 
 interface StoredPreviewData {
   parseResult: ParseImportResult
-  tempPath: string
+  fileBase64: string
   fileName: string
 }
 
@@ -404,7 +404,7 @@ export function ImportPreviewClient() {
     const fixedRows = validRows.filter((r) => r.source === 'fixed')
 
     startTransition(async () => {
-      const result = await executeImportAction(previewData.tempPath, previewData.fileName, fixedRows)
+      const result = await executeImportAction(previewData.fileBase64, previewData.fileName, fixedRows)
       if (!result.ok) {
         setImportError(result.error)
         return
