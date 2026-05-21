@@ -96,7 +96,7 @@ function setupSessionStorage(overrides: Partial<ParseImportResult> = {}): ParseI
 
   sessionStorage.setItem(
     'importPreviewData',
-    JSON.stringify({ parseResult, tempPath: '/tmp/test.xlsx', fileName: 'test.xlsx' })
+    JSON.stringify({ parseResult, fileBase64: 'mock-base64', fileName: 'test.xlsx' })
   )
 
   return parseResult
@@ -278,9 +278,9 @@ describe('ImportPreviewClient', () => {
       expect(executeImportAction).toHaveBeenCalledTimes(1)
       // executeImportAction should receive the fixedRows
       const callArgs = vi.mocked(executeImportAction).mock.calls[0]
-      // The action receives tempPath, fileName, and optionally fixedRows
+      // The action receives fileBase64, fileName, and optionally fixedRows
       // Based on spec: executeImportAction is called with fixedRows = [fixedRow]
-      expect(callArgs).toContain('/tmp/test.xlsx')
+      expect(callArgs).toContain('mock-base64')
     })
 
     it('calls executeImportAction with fixedRows array containing only fixed rows', async () => {

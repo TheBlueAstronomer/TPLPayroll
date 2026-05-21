@@ -1,8 +1,5 @@
 'use server'
 
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { tmpdir } from 'os'
 import { validateImportFile, parseImportFile, executeImport } from '@/features/employee-import-export/services/import.service'
 import { ImportExportServiceError } from '@/features/employee-import-export/types/import-export.types'
 import type { ParseImportResult, ExecuteImportResult, ValidImportRow } from '@/features/employee-import-export/types/import-export.types'
@@ -17,7 +14,7 @@ export type ActionResult<T> =
 
 export async function parseImportFileAction(
   formData: FormData
-): Promise<ActionResult<{ parseResult: ParseImportResult; tempPath: string; fileName: string }>> {
+): Promise<ActionResult<{ parseResult: ParseImportResult; fileBase64: string; fileName: string }>> {
   const file = formData.get('file') as File | null
   if (!file) return { ok: false, error: 'No file provided', code: 'MISSING_FILE' }
 
@@ -34,27 +31,21 @@ export async function parseImportFileAction(
   }
 
   const parseResult = await parseImportFile(buffer)
+  const fileBase64 = buffer.toString('base64')
 
-  // Save buffer to a temp file — the path is passed to executeImportAction for cleanup
-  const tmpDir = join(tmpdir(), 'tpl-payroll-imports')
-  await mkdir(tmpDir, { recursive: true })
-  const tempPath = join(tmpDir, `import-${Date.now()}-${file.name}`)
-  await writeFile(tempPath, buffer)
-
-  return { ok: true, data: { parseResult, tempPath, fileName: file.name } }
+  return { ok: true, data: { parseResult, fileBase64, fileName: file.name } }
 }
 
 // ─── executeImportAction ───────────────────────────────────────────────────────
 
 export async function executeImportAction(
-  tempPath: string,
+  fileBase64: string,
   fileName: string,
   fixedRows: ValidImportRow[] = []
 ): Promise<ActionResult<ExecuteImportResult>> {
   try {
-    const { readFile } = await import('fs/promises')
-    const buffer = await readFile(tempPath)
-    const result = await executeImport(buffer, fileName, tempPath, fixedRows)
+    const buffer = Buffer.from(fileBase64, 'base64')
+    const result = await executeImport(buffer, fileName, '', fixedRows)
     return { ok: true, data: result }
   } catch (err) {
     console.error('[ImportError] executeImportAction failed:', err)
@@ -64,3 +55,4 @@ export async function executeImportAction(
     return { ok: false, error: 'Import failed. Please try again.' }
   }
 }
+

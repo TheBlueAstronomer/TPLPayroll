@@ -85,7 +85,7 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
         'importPreviewData',
         JSON.stringify({
           parseResult: result.data.parseResult,
-          tempPath: result.data.tempPath,
+          fileBase64: result.data.fileBase64,
           fileName: result.data.fileName,
         })
       )
