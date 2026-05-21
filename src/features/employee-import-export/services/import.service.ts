@@ -1,5 +1,4 @@
 import * as XLSX from 'xlsx'
-import { existsSync, unlinkSync } from 'fs'
 import prisma from '@/lib/prisma'
 import {
   IMPORT_SHEET_NAME,
@@ -362,7 +361,7 @@ async function applyRowToDb(
 export async function executeImport(
   buffer: Buffer,
   fileName: string,
-  filePath: string,
+  _filePath: string,
   fixedRows: ValidImportRow[] = []
 ): Promise<ExecuteImportResult> {
   const { validRows: parsedValidRows, invalidRows, duplicateIdRows } = await parseImportFile(buffer)
@@ -411,11 +410,9 @@ export async function executeImport(
         sourceFileDeletedAt: today,
       },
     })
-  })
+  }, { timeout: 30000 })
 
-  if (existsSync(filePath)) {
-    unlinkSync(filePath)
-  }
+
 
   return {
     batchId: batch.id,

@@ -48,7 +48,12 @@ export async function executeImportAction(
     const result = await executeImport(buffer, fileName, '', fixedRows)
     return { ok: true, data: result }
   } catch (err) {
-    console.error('[ImportError] executeImportAction failed:', err)
+    const e = err as Error & { code?: string; meta?: unknown }
+    console.error('[ImportError] name:', e?.name)
+    console.error('[ImportError] message:', e?.message)
+    console.error('[ImportError] code:', e?.code)
+    console.error('[ImportError] stack:', e?.stack)
+    if (e?.meta) console.error('[ImportError] meta:', JSON.stringify(e.meta))
     if (err instanceof ImportExportServiceError) {
       return { ok: false, error: err.message, code: err.code }
     }
