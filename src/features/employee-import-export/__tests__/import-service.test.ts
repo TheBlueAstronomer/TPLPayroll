@@ -286,7 +286,11 @@ describe('executeImport', () => {
 
     const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
-        employee: { create: vi.fn().mockResolvedValue(makeEmployee()), update: vi.fn().mockResolvedValue(makeEmployee()) },
+        employee: {
+          create: vi.fn().mockResolvedValue(makeEmployee()),
+          update: vi.fn().mockResolvedValue(makeEmployee()),
+          findMany: vi.fn().mockResolvedValue([]),
+        },
         employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
         employeeImportBatch: { update: vi.fn() },
         auditLog: { create: vi.fn() },
@@ -313,7 +317,11 @@ describe('executeImport', () => {
 
     const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
-        employee: { create: vi.fn().mockResolvedValue(makeEmployee()), update: vi.fn().mockResolvedValue(makeEmployee({ phone: '222' })) },
+        employee: {
+          create: vi.fn().mockResolvedValue(makeEmployee()),
+          update: vi.fn().mockResolvedValue(makeEmployee({ phone: '222' })),
+          findMany: vi.fn().mockResolvedValue([{ id: 'uuid-1' }]),
+        },
         employeeWageHistory: { create: vi.fn(), updateMany: vi.fn(), findMany: vi.fn().mockResolvedValue([makeWageHistory()]) },
         employeeImportBatch: { update: vi.fn() },
         auditLog: { create: vi.fn() },
@@ -346,7 +354,11 @@ describe('executeImport', () => {
 
     const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
-        employee: { create: vi.fn(), update: vi.fn().mockResolvedValue(makeEmployee()) },
+        employee: {
+          create: vi.fn(),
+          update: vi.fn().mockResolvedValue(makeEmployee()),
+          findMany: vi.fn().mockResolvedValue([{ id: 'uuid-1' }]),
+        },
         employeeWageHistory: { create: wageHistoryCreate, updateMany: wageHistoryUpdateMany, findMany: wageHistoryFindMany },
         employeeImportBatch: { update: vi.fn() },
         auditLog: { create: vi.fn() },
@@ -373,7 +385,11 @@ describe('executeImport', () => {
 
     const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
-        employee: { create: vi.fn().mockResolvedValue(makeEmployee()), update: vi.fn() },
+        employee: {
+          create: vi.fn().mockResolvedValue(makeEmployee()),
+          update: vi.fn(),
+          findMany: vi.fn().mockResolvedValue([]),
+        },
         employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
         employeeImportBatch: { update: vi.fn() },
         auditLog: { create: vi.fn() },
@@ -408,7 +424,12 @@ describe('executeImport', () => {
 
     const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
-        employee: { create: employeeCreate, update: employeeUpdate, findUnique: vi.fn().mockResolvedValue(null) },
+        employee: {
+          create: employeeCreate,
+          update: employeeUpdate,
+          findUnique: vi.fn().mockResolvedValue(null),
+          findMany: vi.fn().mockResolvedValue([]),
+        },
         employeeWageHistory: { create: vi.fn(), updateMany: vi.fn(), findMany: vi.fn().mockResolvedValue([]) },
         employeeImportBatch: { update: vi.fn() },
         auditLog: { create: vi.fn() },
@@ -435,7 +456,11 @@ describe('executeImport', () => {
 
     const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
-        employee: { create: vi.fn().mockResolvedValue(makeEmployee()), update: vi.fn() },
+        employee: {
+          create: vi.fn().mockResolvedValue(makeEmployee()),
+          update: vi.fn(),
+          findMany: vi.fn().mockResolvedValue([]),
+        },
         employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
         employeeImportBatch: { update: vi.fn() },
         auditLog: { create: vi.fn() },
@@ -466,7 +491,11 @@ describe('executeImport', () => {
     const batchUpdate = vi.fn()
     const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
-        employee: { create: vi.fn().mockResolvedValue(makeEmployee()), update: vi.fn() },
+        employee: {
+          create: vi.fn().mockResolvedValue(makeEmployee()),
+          update: vi.fn(),
+          findMany: vi.fn().mockResolvedValue([]),
+        },
         employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
         employeeImportBatch: { update: batchUpdate },
         auditLog: { create: vi.fn() },

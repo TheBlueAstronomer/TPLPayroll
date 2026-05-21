@@ -287,7 +287,7 @@ async function applyRowToDb(
   // UPDATE path — or duplicate (alreadyProcessedId exists)
   const existingDbId =
     alreadyProcessedId ??
-    (await prisma.employee
+    (await tx.employee
       .findMany({ where: { employeeId: data.employeeId }, select: { id: true } })
       .then((r) => r[0]?.id ?? null))
 
@@ -401,10 +401,6 @@ export async function executeImport(
       await applyRowToDb(tx, dup.data, dup.action, batch.id, today, processedInFile)
     }
 
-    if (existsSync(filePath)) {
-      unlinkSync(filePath)
-    }
-
     await tx.employeeImportBatch.update({
       where: { id: batch.id },
       data: {
@@ -416,6 +412,10 @@ export async function executeImport(
       },
     })
   })
+
+  if (existsSync(filePath)) {
+    unlinkSync(filePath)
+  }
 
   return {
     batchId: batch.id,

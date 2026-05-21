@@ -57,6 +57,7 @@ export async function executeImportAction(
     const result = await executeImport(buffer, fileName, tempPath, fixedRows)
     return { ok: true, data: result }
   } catch (err) {
+    console.error('[ImportError] executeImportAction failed:', err)
     if (err instanceof ImportExportServiceError) {
       return { ok: false, error: err.message, code: err.code }
     }
