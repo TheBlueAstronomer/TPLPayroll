@@ -13,18 +13,12 @@ vi.mock('@/lib/prisma', () => ({
     attendanceRecord: {
       createMany: vi.fn(),
     },
-    $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
-      fn({
-        attendanceUpload: {
-          findFirst: vi.fn(),
-          create: vi.fn(),
-          update: vi.fn(),
-        },
-        attendanceRecord: {
-          createMany: vi.fn(),
-        },
-      })
-    ),
+    $transaction: vi.fn(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    }),
   },
 }))
 
@@ -90,16 +84,9 @@ describe('replaceAttendanceUpload', () => {
 
   it('deletes the previous file when replacing', async () => {
     const previousUpload = makeUpload({ sourceFilePath: '/tmp/old.xlsx' })
-    vi.mocked(prisma.$transaction).mockImplementationOnce(async (fn) => {
-      const tx = {
-        attendanceUpload: {
-          update: vi.fn().mockResolvedValue({ id: 'upload-new', isActiveForPayrollWeek: true }),
-          create: vi.fn().mockResolvedValue({ id: 'upload-new', isActiveForPayrollWeek: true }),
-        },
-        attendanceRecord: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      }
-      return (fn as (tx: unknown) => Promise<unknown>)(tx)
-    })
+    vi.mocked(prisma.attendanceUpload.update).mockResolvedValue({ id: 'upload-new', isActiveForPayrollWeek: true } as never)
+    vi.mocked(prisma.attendanceUpload.create).mockResolvedValue({ id: 'upload-new', isActiveForPayrollWeek: true } as never)
+    vi.mocked(prisma.attendanceRecord.createMany).mockResolvedValue({ count: 1 } as never)
 
     await replaceAttendanceUpload({
       previousUpload,
@@ -121,18 +108,11 @@ describe('replaceAttendanceUpload', () => {
     const previousUpload = makeUpload()
     let capturedTxUpdate: ReturnType<typeof vi.fn> | undefined
 
-    vi.mocked(prisma.$transaction).mockImplementationOnce(async (fn) => {
-      const txUpdate = vi.fn().mockResolvedValue({ ...previousUpload, isActiveForPayrollWeek: false })
-      const tx = {
-        attendanceUpload: {
-          update: txUpdate,
-          create: vi.fn().mockResolvedValue({ id: 'upload-new', isActiveForPayrollWeek: true }),
-        },
-        attendanceRecord: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      }
-      capturedTxUpdate = txUpdate
-      return (fn as (tx: unknown) => Promise<unknown>)(tx)
-    })
+    const txUpdate = vi.fn().mockResolvedValue({ ...previousUpload, isActiveForPayrollWeek: false })
+    capturedTxUpdate = txUpdate
+    vi.mocked(prisma.attendanceUpload.update).mockImplementation(txUpdate as never)
+    vi.mocked(prisma.attendanceUpload.create).mockResolvedValue({ id: 'upload-new', isActiveForPayrollWeek: true } as never)
+    vi.mocked(prisma.attendanceRecord.createMany).mockResolvedValue({ count: 1 } as never)
 
     await replaceAttendanceUpload({
       previousUpload,
@@ -159,18 +139,11 @@ describe('replaceAttendanceUpload', () => {
     const previousUpload = makeUpload()
     let capturedTxCreate: ReturnType<typeof vi.fn> | undefined
 
-    vi.mocked(prisma.$transaction).mockImplementationOnce(async (fn) => {
-      const txCreate = vi.fn().mockResolvedValue({ id: 'upload-new', isActiveForPayrollWeek: true })
-      const tx = {
-        attendanceUpload: {
-          update: vi.fn().mockResolvedValue({ ...previousUpload, isActiveForPayrollWeek: false }),
-          create: txCreate,
-        },
-        attendanceRecord: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      }
-      capturedTxCreate = txCreate
-      return (fn as (tx: unknown) => Promise<unknown>)(tx)
-    })
+    const txCreate = vi.fn().mockResolvedValue({ id: 'upload-new', isActiveForPayrollWeek: true })
+    capturedTxCreate = txCreate
+    vi.mocked(prisma.attendanceUpload.update).mockResolvedValue({ ...previousUpload, isActiveForPayrollWeek: false } as never)
+    vi.mocked(prisma.attendanceUpload.create).mockImplementation(txCreate as never)
+    vi.mocked(prisma.attendanceRecord.createMany).mockResolvedValue({ count: 1 } as never)
 
     await replaceAttendanceUpload({
       previousUpload,

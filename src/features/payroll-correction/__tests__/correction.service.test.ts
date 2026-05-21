@@ -312,16 +312,16 @@ describe('recalculateAndCreateRevision', () => {
       isCurrent: true,
     })
 
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn: unknown) => {
-      const tx: Record<string, Record<string, ReturnType<typeof vi.fn>>> = {
-        payrollRevision: {
-          update: vi.fn().mockResolvedValue(revision),
-          create: vi.fn().mockResolvedValue(newRevision),
-        },
-        payrollRunEmployee: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-        payrollRun: { update: vi.fn().mockResolvedValue({ ...run, currentRevisionNumber: 2 }) },
+    vi.mocked(prisma.payrollRevision.update).mockResolvedValue(revision as never)
+    vi.mocked(prisma.payrollRevision.create).mockResolvedValue(newRevision as never)
+    vi.mocked(prisma.payrollRunEmployee.createMany).mockResolvedValue({ count: 1 } as never)
+    vi.mocked(prisma.payrollRun.update).mockResolvedValue({ ...run, currentRevisionNumber: 2 } as never)
+
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
       }
-      return (fn as (tx: typeof tx) => unknown)(tx)
+      return promises as any
     })
 
     return { newRevision }
@@ -353,20 +353,7 @@ describe('recalculateAndCreateRevision', () => {
     // Verify the transaction was called
     expect(prisma.$transaction).toHaveBeenCalled()
 
-    // Get the transaction function and verify it was called with update
-    const txFn = vi.mocked(prisma.$transaction).mock.calls[0][0] as Function
-    const mockTx = {
-      payrollRevision: {
-        update: vi.fn().mockResolvedValue(makeRevision({ isCurrent: false, status: 'SUPERSEDED' })),
-        create: vi.fn().mockResolvedValue(makeRevision({ id: 'revision-uuid-2', revisionNumber: 2 })),
-      },
-      payrollRunEmployee: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      payrollRun: { update: vi.fn().mockResolvedValue(makePayrollRun({ currentRevisionNumber: 2 })) },
-    }
-
-    await txFn(mockTx)
-
-    expect(mockTx.payrollRevision.update).toHaveBeenCalledWith(
+    expect(prisma.payrollRevision.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'revision-uuid-1' },
         data: { isCurrent: false, status: 'SUPERSEDED' },
@@ -383,19 +370,7 @@ describe('recalculateAndCreateRevision', () => {
       correctionTypes: ['ADJUSTMENTS'],
     })
 
-    const txFn = vi.mocked(prisma.$transaction).mock.calls[0][0] as Function
-    const mockTx = {
-      payrollRevision: {
-        update: vi.fn().mockResolvedValue(makeRevision()),
-        create: vi.fn().mockResolvedValue(makeRevision({ id: 'revision-uuid-2', revisionNumber: 2, correctionReason: 'Wrong overtime hours for EMP-003' })),
-      },
-      payrollRunEmployee: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      payrollRun: { update: vi.fn().mockResolvedValue(makePayrollRun()) },
-    }
-
-    await txFn(mockTx)
-
-    expect(mockTx.payrollRevision.create).toHaveBeenCalledWith(
+    expect(prisma.payrollRevision.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           correctionReason: 'Wrong overtime hours for EMP-003',
@@ -413,19 +388,7 @@ describe('recalculateAndCreateRevision', () => {
       correctionTypes: ['ADJUSTMENTS'],
     })
 
-    const txFn = vi.mocked(prisma.$transaction).mock.calls[0][0] as Function
-    const mockTx = {
-      payrollRevision: {
-        update: vi.fn().mockResolvedValue(makeRevision()),
-        create: vi.fn().mockResolvedValue(makeRevision({ id: 'revision-uuid-2', revisionNumber: 2, correctionReason: null })),
-      },
-      payrollRunEmployee: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      payrollRun: { update: vi.fn().mockResolvedValue(makePayrollRun()) },
-    }
-
-    await txFn(mockTx)
-
-    expect(mockTx.payrollRevision.create).toHaveBeenCalledWith(
+    expect(prisma.payrollRevision.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           correctionReason: null,

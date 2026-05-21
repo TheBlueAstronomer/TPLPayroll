@@ -1,4 +1,5 @@
 import * as fsModule from 'fs'
+import { randomUUID } from 'crypto'
 import prisma from '@/lib/prisma'
 import type { AttendanceUpload } from '@prisma/client'
 import type {
@@ -36,9 +37,13 @@ export async function createAttendanceUpload(
     payrollWeekStartISO,
   } = params
 
-  return prisma.$transaction(async (tx) => {
-    const upload = await (tx as typeof prisma).attendanceUpload.create({
+  const uploadId = randomUUID()
+  const rowsToInsert = buildAttendanceRecords(uploadId, records, payrollWeekStartISO)
+
+  const promises: any[] = [
+    prisma.attendanceUpload.create({
       data: {
+        id: uploadId,
         fileName: newFileName,
         fileType,
         payrollWeekStartDate,
@@ -48,19 +53,23 @@ export async function createAttendanceUpload(
         isActiveForPayrollWeek: true,
         sourceFilePath: newFilePath,
       },
-    })
+    }),
+  ]
 
-    await saveAttendanceRecords(tx as typeof prisma, upload.id, records, payrollWeekStartISO)
+  if (rowsToInsert.length > 0) {
+    promises.push(prisma.attendanceRecord.createMany({ data: rowsToInsert }))
+  }
 
-    return {
-      uploadId: upload.id,
-      payrollWeekStartDate: upload.payrollWeekStartDate,
-      payrollWeekEndDate: upload.payrollWeekEndDate,
-      payrollWeekSource: upload.payrollWeekSource as PayrollWeekSource,
-      status: upload.status,
-      isActiveForPayrollWeek: upload.isActiveForPayrollWeek,
-    }
-  })
+  await prisma.$transaction(promises)
+
+  return {
+    uploadId,
+    payrollWeekStartDate,
+    payrollWeekEndDate,
+    payrollWeekSource,
+    status,
+    isActiveForPayrollWeek: true,
+  }
 }
 
 // ─── replaceAttendanceUpload ──────────────────────────────────────────────────
@@ -79,16 +88,23 @@ export async function replaceAttendanceUpload(
     fsModule.unlinkSync(previousUpload.sourceFilePath)
   }
 
-  return prisma.$transaction(async (tx) => {
+  const uploadId = randomUUID()
+  const rowsToInsert = buildAttendanceRecords(
+    uploadId,
+    createParams.records,
+    createParams.payrollWeekStartISO
+  )
+
+  const promises: any[] = [
     // Deactivate old upload
-    await (tx as typeof prisma).attendanceUpload.update({
+    prisma.attendanceUpload.update({
       where: { id: previousUpload.id },
       data: { isActiveForPayrollWeek: false },
-    })
-
+    }),
     // Create new upload as active
-    const upload = await (tx as typeof prisma).attendanceUpload.create({
+    prisma.attendanceUpload.create({
       data: {
+        id: uploadId,
         fileName: createParams.newFileName,
         fileType: createParams.fileType,
         payrollWeekStartDate: createParams.payrollWeekStartDate,
@@ -98,34 +114,32 @@ export async function replaceAttendanceUpload(
         isActiveForPayrollWeek: true,
         sourceFilePath: createParams.newFilePath,
       },
-    })
+    }),
+  ]
 
-    await saveAttendanceRecords(
-      tx as typeof prisma,
-      upload.id,
-      createParams.records,
-      createParams.payrollWeekStartISO
-    )
+  if (rowsToInsert.length > 0) {
+    promises.push(prisma.attendanceRecord.createMany({ data: rowsToInsert }))
+  }
 
-    return {
-      uploadId: upload.id,
-      payrollWeekStartDate: upload.payrollWeekStartDate,
-      payrollWeekEndDate: upload.payrollWeekEndDate,
-      payrollWeekSource: upload.payrollWeekSource as PayrollWeekSource,
-      status: upload.status,
-      isActiveForPayrollWeek: upload.isActiveForPayrollWeek,
-    }
-  })
+  await prisma.$transaction(promises)
+
+  return {
+    uploadId,
+    payrollWeekStartDate: createParams.payrollWeekStartDate,
+    payrollWeekEndDate: createParams.payrollWeekEndDate,
+    payrollWeekSource: createParams.payrollWeekSource,
+    status: createParams.status,
+    isActiveForPayrollWeek: true,
+  }
 }
 
-// ─── saveAttendanceRecords ────────────────────────────────────────────────────
+// ─── buildAttendanceRecords ────────────────────────────────────────────────────
 
-async function saveAttendanceRecords(
-  tx: typeof prisma,
+function buildAttendanceRecords(
   uploadId: string,
   records: MatchedAttendanceRecord[],
   payrollWeekStartISO: string // YYYY-MM-DD — base date for day offsets
-): Promise<void> {
+) {
   const baseDate = new Date(payrollWeekStartISO + 'T00:00:00Z')
 
   const matchedRecords = records.filter(
@@ -137,9 +151,9 @@ async function saveAttendanceRecords(
       r.employeeDbId
   )
 
-  if (matchedRecords.length === 0) return
+  if (matchedRecords.length === 0) return []
 
-  const rowsToInsert = matchedRecords.flatMap((record) =>
+  return matchedRecords.flatMap((record) =>
     record.dailyHours.map((dh, dayIndex) => {
       const date = new Date(baseDate)
       date.setUTCDate(date.getUTCDate() + dayIndex)
@@ -161,6 +175,4 @@ async function saveAttendanceRecords(
       }
     })
   )
-
-  await tx.attendanceRecord.createMany({ data: rowsToInsert })
 }

@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import prisma from '@/lib/prisma'
 import {
   PayrollServiceError,
@@ -321,9 +322,13 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
   const { totals, weekStart, weekEnd, employees } = summary
   const now = new Date()
 
-  const result = await prisma.$transaction(async (tx) => {
-    const run = await tx.payrollRun.create({
+  const runId = randomUUID()
+  const revisionId = randomUUID()
+
+  const promises = [
+    prisma.payrollRun.create({
       data: {
+        id: runId,
         payrollWeekStartDate: weekStart,
         payrollWeekEndDate: weekEnd,
         status: 'APPROVED',
@@ -335,11 +340,12 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
         totalNetPayable: totals.totalNetPayable,
         approvedAt: now,
       },
-    })
+    }),
 
-    const revision = await tx.payrollRevision.create({
+    prisma.payrollRevision.create({
       data: {
-        payrollRunId: run.id,
+        id: revisionId,
+        payrollRunId: runId,
         revisionNumber: 1,
         status: 'APPROVED',
         isCurrent: true,
@@ -350,12 +356,12 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
         totalNetPayable: totals.totalNetPayable,
         approvedAt: now,
       },
-    })
+    }),
 
-    await tx.payrollRunEmployee.createMany({
+    prisma.payrollRunEmployee.createMany({
       data: employees.map((emp) => ({
-        payrollRunId: run.id,
-        payrollRevisionId: revision.id,
+        payrollRunId: runId,
+        payrollRevisionId: revisionId,
         employeeId: emp.employeeId,
         weeklySalaryUsed: emp.weeklySalaryUsed,
         hourlyRateUsed: emp.hourlyRateUsed,
@@ -367,29 +373,29 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
         deductions: emp.deductions,
         netPayable: emp.netPayable,
       })),
-    })
+    }),
 
-    await tx.payrollAdjustmentApplication.updateMany({
+    prisma.payrollAdjustmentApplication.updateMany({
       where: {
         payrollWeekStartDate: weekStart,
         approvalStatus: 'APPROVED',
         payrollRunId: null,
       },
       data: {
-        payrollRunId: run.id,
-        payrollRevisionId: revision.id,
+        payrollRunId: runId,
+        payrollRevisionId: revisionId,
       },
-    })
+    }),
+  ]
 
-    return { run, revision }
-  })
+  await prisma.$transaction(promises)
 
   return {
-    payrollRunId: result.run.id,
-    payrollRevisionId: result.revision.id,
-    revisionNumber: result.revision.revisionNumber,
-    approvedAt: result.run.approvedAt!,
-    totalNetPayable: Number(result.run.totalNetPayable),
+    payrollRunId: runId,
+    payrollRevisionId: revisionId,
+    revisionNumber: 1,
+    approvedAt: now,
+    totalNetPayable: Number(totals.totalNetPayable),
     employeeCount: employees.length,
   }
 }

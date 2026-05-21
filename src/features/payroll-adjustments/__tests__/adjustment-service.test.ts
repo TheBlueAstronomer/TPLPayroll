@@ -131,12 +131,14 @@ describe('createAdjustment — one-time', () => {
     const adj = makeAdjustment()
     const app = makeApplication()
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: { create: vi.fn().mockResolvedValue(adj) },
-        payrollAdjustmentApplication: { create: vi.fn().mockResolvedValue(app) },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockResolvedValue(adj as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(app as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     // WHEN
     const result = await createAdjustment(validOneTimeInput)
@@ -153,17 +155,17 @@ describe('createAdjustment — one-time', () => {
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
 
     let capturedAppCreate: unknown = null
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: { create: vi.fn().mockResolvedValue(adj) },
-        payrollAdjustmentApplication: {
-          create: vi.fn().mockImplementation((args: unknown) => {
-            capturedAppCreate = args
-            return makeApplication()
-          }),
-        },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockResolvedValue(adj as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockImplementation((args: unknown) => {
+      capturedAppCreate = args
+      return Promise.resolve(makeApplication() as never)
+    })
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     await createAdjustment(validOneTimeInput)
 
@@ -192,17 +194,17 @@ describe('createAdjustment — one-time', () => {
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
 
     let capturedCreate: unknown = null
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: {
-          create: vi.fn().mockImplementation((args: unknown) => {
-            capturedCreate = args
-            return adj
-          }),
-        },
-        payrollAdjustmentApplication: { create: vi.fn().mockResolvedValue(makeApplication()) },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockImplementation((args: unknown) => {
+      capturedCreate = args
+      return Promise.resolve(adj as never)
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     await createAdjustment({ ...validOneTimeInput, amount: 1250.75 })
 
@@ -244,12 +246,14 @@ describe('createAdjustment — recurring', () => {
       endPayrollWeekStartDate: new Date('2025-04-03'),
     })
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: { create: vi.fn().mockResolvedValue(adj) },
-        payrollAdjustmentApplication: { create: vi.fn().mockResolvedValue(makeApplication()) },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockResolvedValue(adj as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     const result = await createAdjustment(input)
 
@@ -274,17 +278,17 @@ describe('createAdjustment — recurring', () => {
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
 
     let capturedAdjCreate: unknown = null
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: {
-          create: vi.fn().mockImplementation((args: unknown) => {
-            capturedAdjCreate = args
-            return adj
-          }),
-        },
-        payrollAdjustmentApplication: { create: vi.fn().mockResolvedValue(makeApplication()) },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockImplementation((args: unknown) => {
+      capturedAdjCreate = args
+      return Promise.resolve(adj as never)
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     const result = await createAdjustment(input)
 
@@ -313,17 +317,17 @@ describe('createAdjustment — recurring', () => {
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
 
     let capturedAdjCreate: unknown = null
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: {
-          create: vi.fn().mockImplementation((args: unknown) => {
-            capturedAdjCreate = args
-            return adj
-          }),
-        },
-        payrollAdjustmentApplication: { create: vi.fn().mockResolvedValue(makeApplication()) },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockImplementation((args: unknown) => {
+      capturedAdjCreate = args
+      return Promise.resolve(adj as never)
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     const result = await createAdjustment(input)
 
