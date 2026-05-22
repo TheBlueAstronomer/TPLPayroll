@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import prisma from '@/lib/prisma'
 import {
   CreateAdjustmentSchema,
@@ -59,9 +60,12 @@ export async function createAdjustment(input: CreateAdjustmentInput) {
 
   const isTotalBalance = d.recurrenceType === 'RECURRING' && d.recurrenceEndType === 'TOTAL_BALANCE'
 
-  const result = await prisma.$transaction(async (tx) => {
-    const adjustment = await tx.payrollAdjustment.create({
+  const adjustmentId = randomUUID()
+
+  const [result] = await prisma.$transaction([
+    prisma.payrollAdjustment.create({
       data: {
+        id: adjustmentId,
         employeeId: d.employeeId,
         adjustmentType: d.adjustmentType,
         recurrenceType: d.recurrenceType,
@@ -78,21 +82,19 @@ export async function createAdjustment(input: CreateAdjustmentInput) {
         status: 'ACTIVE',
         skippedCarryForwardCount: 0,
       },
-    })
+    }),
 
-    await tx.payrollAdjustmentApplication.create({
+    prisma.payrollAdjustmentApplication.create({
       data: {
-        payrollAdjustmentId: adjustment.id,
+        payrollAdjustmentId: adjustmentId,
         employeeId: d.employeeId,
         payrollWeekStartDate: d.startPayrollWeekStartDate,
         payrollWeekEndDate: d.startPayrollWeekEndDate,
         appliedAmount: d.amount,
         approvalStatus: 'PENDING',
       },
-    })
-
-    return adjustment
-  })
+    }),
+  ])
 
   return {
     ...result,

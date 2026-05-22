@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import prisma from '@/lib/prisma'
 import {
   CorrectionServiceError,
@@ -373,17 +374,20 @@ export async function recalculateAndCreateRevision(
   const newRevisionNumber = currentRevision.revisionNumber + 1
   const now = new Date()
 
-  // Create new revision in a transaction
-  const result = await prisma.$transaction(async (tx) => {
+  const newRevisionId = randomUUID()
+
+  // Create new revision in an array transaction
+  const promises = [
     // Supersede current revision
-    await tx.payrollRevision.update({
+    prisma.payrollRevision.update({
       where: { id: currentRevision.id },
       data: { isCurrent: false, status: 'SUPERSEDED' },
-    })
+    }),
 
     // Create new revision
-    const newRevision = await tx.payrollRevision.create({
+    prisma.payrollRevision.create({
       data: {
+        id: newRevisionId,
         payrollRunId: run.id,
         revisionNumber: newRevisionNumber,
         status: 'APPROVED',
@@ -397,13 +401,13 @@ export async function recalculateAndCreateRevision(
         generatedAt: now,
         approvedAt: now,
       },
-    })
+    }),
 
     // Create new employee records
-    await tx.payrollRunEmployee.createMany({
+    prisma.payrollRunEmployee.createMany({
       data: employeeRows.map((emp) => ({
         payrollRunId: run.id,
-        payrollRevisionId: newRevision.id,
+        payrollRevisionId: newRevisionId,
         employeeId: emp.employeeId,
         weeklySalaryUsed: emp.weeklySalaryUsed,
         hourlyRateUsed: emp.hourlyRateUsed,
@@ -415,10 +419,10 @@ export async function recalculateAndCreateRevision(
         deductions: emp.deductions,
         netPayable: emp.netPayable,
       })),
-    })
+    }),
 
     // Update PayrollRun
-    await tx.payrollRun.update({
+    prisma.payrollRun.update({
       where: { id: run.id },
       data: {
         currentRevisionNumber: newRevisionNumber,
@@ -429,15 +433,15 @@ export async function recalculateAndCreateRevision(
         totalDeductions: totals.totalDeductions,
         totalNetPayable: totals.totalNetPayable,
       },
-    })
+    }),
+  ]
 
-    return newRevision
-  })
+  await prisma.$transaction(promises)
 
   return {
     payrollRunId: run.id,
-    revisionId: result.id,
-    revisionNumber: result.revisionNumber,
+    revisionId: newRevisionId,
+    revisionNumber: newRevisionNumber,
     totals,
     employeeCount: employeeRows.length,
   }

@@ -10,21 +10,37 @@ vi.mock('fs', async (importOriginal) => {
   }
 })
 
+vi.mock('@/lib/prisma', () => ({
+  default: {
+    attendanceUpload: {
+      update: vi.fn(),
+      create: vi.fn(),
+    },
+    attendanceRecord: {
+      createMany: vi.fn(),
+    },
+    $transaction: vi.fn(),
+  },
+}))
+
 import { replaceAttendanceUpload } from './upload.service'
 import prisma from '@/lib/prisma'
 import * as fs from 'fs'
 
-// No top-level vi.mock needed if we use spyOn
-
 describe('upload.service - replaceAttendanceUpload', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises
+    })
   })
 
   it('should deactivate the old upload and create a new one in a transaction', async () => {
     // 1. Arrange
     const oldUploadId = 'old-id'
-    const newUploadId = 'new-id'
     const payrollWeekStart = new Date('2025-05-01T00:00:00Z')
     const payrollWeekEnd = new Date('2025-05-07T00:00:00Z')
 
@@ -61,47 +77,34 @@ describe('upload.service - replaceAttendanceUpload', () => {
     const existsSpy = vi.mocked(fs.existsSync).mockReturnValue(true)
     const unlinkSpy = vi.mocked(fs.unlinkSync).mockImplementation(() => {})
 
-    // Mock Prisma Transaction
-    // We need to mock the $transaction method and the functions inside it
-    const mockTx = {
-      attendanceUpload: {
-        update: vi.fn().mockResolvedValue({ id: oldUploadId, isActiveForPayrollWeek: false }),
-        create: vi.fn().mockResolvedValue({ id: newUploadId, ...params, isActiveForPayrollWeek: true }),
-      },
-      attendanceRecord: {
-        createMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    }
-
-    vi.spyOn(prisma, '$transaction').mockImplementation(async (callback) => {
-      return callback(mockTx as any)
-    })
+    // Mock Prisma
+    vi.mocked(prisma.attendanceUpload.update).mockResolvedValue({ id: oldUploadId, isActiveForPayrollWeek: false } as any)
+    vi.mocked(prisma.attendanceUpload.create).mockResolvedValue({ id: 'new-id-1', ...params, isActiveForPayrollWeek: true } as any)
+    vi.mocked(prisma.attendanceRecord.createMany).mockResolvedValue({ count: 1 } as any)
 
     // 2. Act
     const result = await replaceAttendanceUpload(params)
 
     // 3. Assert
-    // A. File system calls
     expect(existsSpy).toHaveBeenCalledWith(previousUpload.sourceFilePath)
     expect(unlinkSpy).toHaveBeenCalledWith(previousUpload.sourceFilePath)
 
-    // B. Transaction calls
-    expect(mockTx.attendanceUpload.update).toHaveBeenCalledWith({
+    expect(prisma.attendanceUpload.update).toHaveBeenCalledWith({
       where: { id: oldUploadId },
       data: { isActiveForPayrollWeek: false },
     })
 
-    expect(mockTx.attendanceUpload.create).toHaveBeenCalledWith({
+    expect(prisma.attendanceUpload.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         fileName: 'new.xlsx',
         isActiveForPayrollWeek: true,
       }),
     })
 
-    expect(mockTx.attendanceRecord.createMany).toHaveBeenCalled()
+    expect(prisma.attendanceRecord.createMany).toHaveBeenCalled()
 
     // C. Result
-    expect(result.uploadId).toBe(newUploadId)
+    expect(result.uploadId).toBeDefined()
     expect(result.isActiveForPayrollWeek).toBe(true)
   })
 
@@ -127,23 +130,15 @@ describe('upload.service - replaceAttendanceUpload', () => {
 
     const existsSpy = vi.mocked(fs.existsSync).mockReturnValue(false)
     const unlinkSpy = vi.mocked(fs.unlinkSync).mockImplementation(() => {})
-    
-    const mockTx = {
-      attendanceUpload: {
-        update: vi.fn().mockResolvedValue({}),
-        create: vi.fn().mockResolvedValue({ id: 'new-id' }),
-      },
-      attendanceRecord: {
-        createMany: vi.fn(),
-      },
-    }
-    vi.spyOn(prisma, '$transaction').mockImplementation(async (callback) => callback(mockTx as any))
+
+    vi.mocked(prisma.attendanceUpload.update).mockResolvedValue({} as any)
+    vi.mocked(prisma.attendanceUpload.create).mockResolvedValue({ id: 'new-id' } as any)
 
     // Act
     await replaceAttendanceUpload(params)
 
     // Assert
     expect(unlinkSpy).not.toHaveBeenCalled()
-    expect(mockTx.attendanceUpload.update).toHaveBeenCalled()
+    expect(prisma.attendanceUpload.update).toHaveBeenCalled()
   })
 })
