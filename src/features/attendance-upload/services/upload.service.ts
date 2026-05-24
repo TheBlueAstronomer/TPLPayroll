@@ -146,8 +146,8 @@ function buildAttendanceRecords(
     (r) =>
       (r.matchStatus === 'MATCHED' ||
         r.matchStatus === 'MANUALLY_MATCHED' ||
-        r.matchStatus === 'INACTIVE' ||
-        r.matchStatus === 'RESIGNED_BEFORE_WEEK') &&
+        ((r.matchStatus === 'INACTIVE' || r.matchStatus === 'RESIGNED_BEFORE_WEEK') &&
+          r.verificationDecision !== 'REJECTED')) &&
       r.employeeDbId
   )
 
