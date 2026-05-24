@@ -7,6 +7,7 @@ test('simple prisma create', async () => {
     data: {
       employeeId: 'TEST-001',
       employeeName: 'Test User',
+      designation: 'Worker',
       isActive: true,
     }
   });
