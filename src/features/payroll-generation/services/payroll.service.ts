@@ -224,6 +224,7 @@ export async function calculatePayroll(
       payrollWeekStartDate: weekStart,
       approvalStatus: 'APPROVED',
       employeeId: { in: [...employeeMap.keys()] },
+      payrollAdjustment: { status: { not: 'CANCELLED' } },
     },
     include: {
       payrollAdjustment: { select: { adjustmentType: true } },
