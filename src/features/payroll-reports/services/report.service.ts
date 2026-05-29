@@ -555,7 +555,7 @@ export async function saveInvoiceSnapshots(slips: PayrollSlipData[]): Promise<vo
         generatedAt: new Date(slip.generatedAt),
       })),
     }),
-  ])
+  ], { timeout: 30000 })
 }
 
 export async function markInvoiceSnapshotsCleaned(payrollRunId: string): Promise<void> {

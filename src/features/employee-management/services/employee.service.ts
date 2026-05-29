@@ -160,7 +160,7 @@ export async function createEmployee(input: CreateEmployeeInput): Promise<Employ
         },
       },
     }),
-  ])
+  ], { timeout: 30000 })
 
   return {
     id: employeeDbId,
@@ -419,7 +419,7 @@ export async function updateEmployee(
     })
   )
 
-  await prisma.$transaction(promises)
+  await prisma.$transaction(promises, { timeout: 30000 })
 
   // Return the merged employee state
   return {
@@ -478,7 +478,7 @@ export async function bulkUpdateStatus(input: BulkStatusUpdateInput): Promise<Bu
               },
             },
           }),
-        ])
+        ], { timeout: 30000 })
       } else {
         // RESIGNED
         await prisma.$transaction([
@@ -500,7 +500,7 @@ export async function bulkUpdateStatus(input: BulkStatusUpdateInput): Promise<Bu
               },
             },
           }),
-        ])
+        ], { timeout: 30000 })
       }
 
       result.succeeded++
@@ -594,7 +594,7 @@ export async function bulkUpdateHourlyRate(input: BulkHourlyRateUpdateInput): Pr
             },
           },
         }),
-      ])
+      ], { timeout: 30000 })
 
       result.succeeded++
     } catch (error) {
