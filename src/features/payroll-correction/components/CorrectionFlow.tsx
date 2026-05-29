@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useCallback } from 'react'
+import { useState, useTransition, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, CircleNotch } from '@phosphor-icons/react'
 import type { InitiateCorrectionResult, CorrectionType } from '@/features/payroll-correction/types/correction.types'
@@ -15,6 +15,7 @@ import { AttendanceDropzone } from '@/features/attendance-upload/components/Atte
 import { WeekSelectionDialog } from '@/features/attendance-upload/components/WeekSelectionDialog'
 import { EmployeeVerificationDialog } from '@/features/attendance-upload/components/EmployeeVerificationDialog'
 import type { VerificationDialogState } from '@/features/attendance-upload/components/EmployeeVerificationDialog'
+import type { InitialDialogState } from '@/features/attendance-upload/components/AttendanceUploadClient'
 import {
   parseAttendanceWithDatesAction,
   finalizeAttendanceUploadAction,
@@ -57,6 +58,7 @@ type DialogState =
 interface CorrectionFlowProps {
   data: InitiateCorrectionResult
   weekLabel: string
+  initialDialogState?: InitialDialogState | null
 }
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
@@ -70,7 +72,7 @@ function formatCurrency(amount: number) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function CorrectionFlow({ data, weekLabel }: CorrectionFlowProps) {
+export function CorrectionFlow({ data, weekLabel, initialDialogState }: CorrectionFlowProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -85,11 +87,43 @@ export function CorrectionFlow({ data, weekLabel }: CorrectionFlowProps) {
   const expectedWeekStartISO = new Date(data.weekStart).toISOString().slice(0, 10)
   const expectedWeekEndISO = new Date(data.weekEnd).toISOString().slice(0, 10)
 
+  const hydratedFromSession = useRef(false)
+
   const loadEmployeeOptions = useCallback(async (records: MatchedAttendanceRecord[]) => {
     if (!records.some((r) => r.matchStatus === 'UNMATCHED')) return
     const result = await getEmployeesForMatchingAction()
     if (result.ok) setEmployeeOptions(result.data)
   }, [])
+
+  // ── Hydrate from server-provided session resume ────────────────────────────
+  useEffect(() => {
+    if (hydratedFromSession.current) return
+    if (!initialDialogState) return
+    hydratedFromSession.current = true
+    loadEmployeeOptions(initialDialogState.records)
+    setSelectedTypes(new Set(['ATTENDANCE'])) // Auto-select Attendance option when resuming
+    setDialog({
+      type: 'verify_required',
+      records: initialDialogState.records,
+      summary: initialDialogState.summary,
+      payrollWeekStartDate: initialDialogState.payrollWeekStartDate,
+      payrollWeekEndDate: initialDialogState.payrollWeekEndDate,
+      payrollWeekSource: initialDialogState.payrollWeekSource,
+      tempFilePath: initialDialogState.tempFilePath,
+      fileName: initialDialogState.fileName,
+      fileType: initialDialogState.fileType,
+      initialState: initialDialogState.dialogState,
+      pendingOnboardBlockKeys: [],
+    })
+    // Clear resume params from URL so a refresh doesn't re-trigger resume.
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('resumeSession') || params.has('newEmployeeId')) {
+      params.delete('resumeSession')
+      params.delete('newEmployeeId')
+      const qs = params.toString()
+      router.replace(qs ? `/payroll/run/${data.payrollRunId}/correct?${qs}` : `/payroll/run/${data.payrollRunId}/correct`)
+    }
+  }, [initialDialogState, loadEmployeeOptions, router, data.payrollRunId])
 
   const handleWeekRequired = useCallback(
     (tempFilePath: string, fileName: string, fileType: string) => {
@@ -254,10 +288,10 @@ export function CorrectionFlow({ data, weekLabel }: CorrectionFlowProps) {
       )
 
       startTransition(() => {
-        router.push(`/employees/new?attendanceSession=${result.data.sessionId}`)
+        router.push(`/employees/new?attendanceSession=${result.data.sessionId}&returnTo=/payroll/run/${data.payrollRunId}/correct`)
       })
     },
-    [dialog, router, startTransition]
+    [dialog, router, startTransition, data.payrollRunId]
   )
 
   const isRecalculateDisabled =

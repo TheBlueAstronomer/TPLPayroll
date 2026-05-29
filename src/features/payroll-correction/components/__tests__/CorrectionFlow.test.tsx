@@ -80,7 +80,7 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
         fileName: 'attendance.xlsx',
         fileType: 'xlsx',
         payrollWeek: {
-          source: 'FILENAME',
+          source: 'FILE_NAME',
           start: '2025-03-13', // Wrong week start
           end: '2025-03-19',   // Wrong week end
         },
@@ -134,7 +134,7 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
         fileName: 'attendance.xlsx',
         fileType: 'xlsx',
         payrollWeek: {
-          source: 'FILENAME',
+          source: 'FILE_NAME',
           start: '2025-03-06', // Matching week start
           end: '2025-03-12',   // Matching week end
         },
@@ -208,7 +208,7 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
         fileName: 'attendance.xlsx',
         fileType: 'xlsx',
         payrollWeek: {
-          source: 'FILENAME',
+          source: 'FILE_NAME',
           start: '2025-03-06',
           end: '2025-03-12',
         },
