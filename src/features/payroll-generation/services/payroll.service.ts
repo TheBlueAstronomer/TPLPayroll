@@ -389,7 +389,7 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
     }),
   ]
 
-  await prisma.$transaction(promises)
+  await prisma.$transaction(promises, { timeout: 30000 })
 
   return {
     payrollRunId: runId,

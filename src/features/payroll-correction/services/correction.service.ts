@@ -436,7 +436,7 @@ export async function recalculateAndCreateRevision(
     }),
   ]
 
-  await prisma.$transaction(promises)
+  await prisma.$transaction(promises, { timeout: 30000 })
 
   return {
     payrollRunId: run.id,

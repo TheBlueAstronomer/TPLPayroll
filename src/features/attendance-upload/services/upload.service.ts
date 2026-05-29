@@ -60,7 +60,7 @@ export async function createAttendanceUpload(
     promises.push(prisma.attendanceRecord.createMany({ data: rowsToInsert }))
   }
 
-  await prisma.$transaction(promises)
+  await prisma.$transaction(promises, { timeout: 30000 })
 
   return {
     uploadId,
@@ -121,7 +121,7 @@ export async function replaceAttendanceUpload(
     promises.push(prisma.attendanceRecord.createMany({ data: rowsToInsert }))
   }
 
-  await prisma.$transaction(promises)
+  await prisma.$transaction(promises, { timeout: 30000 })
 
   return {
     uploadId,

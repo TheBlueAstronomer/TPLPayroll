@@ -114,7 +114,7 @@ export async function createAdjustment(input: CreateAdjustmentInput) {
         approvalStatus: 'PENDING',
       },
     }),
-  ])
+  ], { timeout: 30000 })
 
   return {
     ...result,
