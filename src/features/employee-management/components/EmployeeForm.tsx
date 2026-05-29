@@ -24,6 +24,7 @@ type Mode = 'create' | 'edit'
 export interface AttendanceReturnContext {
   sessionId: string
   sheetEmployeeName: string
+  returnTo?: string
 }
 
 interface EmployeeFormProps {
@@ -267,7 +268,8 @@ export function EmployeeForm({
             resumeSession: returnContext.sessionId,
             newEmployeeId: result.data.id,
           })
-          router.push(`/attendance?${params.toString()}`)
+          const targetPath = returnContext.returnTo || '/attendance'
+          router.push(`${targetPath}?${params.toString()}`)
           return
         }
         router.push(`/employees/${result.data.id}`)
@@ -283,7 +285,10 @@ export function EmployeeForm({
       {returnContext ? (
         <button
           type="button"
-          onClick={() => router.push(`/attendance?resumeSession=${returnContext.sessionId}`)}
+          onClick={() => {
+            const targetPath = returnContext.returnTo || '/attendance'
+            router.push(`${targetPath}?resumeSession=${returnContext.sessionId}`)
+          }}
           className="inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-800 transition-colors duration-200 mb-6"
         >
           <ArrowLeft size={16} />

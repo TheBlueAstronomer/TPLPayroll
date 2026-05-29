@@ -3,12 +3,15 @@ import { initiateCorrection } from '@/features/payroll-correction/services/corre
 import { CorrectionFlow } from '@/features/payroll-correction/components/CorrectionFlow'
 import { CorrectionServiceError } from '@/features/payroll-correction/types/correction.types'
 import { AppShell } from '@/components/layout/AppShell'
+import { resumeAttendanceUploadSessionAction } from '@/features/attendance-upload/actions/session.actions'
+import type { InitialDialogState } from '@/features/attendance-upload/components/AttendanceUploadClient'
 
 export const dynamic = 'force-dynamic'
 
 
 interface Props {
   params: Promise<{ payrollRunId: string }>
+  searchParams: Promise<{ resumeSession?: string; newEmployeeId?: string }>
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -21,8 +24,9 @@ function formatWeekRange(start: Date, end: Date) {
   return `${start.toLocaleDateString('en-IN', opts)} – ${end.toLocaleDateString('en-IN', opts)}`
 }
 
-export default async function PayrollCorrectionPage({ params }: Props) {
+export default async function PayrollCorrectionPage({ params, searchParams }: Props) {
   const { payrollRunId } = await params
+  const { resumeSession, newEmployeeId } = await searchParams
 
   let data
   try {
@@ -50,9 +54,35 @@ export default async function PayrollCorrectionPage({ params }: Props) {
 
   const weekLabel = `Week ${formatWeekRange(data.weekStart, data.weekEnd)}`
 
+  let initialDialogState: InitialDialogState | null = null
+  if (resumeSession) {
+    const resumeResult = await resumeAttendanceUploadSessionAction(
+      resumeSession,
+      newEmployeeId ?? ''
+    )
+    if (resumeResult.ok) {
+      const d = resumeResult.data
+      initialDialogState = {
+        records: d.records,
+        summary: d.summary,
+        payrollWeekStartDate: d.payrollWeekStartDate,
+        payrollWeekEndDate: d.payrollWeekEndDate,
+        payrollWeekSource: d.payrollWeekSource,
+        tempFilePath: d.tempFilePath,
+        fileName: d.fileName,
+        fileType: d.fileType,
+        dialogState: {
+          verificationDecisions: d.verificationDecisions,
+          manualMatchDecisions: d.manualMatchDecisions,
+          rejectedBlockKeys: d.rejectedBlockKeys,
+        },
+      }
+    }
+  }
+
   return (
     <AppShell>
-      <CorrectionFlow data={data} weekLabel={weekLabel} />
+      <CorrectionFlow data={data} weekLabel={weekLabel} initialDialogState={initialDialogState} />
     </AppShell>
   )
 }
