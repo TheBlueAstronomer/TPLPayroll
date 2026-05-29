@@ -148,7 +148,6 @@ export default async function PayrollRunPage({ params }: Props) {
 
         {/* ── Action bar ──────────────────────────────────────────────── */}
         <div className="mt-6 flex gap-3">
-          <ReportSection payrollRunId={payrollRunId} employeeCount={employeeCount} />
           <form action={beginPayrollCorrectionAction.bind(null, payrollRunId)}>
             <button
               type="submit"
@@ -159,6 +158,9 @@ export default async function PayrollRunPage({ params }: Props) {
             </button>
           </form>
         </div>
+
+        {/* ── Reports ─────────────────────────────────────────────────── */}
+        <ReportSection payrollRunId={payrollRunId} employeeCount={employeeCount} />
 
         {/* ── Revision History ────────────────────────────────────────── */}
         <RevisionHistoryTable revisions={revisions} />
