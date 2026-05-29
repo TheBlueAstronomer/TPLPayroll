@@ -28,9 +28,18 @@ interface VerificationRequiredPayload {
 interface AttendanceDropzoneProps {
   onWeekRequired: (tempFilePath: string, fileName: string, fileType: string) => void
   onVerificationRequired: (payload: VerificationRequiredPayload) => void
+  expectedWeekStart?: string
+  expectedWeekEnd?: string
+  onUploadSuccess?: (uploadId: string) => void
 }
 
-export function AttendanceDropzone({ onWeekRequired, onVerificationRequired }: AttendanceDropzoneProps) {
+export function AttendanceDropzone({
+  onWeekRequired,
+  onVerificationRequired,
+  expectedWeekStart,
+  expectedWeekEnd,
+  onUploadSuccess,
+}: AttendanceDropzoneProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -94,6 +103,15 @@ export function AttendanceDropzone({ onWeekRequired, onVerificationRequired }: A
 
     const { payrollWeek, tempFilePath, fileName, fileType, records, summary } = result.data
 
+    if (expectedWeekStart && expectedWeekEnd) {
+      if (payrollWeek.source !== 'MANUAL_REQUIRED') {
+        if (payrollWeek.start !== expectedWeekStart || payrollWeek.end !== expectedWeekEnd) {
+          setError('The uploaded attendance file is for a different week. Please upload the correct file for this payroll run.')
+          return
+        }
+      }
+    }
+
     if (payrollWeek.source === 'MANUAL_REQUIRED') {
       onWeekRequired(tempFilePath, fileName, fileType)
       return
@@ -134,10 +152,15 @@ export function AttendanceDropzone({ onWeekRequired, onVerificationRequired }: A
       return
     }
 
+    if (onUploadSuccess) {
+      onUploadSuccess(finalResult.data.uploadId)
+      return
+    }
+
     startTransition(() => {
       router.push(`/attendance/${finalResult.data.uploadId}/preview`)
     })
-  }, [selectedFile, router, startTransition, onWeekRequired, onVerificationRequired])
+  }, [selectedFile, router, startTransition, onWeekRequired, onVerificationRequired, expectedWeekStart, expectedWeekEnd, onUploadSuccess])
 
   const isOver = dragState === 'over'
 
