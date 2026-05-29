@@ -53,18 +53,17 @@ function isStandardWeek(start: string, end: string): boolean {
 // ─── Scan all cells in a workbook for a date range ────────────────────────────
 
 function scanWorkbookForDateRange(wb: XLSX.WorkBook): { start: string; end: string } | null {
+  const cellRegex = /^[A-Z]+\d+$/
   for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName]
-    const range = XLSX.utils.decode_range(ws['!ref'] ?? 'A1:A1')
-    for (let r = range.s.r; r <= range.e.r; r++) {
-      for (let c = range.s.c; c <= range.e.c; c++) {
-        const addr = XLSX.utils.encode_cell({ r, c })
-        const cell = ws[addr]
-        if (!cell) continue
-        const text = String(cell.v ?? cell.w ?? '')
-        const found = extractIsoDateRange(text) ?? extractDateRange(text)
-        if (found) return found
-      }
+    if (!ws) continue
+    for (const key of Object.keys(ws)) {
+      if (!cellRegex.test(key)) continue
+      const cell = ws[key]
+      if (!cell) continue
+      const text = String(cell.v ?? cell.w ?? '')
+      const found = extractIsoDateRange(text) ?? extractDateRange(text)
+      if (found) return found
     }
   }
   return null
