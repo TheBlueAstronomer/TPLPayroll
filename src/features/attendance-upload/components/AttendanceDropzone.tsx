@@ -90,76 +90,85 @@ export function AttendanceDropzone({
     setParsing(true)
     setError(null)
 
-    const formData = new FormData()
-    formData.append('file', selectedFile)
+    try {
+      const formData = new FormData()
+      formData.append('file', selectedFile)
 
-    const result = await parseAttendanceFileAction(formData)
-    setParsing(false)
+      const result = await parseAttendanceFileAction(formData)
 
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
 
-    const { payrollWeek, tempFilePath, fileName, fileType, records, summary } = result.data
+      const { payrollWeek, tempFilePath, fileName, fileType, records, summary } = result.data
 
-    if (expectedWeekStart && expectedWeekEnd) {
-      if (payrollWeek.source !== 'MANUAL_REQUIRED') {
-        if (payrollWeek.start !== expectedWeekStart || payrollWeek.end !== expectedWeekEnd) {
-          setError('The uploaded attendance file is for a different week. Please upload the correct file for this payroll run.')
-          return
+      if (expectedWeekStart && expectedWeekEnd) {
+        if (payrollWeek.source !== 'MANUAL_REQUIRED') {
+          if (payrollWeek.start !== expectedWeekStart || payrollWeek.end !== expectedWeekEnd) {
+            setError('The uploaded attendance file is for a different week. Please upload the correct file for this payroll run.')
+            return
+          }
         }
       }
-    }
 
-    if (payrollWeek.source === 'MANUAL_REQUIRED') {
-      onWeekRequired(tempFilePath, fileName, fileType)
-      return
-    }
+      if (payrollWeek.source === 'MANUAL_REQUIRED') {
+        onWeekRequired(tempFilePath, fileName, fileType)
+        return
+      }
 
-    const needsVerification = records.some(
-      (r) =>
-        r.matchStatus === 'UNMATCHED' ||
-        r.matchStatus === 'INACTIVE' ||
-        r.matchStatus === 'RESIGNED_BEFORE_WEEK'
-    )
+      const needsVerification = records.some(
+        (r) =>
+          r.matchStatus === 'UNMATCHED' ||
+          r.matchStatus === 'INACTIVE' ||
+          r.matchStatus === 'RESIGNED_BEFORE_WEEK'
+      )
 
-    if (needsVerification) {
-      onVerificationRequired({
-        records,
-        summary,
+      if (needsVerification) {
+        onVerificationRequired({
+          records,
+          summary,
+          payrollWeekStartDate: payrollWeek.start,
+          payrollWeekEndDate: payrollWeek.end,
+          payrollWeekSource: payrollWeek.source,
+          tempFilePath,
+          fileName,
+          fileType,
+        })
+        return
+      }
+
+      // Finalize and navigate to preview
+      const { finalizeAttendanceUploadAction } = await import('@/features/attendance-upload/actions/attendance.actions')
+      const finalResult = await finalizeAttendanceUploadAction({
+        ...result.data,
         payrollWeekStartDate: payrollWeek.start,
         payrollWeekEndDate: payrollWeek.end,
         payrollWeekSource: payrollWeek.source,
-        tempFilePath,
-        fileName,
-        fileType,
       })
-      return
+
+      if (!finalResult.ok) {
+        setError(finalResult.error)
+        return
+      }
+
+      if (onUploadSuccess) {
+        onUploadSuccess(finalResult.data.uploadId)
+        return
+      }
+
+      startTransition(() => {
+        router.push(`/attendance/${finalResult.data.uploadId}/preview`)
+      })
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to parse attendance file. Please try again.'
+      )
+    } finally {
+      setParsing(false)
     }
-
-    // Finalize and navigate to preview
-    const { finalizeAttendanceUploadAction } = await import('@/features/attendance-upload/actions/attendance.actions')
-    const finalResult = await finalizeAttendanceUploadAction({
-      ...result.data,
-      payrollWeekStartDate: payrollWeek.start,
-      payrollWeekEndDate: payrollWeek.end,
-      payrollWeekSource: payrollWeek.source,
-    })
-
-    if (!finalResult.ok) {
-      setError(finalResult.error)
-      return
-    }
-
-    if (onUploadSuccess) {
-      onUploadSuccess(finalResult.data.uploadId)
-      return
-    }
-
-    startTransition(() => {
-      router.push(`/attendance/${finalResult.data.uploadId}/preview`)
-    })
   }, [selectedFile, router, startTransition, onWeekRequired, onVerificationRequired, expectedWeekStart, expectedWeekEnd, onUploadSuccess])
 
   const isOver = dragState === 'over'
