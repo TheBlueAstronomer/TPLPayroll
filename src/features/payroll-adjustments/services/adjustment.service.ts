@@ -307,16 +307,27 @@ export async function approveAdjustmentApplication(applicationId: string) {
       const nextWeekStart = addDays(app.payrollWeekStartDate, 7)
       const nextWeekEnd = addDays(app.payrollWeekEndDate, 7)
 
-      await prisma.payrollAdjustmentApplication.create({
-        data: {
+      // Guard: only create if no PENDING application already exists for this week
+      const existingNextPending = await prisma.payrollAdjustmentApplication.findFirst({
+        where: {
           payrollAdjustmentId: adj.id,
-          employeeId: app.employeeId,
           payrollWeekStartDate: nextWeekStart,
-          payrollWeekEndDate: nextWeekEnd,
-          appliedAmount: Number(adj.amount), // per-week instalment
           approvalStatus: 'PENDING',
         },
       })
+
+      if (!existingNextPending) {
+        await prisma.payrollAdjustmentApplication.create({
+          data: {
+            payrollAdjustmentId: adj.id,
+            employeeId: app.employeeId,
+            payrollWeekStartDate: nextWeekStart,
+            payrollWeekEndDate: nextWeekEnd,
+            appliedAmount: Number(adj.amount), // per-week instalment
+            approvalStatus: 'PENDING',
+          },
+        })
+      }
 
       if (newRemainingBalance !== null) {
         await prisma.payrollAdjustment.update({
@@ -343,16 +354,27 @@ export async function approveAdjustmentApplication(applicationId: string) {
       const nextWeekStart = addDays(app.payrollWeekStartDate, 7)
       const nextWeekEnd = addDays(app.payrollWeekEndDate, 7)
 
-      await prisma.payrollAdjustmentApplication.create({
-        data: {
+      // Guard: only create if no PENDING application already exists for this week
+      const existingNextPending = await prisma.payrollAdjustmentApplication.findFirst({
+        where: {
           payrollAdjustmentId: adj.id,
-          employeeId: app.employeeId,
           payrollWeekStartDate: nextWeekStart,
-          payrollWeekEndDate: nextWeekEnd,
-          appliedAmount: Number(adj.amount),
           approvalStatus: 'PENDING',
         },
       })
+
+      if (!existingNextPending) {
+        await prisma.payrollAdjustmentApplication.create({
+          data: {
+            payrollAdjustmentId: adj.id,
+            employeeId: app.employeeId,
+            payrollWeekStartDate: nextWeekStart,
+            payrollWeekEndDate: nextWeekEnd,
+            appliedAmount: Number(adj.amount),
+            approvalStatus: 'PENDING',
+          },
+        })
+      }
     }
   }
 
@@ -397,16 +419,27 @@ export async function skipAdjustmentApplication(applicationId: string) {
     },
   })
 
-  await prisma.payrollAdjustmentApplication.create({
-    data: {
+  // Guard: only create carry-forward if no PENDING application already exists for next week
+  const existingNextPending = await prisma.payrollAdjustmentApplication.findFirst({
+    where: {
       payrollAdjustmentId: adj.id,
-      employeeId: app.employeeId,
       payrollWeekStartDate: nextWeekStart,
-      payrollWeekEndDate: nextWeekEnd,
-      appliedAmount: Number(adj.amount),
       approvalStatus: 'PENDING',
     },
   })
+
+  if (!existingNextPending) {
+    await prisma.payrollAdjustmentApplication.create({
+      data: {
+        payrollAdjustmentId: adj.id,
+        employeeId: app.employeeId,
+        payrollWeekStartDate: nextWeekStart,
+        payrollWeekEndDate: nextWeekEnd,
+        appliedAmount: Number(adj.amount),
+        approvalStatus: 'PENDING',
+      },
+    })
+  }
 
   await prisma.payrollAdjustment.update({
     where: { id: adj.id },
@@ -439,7 +472,15 @@ export async function getAdjustmentsForWeekReview(
     },
   })
 
-  return rows.map((row) => {
+  // Defense-in-depth: deduplicate so only one PENDING per adjustment is shown
+  const seen = new Set<string>()
+  const deduped = rows.filter((row) => {
+    if (seen.has(row.payrollAdjustmentId)) return false
+    seen.add(row.payrollAdjustmentId)
+    return true
+  })
+
+  return deduped.map((row) => {
     const adjAmount = Number(row.payrollAdjustment.amount)
     const remaining =
       row.payrollAdjustment.recurrenceEndType === 'TOTAL_BALANCE' &&
@@ -508,10 +549,22 @@ export async function updateAdjustment(id: string, input: UpdateAdjustmentInput)
     ? (d.totalBalance ?? null)
     : null
 
+  // Sum up already approved amounts for this adjustment to prevent balance resets on edits
+  const approvedTotal = await prisma.payrollAdjustmentApplication.aggregate({
+    where: {
+      payrollAdjustmentId: id,
+      approvalStatus: 'APPROVED',
+    },
+    _sum: {
+      appliedAmount: true,
+    },
+  })
+  const approvedSum = Number(approvedTotal._sum.appliedAmount ?? 0)
+
   const storedRemainingBalance: number | null = isFixedWeeks
-    ? d.amount
+    ? Math.max(0, d.amount - approvedSum)
     : isTotalBalance
-    ? (d.totalBalance ?? null)
+    ? Math.max(0, (d.totalBalance ?? 0) - approvedSum)
     : null
 
   const updated = await prisma.payrollAdjustment.update({

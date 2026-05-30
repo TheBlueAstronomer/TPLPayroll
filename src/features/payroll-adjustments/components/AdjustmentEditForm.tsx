@@ -173,7 +173,10 @@ export function AdjustmentEditForm({ adjustment: adj }: Props) {
     resolver: zodResolver(FormSchema),
     defaultValues: {
       adjustmentType: adj.adjustmentType,
-      amount: String(adj.amount),
+      amount:
+        adj.recurrenceEndType === 'FIXED_WEEKS' && adj.totalBalance != null
+          ? String(adj.totalBalance)
+          : String(adj.amount),
       reason: adj.reason,
       recurrenceType: adj.recurrenceType,
       weekValue: currentStartWeekValue,
