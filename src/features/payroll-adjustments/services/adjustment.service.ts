@@ -562,7 +562,7 @@ export async function updateAdjustment(id: string, input: UpdateAdjustmentInput)
   const approvedSum = Number(approvedTotal._sum.appliedAmount ?? 0)
 
   const storedRemainingBalance: number | null = isFixedWeeks
-    ? Math.max(0, storedTotalBalance - approvedSum)
+    ? Math.max(0, d.amount - approvedSum)
     : isTotalBalance
     ? Math.max(0, (d.totalBalance ?? 0) - approvedSum)
     : null
