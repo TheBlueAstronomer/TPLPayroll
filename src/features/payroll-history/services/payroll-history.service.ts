@@ -12,7 +12,7 @@ export async function searchPayrollHistory(params: { employeeName?: string; empl
   }
 
   const whereClause: any = {
-    payrollRun: { status: 'APPROVED' },
+    payrollRun: { status: { in: ['APPROVED', 'REVISED'] } },
     payrollRevision: { isCurrent: true }
   }
 
@@ -58,7 +58,7 @@ export async function getPayrollHistoryByWeek(weekStart: string, weekEnd: string
       payrollRun: {
         payrollWeekStartDate: new Date(weekStart),
         payrollWeekEndDate: new Date(weekEnd),
-        status: 'APPROVED'
+        status: { in: ['APPROVED', 'REVISED'] }
       },
       payrollRevision: { isCurrent: true }
     },
@@ -92,7 +92,7 @@ export async function getPayrollHistoryByWeek(weekStart: string, weekEnd: string
 
 export async function getApprovedPayrollWeeks(): Promise<{ weekStart: string; weekEnd: string }[]> {
   const weeks = await prisma.payrollRun.findMany({
-    where: { status: 'APPROVED' },
+    where: { status: { in: ['APPROVED', 'REVISED'] } },
     select: { payrollWeekStartDate: true, payrollWeekEndDate: true },
     distinct: ['payrollWeekStartDate', 'payrollWeekEndDate'],
     orderBy: { payrollWeekStartDate: 'desc' }

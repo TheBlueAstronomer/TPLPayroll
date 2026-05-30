@@ -55,8 +55,8 @@ export async function getAvailablePayrollWeeks(): Promise<PayrollWeekItem[]> {
 
   const [payrollRuns, recordGroups, hourSums] = await Promise.all([
     prisma.payrollRun.findMany({
-      where: { payrollWeekStartDate: { in: weekStarts }, status: 'APPROVED' },
-      select: { id: true, payrollWeekStartDate: true },
+      where: { payrollWeekStartDate: { in: weekStarts }, status: { in: ['APPROVED', 'REVISED'] } },
+      select: { id: true, payrollWeekStartDate: true, status: true },
     }),
     prisma.attendanceRecord.groupBy({
       by: ['attendanceUploadId', 'employeeId'],
@@ -69,7 +69,7 @@ export async function getAvailablePayrollWeeks(): Promise<PayrollWeekItem[]> {
     }),
   ])
 
-  const runByWeek = new Map(payrollRuns.map((r) => [r.payrollWeekStartDate.toISOString(), r.id]))
+  const runByWeek = new Map(payrollRuns.map((r) => [r.payrollWeekStartDate.toISOString(), { id: r.id, status: r.status }]))
 
   const employeesByUpload = new Map<string, Set<string>>()
   for (const r of recordGroups) {
@@ -91,7 +91,8 @@ export async function getAvailablePayrollWeeks(): Promise<PayrollWeekItem[]> {
 
   return uploads.map((u): PayrollWeekItem => {
     const weekId = u.payrollWeekStartDate.toISOString().slice(0, 10)
-    const payrollRunId = runByWeek.get(u.payrollWeekStartDate.toISOString()) ?? null
+    const runInfo = runByWeek.get(u.payrollWeekStartDate.toISOString()) ?? null
+    const payrollRunId = runInfo?.id ?? null
     const hours = hoursByUpload.get(u.id) ?? { regularHours: 0, overtimeHours: 0 }
     const matchedEmployeeCount = employeesByUpload.get(u.id)?.size ?? 0
 
@@ -103,7 +104,9 @@ export async function getAvailablePayrollWeeks(): Promise<PayrollWeekItem[]> {
       matchedEmployeeCount,
       totalRegularHours: hours.regularHours,
       totalOvertimeHours: hours.overtimeHours,
-      payrollStatus: payrollRunId ? 'APPROVED' : 'NOT_GENERATED',
+      payrollStatus: runInfo
+        ? (runInfo.status === 'REVISED' ? 'REVISED' as const : 'APPROVED' as const)
+        : 'NOT_GENERATED' as const,
       payrollRunId,
     }
   })
@@ -312,7 +315,7 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
     where: {
       payrollWeekStartDate: summary.weekStart,
       payrollWeekEndDate: summary.weekEnd,
-      status: 'APPROVED',
+      status: { in: ['APPROVED', 'REVISED'] },
     },
   })
 
