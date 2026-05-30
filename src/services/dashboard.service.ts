@@ -19,7 +19,7 @@ export async function getLatestPayrollTotal(): Promise<number> {
       isCurrent: true,
       status: 'APPROVED',
       payrollRun: {
-        status: 'APPROVED',
+        status: { in: ['APPROVED', 'REVISED'] },
       },
     },
     orderBy: {
