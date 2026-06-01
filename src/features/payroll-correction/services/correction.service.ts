@@ -434,6 +434,12 @@ export async function recalculateAndCreateRevision(
         totalNetPayable: totals.totalNetPayable,
       },
     }),
+
+    // Update adjustment applications to point to the new revision ID
+    prisma.payrollAdjustmentApplication.updateMany({
+      where: { payrollRunId: run.id },
+      data: { payrollRevisionId: newRevisionId },
+    }),
   ]
 
   await prisma.$transaction(promises, { timeout: 30000 })
