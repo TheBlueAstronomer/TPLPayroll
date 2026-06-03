@@ -203,7 +203,7 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{
   if (!run) {
     throw new ReportServiceError('PAYROLL_RUN_NOT_FOUND', `Payroll run ${payrollRunId} not found`)
   }
-  if (run.status !== 'APPROVED') {
+  if (run.status !== 'APPROVED' && run.status !== 'REVISED') {
     throw new ReportServiceError('PAYROLL_NOT_APPROVED', `Payroll run ${payrollRunId} is not approved`)
   }
 
@@ -454,7 +454,7 @@ export async function generatePayrollSlipsZip(
   if (!run) {
     throw new ReportServiceError('PAYROLL_RUN_NOT_FOUND', `Payroll run ${payrollRunId} not found`)
   }
-  if (run.status !== 'APPROVED') {
+  if (run.status !== 'APPROVED' && run.status !== 'REVISED') {
     throw new ReportServiceError('PAYROLL_NOT_APPROVED', `Payroll run ${payrollRunId} is not approved`)
   }
   if (run.runEmployees.length === 0) {
