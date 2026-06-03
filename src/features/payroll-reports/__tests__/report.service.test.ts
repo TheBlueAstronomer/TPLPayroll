@@ -354,6 +354,26 @@ describe('generatePayrollSummaryPdf', () => {
       code: 'PAYROLL_NOT_APPROVED',
     })
   })
+
+  it('queries runEmployees filtered by current revision to prevent duplicates on revised runs', async () => {
+    // Regression: a REVISED payroll run previously returned runEmployees
+    // from ALL revisions, duplicating every employee in the PDF.
+    vi.mocked(prisma.payrollRun.findUnique).mockResolvedValue(
+      makePayrollRun({ status: 'REVISED' }) as never,
+    )
+
+    await generatePayrollSummaryPdf('run-uuid-1')
+
+    expect(prisma.payrollRun.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          runEmployees: expect.objectContaining({
+            where: { payrollRevision: { isCurrent: true } },
+          }),
+        }),
+      }),
+    )
+  })
 })
 
 // ── US-07.2: generatePayrollSlipPdf ─────────────────────────────────────────
@@ -428,6 +448,24 @@ describe('generatePayrollSlipsZip', () => {
     await expect(generatePayrollSlipsZip('run-uuid-1')).rejects.toMatchObject({
       code: 'PAYROLL_NOT_APPROVED',
     })
+  })
+
+  it('queries runEmployees filtered by current revision to prevent duplicates on revised runs', async () => {
+    vi.mocked(prisma.payrollRun.findUnique).mockResolvedValue(
+      makePayrollRun({ status: 'REVISED' }) as never,
+    )
+
+    await generatePayrollSlipsZip('run-uuid-1')
+
+    expect(prisma.payrollRun.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          runEmployees: expect.objectContaining({
+            where: { payrollRevision: { isCurrent: true } },
+          }),
+        }),
+      }),
+    )
   })
 })
 

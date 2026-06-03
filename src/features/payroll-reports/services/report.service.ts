@@ -182,6 +182,7 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{
     include: {
       revisions: { where: { isCurrent: true }, take: 1 },
       runEmployees: {
+        where: { payrollRevision: { isCurrent: true } },
         include: {
           employee: {
             select: {
@@ -433,6 +434,7 @@ export async function generatePayrollSlipsZip(
     include: {
       revisions: { where: { isCurrent: true }, take: 1 },
       runEmployees: {
+        where: { payrollRevision: { isCurrent: true } },
         include: {
           employee: {
             select: {
