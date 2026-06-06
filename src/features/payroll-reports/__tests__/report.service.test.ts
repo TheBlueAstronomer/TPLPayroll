@@ -60,7 +60,7 @@ import {
   formatCurrencyPdf,
   formatHours,
   buildSlipData,
-  generatePayrollSummaryPdf,
+  generatePayrollSummaryXlsx,
   generatePayrollSlipPdf,
   generatePayrollSlipsZip,
   markInvoiceSnapshotsCleaned,
@@ -322,24 +322,25 @@ describe('buildSlipData', () => {
   })
 })
 
-// ── US-07.1: generatePayrollSummaryPdf ─────────────────────────────────────
+// ── US-07.1: generatePayrollSummaryXlsx ────────────────────────────────────
 
-describe('generatePayrollSummaryPdf', () => {
-  it('creates valid PDF buffer', async () => {
+describe('generatePayrollSummaryXlsx', () => {
+  it('creates valid XLSX buffer', async () => {
     vi.mocked(prisma.payrollRun.findUnique).mockResolvedValue(makePayrollRun() as never)
 
-    const result = await generatePayrollSummaryPdf('run-uuid-1')
+    const result = await generatePayrollSummaryXlsx('run-uuid-1')
 
     expect(result.buffer).toBeInstanceOf(Buffer)
     expect(result.buffer.length).toBeGreaterThan(0)
     expect(result.fileName).toMatch(/^payroll_summary_/)
+    expect(result.fileName).toMatch(/\.xlsx$/)
   })
 
   it('throws PAYROLL_RUN_NOT_FOUND when run does not exist', async () => {
     vi.mocked(prisma.payrollRun.findUnique).mockResolvedValue(null)
 
-    await expect(generatePayrollSummaryPdf('nonexistent-id')).rejects.toThrow(ReportServiceError)
-    await expect(generatePayrollSummaryPdf('nonexistent-id')).rejects.toMatchObject({
+    await expect(generatePayrollSummaryXlsx('nonexistent-id')).rejects.toThrow(ReportServiceError)
+    await expect(generatePayrollSummaryXlsx('nonexistent-id')).rejects.toMatchObject({
       code: 'PAYROLL_RUN_NOT_FOUND',
     })
   })
@@ -349,20 +350,18 @@ describe('generatePayrollSummaryPdf', () => {
       makePayrollRun({ status: 'DRAFT' }) as never,
     )
 
-    await expect(generatePayrollSummaryPdf('run-uuid-1')).rejects.toThrow(ReportServiceError)
-    await expect(generatePayrollSummaryPdf('run-uuid-1')).rejects.toMatchObject({
+    await expect(generatePayrollSummaryXlsx('run-uuid-1')).rejects.toThrow(ReportServiceError)
+    await expect(generatePayrollSummaryXlsx('run-uuid-1')).rejects.toMatchObject({
       code: 'PAYROLL_NOT_APPROVED',
     })
   })
 
   it('queries runEmployees filtered by current revision to prevent duplicates on revised runs', async () => {
-    // Regression: a REVISED payroll run previously returned runEmployees
-    // from ALL revisions, duplicating every employee in the PDF.
     vi.mocked(prisma.payrollRun.findUnique).mockResolvedValue(
       makePayrollRun({ status: 'REVISED' }) as never,
     )
 
-    await generatePayrollSummaryPdf('run-uuid-1')
+    await generatePayrollSummaryXlsx('run-uuid-1')
 
     expect(prisma.payrollRun.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -375,6 +374,7 @@ describe('generatePayrollSummaryPdf', () => {
     )
   })
 })
+
 
 // ── US-07.2: generatePayrollSlipPdf ─────────────────────────────────────────
 

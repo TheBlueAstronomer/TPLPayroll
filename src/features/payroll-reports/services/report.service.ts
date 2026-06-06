@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma'
+import * as XLSX from 'xlsx'
 
 import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces'
 import JSZip from 'jszip'
@@ -176,7 +177,7 @@ export function buildSlipData(params: {
 
 // ── PDF generation ───────────────────────────────────────────────────────────
 
-export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{ buffer: Buffer; fileName: string }> {
+export async function generatePayrollSummaryXlsx(payrollRunId: string): Promise<{ buffer: Buffer; fileName: string }> {
   const run = await prisma.payrollRun.findUnique({
     where: { id: payrollRunId },
     include: {
@@ -224,54 +225,122 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{
     year: 'numeric',
   })
 
-  const headerRow = [
-    { text: 'ID', style: 'tableHeader' },
-    { text: 'Employee', style: 'tableHeader' },
-    { text: 'GPay', style: 'tableHeader' },
-    { text: 'Bank Acct', style: 'tableHeader' },
-    { text: 'Net Pay', style: 'tableHeader' },
+  const headers = [
+    'ID',
+    'Employee',
+    'GPay',
+    'Bank Acct',
+    'Regular Pay',
+    'OT Pay',
+    'Additions',
+    'Deductions',
+    'Net Pay',
   ]
 
-  const dataRows = run.runEmployees.map((re) => [
-    { text: re.employee.employeeId, font: 'Courier' },
-    { text: re.employee.employeeName, font: 'Helvetica' },
-    { text: re.employee.gPay ?? '-', font: 'Courier' },
-    { text: re.employee.bankAccount ?? '-', font: 'Courier' },
-    { text: formatCurrencyPdf(Number(re.netPayable)), font: 'Courier', alignment: 'right' },
+  const aoa: any[][] = [
+    ['PAYROLL SUMMARY'],
+    [`Week: ${weekStartStr} – ${weekEndStr}`],
+    [`Generated: ${generatedAtStr}`],
+    [], // Blank row
+    headers,
+  ]
+
+  run.runEmployees.forEach((re) => {
+    aoa.push([
+      re.employee.employeeId,
+      re.employee.employeeName,
+      re.employee.gPay ?? '-',
+      re.employee.bankAccount ?? '-',
+      Number(re.regularPay),
+      Number(re.overtimePay),
+      Number(re.additions),
+      Number(re.deductions),
+      Number(re.netPayable),
+    ])
+  })
+
+  // Add totals row placeholder
+  aoa.push([
+    'TOTALS',
+    '',
+    '',
+    '',
+    0, // Regular Pay
+    0, // OT Pay
+    0, // Additions
+    0, // Deductions
+    0, // Net Pay
   ])
 
-  const totalsRow = [
-    { text: 'TOTALS', colSpan: 4, style: 'totalsLabel', font: 'Helvetica' },
-    {}, {}, {},
-    { text: formatCurrencyPdf(Number(run.totalNetPayable)), font: 'Courier', alignment: 'right', bold: true },
-  ]
+  const ws = XLSX.utils.aoa_to_sheet(aoa)
 
-  const docDef: TDocumentDefinitions = {
-    pageOrientation: 'landscape',
-    defaultStyle: { font: 'Helvetica', fontSize: 8 },
-    styles: {
-      title: { fontSize: 14, bold: true, alignment: 'center', font: 'Helvetica' },
-      subtitle: { fontSize: 9, alignment: 'center', font: 'Helvetica', color: '#555555' },
-      tableHeader: { bold: true, font: 'Helvetica', fillColor: '#dddddd' },
-      totalsLabel: { bold: true, font: 'Helvetica' },
-    },
-    content: [
-      { text: 'PAYROLL SUMMARY', style: 'title', marginBottom: 4 },
-      { text: `Week: ${weekStartStr} – ${weekEndStr}`, style: 'subtitle' },
-      { text: `Generated: ${generatedAtStr}`, style: 'subtitle', marginBottom: 8 },
-      {
-        table: {
-          headerRows: 1,
-          widths: ['auto', '*', 'auto', 'auto', 'auto'],
-          body: [headerRow, ...dataRows, totalsRow],
-        },
-        layout: 'lightHorizontalLines',
-      } as Content,
-    ],
+  const startRow = 6 // Excel row 6 (1-based index)
+  const endRow = 5 + run.runEmployees.length // Last employee row (Excel row index)
+  const totalRowIdx = 5 + run.runEmployees.length + 1 // Totals Excel row
+
+  // Format numeric column helper
+  const formatCol = (colLetter: string, isCurrency: boolean) => {
+    // Format data cells
+    for (let r = startRow; r <= endRow; r++) {
+      const cellRef = `${colLetter}${r}`
+      if (ws[cellRef]) {
+        ws[cellRef].t = 'n'
+        ws[cellRef].z = isCurrency ? '"₹"#,##0.00' : '0.00'
+      }
+    }
+    // Format totals cell
+    const totalCellRef = `${colLetter}${totalRowIdx}`
+    ws[totalCellRef] = {
+      t: 'n',
+      f: `SUM(${colLetter}${startRow}:${colLetter}${endRow})`,
+      z: isCurrency ? '"₹"#,##0.00' : '0.00',
+    }
   }
 
-  const buffer = await toPdfBuffer(docDef)
-  const fileName = `payroll_summary_${formatSlipDate(run.payrollWeekStartDate)}-${formatSlipDate(run.payrollWeekEndDate)}.pdf`
+  // Format the columns:
+  formatCol('E', true) // Regular Pay
+  formatCol('F', true) // OT Pay
+  formatCol('G', true) // Additions
+  formatCol('H', true) // Deductions
+  formatCol('I', true) // Net Pay
+
+  // Setup merges
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, // Merge Title
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, // Merge Week range
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }, // Merge Generated date
+  ]
+
+  // Auto-fit column widths
+  const maxCols = 9
+  const wcols = Array(maxCols).fill(0).map(() => ({ wch: 10 }))
+  for (let r = 0; r < aoa.length; r++) {
+    for (let c = 0; c < maxCols; c++) {
+      const val = aoa[r][c]
+      if (val !== undefined && val !== null) {
+        let strLen = String(val).length
+        if (typeof val === 'number') {
+          if (c >= 4 && c <= 8) {
+            strLen += 5 // for "₹" and decimals/commas formatting
+          }
+        }
+        if (strLen > wcols[c].wch) {
+          wcols[c].wch = strLen
+        }
+      }
+    }
+  }
+  wcols[0].wch = Math.max(wcols[0].wch, 8)  // ID
+  wcols[1].wch = Math.max(wcols[1].wch, 22) // Employee Name
+  wcols[2].wch = Math.max(wcols[2].wch, 12) // GPay
+  wcols[3].wch = Math.max(wcols[3].wch, 16) // Bank Acct
+  ws['!cols'] = wcols
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Summary')
+
+  const buffer = Buffer.from(XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as ArrayBuffer)
+  const fileName = `payroll_summary_${formatSlipDate(run.payrollWeekStartDate)}-${formatSlipDate(run.payrollWeekEndDate)}.xlsx`
 
   return { buffer, fileName }
 }

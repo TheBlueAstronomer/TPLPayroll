@@ -43,7 +43,7 @@ export function ReportSection({ payrollRunId, employeeCount }: ReportSectionProp
     summaryAnchorRef.current?.click()
     setTimeout(async () => {
       setSummaryLoading(false)
-      setToast({ message: 'PDF downloaded', type: 'success' })
+      setToast({ message: 'Excel summary downloaded', type: 'success' })
       await callCleanup()
     }, 1500)
   }
@@ -120,7 +120,7 @@ export function ReportSection({ payrollRunId, employeeCount }: ReportSectionProp
           ) : (
             <DownloadSimple size={14} />
           )}
-          Download PDF Summary
+          Download Excel Summary
         </button>
       </div>
 

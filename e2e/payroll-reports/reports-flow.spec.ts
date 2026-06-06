@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test'
 import {
   cleanupDatabase,
   seedApprovedPayrollData,
+  getInvoiceSnapshotCount,
+  getCleanedSnapshotCount,
 } from '../utils/db'
 
 let payrollRunId: string
@@ -17,24 +19,25 @@ test.beforeAll(async () => {
   }
 })
 
-// ─── E2E-01: Generate PDF payroll summary ─────────────────────────────────────
+// ─── E2E-01: Generate Excel payroll summary ───────────────────────────────────
 
-test.describe('E2E-01: PDF payroll summary API', () => {
-  test('GET /api/payroll/reports/:id/summary returns a valid PDF', async ({ request }) => {
+test.describe('E2E-01: Excel payroll summary API', () => {
+  test('GET /api/payroll/reports/:id/summary returns a valid Excel sheet', async ({ request }) => {
     const response = await request.get(`/api/payroll/reports/${payrollRunId}/summary`)
 
     expect(response.status()).toBe(200)
-    expect(response.headers()['content-type']).toContain('application/pdf')
+    expect(response.headers()['content-type']).toContain('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     const body = await response.body()
-    // Every valid PDF starts with the %PDF header
-    expect(body.toString('ascii', 0, 4)).toBe('%PDF')
+    // Every valid XLSX (ZIP) file starts with the PK header bytes
+    expect(body[0]).toBe(0x50) // 'P'
+    expect(body[1]).toBe(0x4B) // 'K'
   })
 
-  test('Content-Disposition header names the file as a .pdf', async ({ request }) => {
+  test('Content-Disposition header names the file as a .xlsx', async ({ request }) => {
     const response = await request.get(`/api/payroll/reports/${payrollRunId}/summary`)
     const disposition = response.headers()['content-disposition']
-    expect(disposition).toMatch(/filename="payroll_summary_.*\.pdf"/)
+    expect(disposition).toMatch(/filename="payroll_summary_.*\.xlsx"/)
   })
 
   test('returns 404 for a non-existent payrollRunId', async ({ request }) => {
@@ -134,20 +137,20 @@ test.describe('UI: Payroll run detail page', () => {
 
     await expect(page.locator('text=Approved')).toBeVisible({ timeout: 8000 })
     await expect(page.locator('text=Reports')).toBeVisible()
-    await expect(page.getByRole('button', { name: /Download PDF Summary/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Download Excel Summary/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /Generate & Download ZIP/i })).toBeVisible()
   })
 
-  test('clicking Download PDF Summary triggers a file download', async ({ page }) => {
+  test('clicking Download Excel Summary triggers a file download', async ({ page }) => {
     await page.goto(`/payroll/run/${payrollRunId}`)
     await page.waitForSelector('text=Reports', { timeout: 8000 })
 
     const [download] = await Promise.all([
       page.waitForEvent('download', { timeout: 15000 }),
-      page.getByRole('button', { name: /Download PDF Summary/i }).click(),
+      page.getByRole('button', { name: /Download Excel Summary/i }).click(),
     ])
 
-    expect(download.suggestedFilename()).toMatch(/\.pdf$/)
+    expect(download.suggestedFilename()).toMatch(/\.xlsx$/)
   })
 
   test('clicking Generate & Download ZIP shows a progress bar and triggers download', async ({
