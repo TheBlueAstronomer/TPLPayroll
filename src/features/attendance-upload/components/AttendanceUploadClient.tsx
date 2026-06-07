@@ -224,8 +224,11 @@ export function AttendanceUploadClient({
         return
       }
 
+      const { tempFilePath, fileName, fileType } = result.data
       const finalResult = await finalizeAttendanceUploadAction({
-        ...result.data,
+        tempFilePath,
+        fileName,
+        fileType,
         payrollWeekStartDate: startDate,
         payrollWeekEndDate: endDate,
         payrollWeekSource: 'MANUAL',
@@ -261,8 +264,6 @@ export function AttendanceUploadClient({
         payrollWeekStartDate,
         payrollWeekEndDate,
         payrollWeekSource,
-        records,
-        summary,
         verificationDecisions: decisions,
         manualMatchDecisions,
         rejectedBlockKeys,

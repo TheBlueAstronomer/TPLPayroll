@@ -198,7 +198,9 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
       }
 
       const finalResult = await finalizeAttendanceUploadAction({
-        ...result.data,
+        tempFilePath,
+        fileName,
+        fileType,
         payrollWeekStartDate: startDate,
         payrollWeekEndDate: endDate,
         payrollWeekSource: 'MANUAL',
@@ -221,7 +223,7 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
       rejectedBlockKeys: string[]
     ) => {
       if (dialog.type !== 'verify_required') return
-      const { tempFilePath, fileName, fileType, payrollWeekStartDate, payrollWeekEndDate, payrollWeekSource, records, summary } = dialog
+      const { tempFilePath, fileName, fileType, payrollWeekStartDate, payrollWeekEndDate, payrollWeekSource } = dialog
       setDialog({ type: 'none' })
       setError(null)
 
@@ -232,8 +234,6 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
         payrollWeekStartDate,
         payrollWeekEndDate,
         payrollWeekSource,
-        records,
-        summary,
         verificationDecisions: decisions,
         manualMatchDecisions,
         rejectedBlockKeys,

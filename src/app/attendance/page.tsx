@@ -30,7 +30,7 @@ export default async function AttendancePage({ searchParams }: Props) {
     if (resumeResult.ok) {
       const d = resumeResult.data
       initialDialogState = {
-        records: d.records,
+        records: d.records.filter((r) => r.matchStatus !== 'MATCHED'),
         summary: d.summary,
         payrollWeekStartDate: d.payrollWeekStartDate,
         payrollWeekEndDate: d.payrollWeekEndDate,

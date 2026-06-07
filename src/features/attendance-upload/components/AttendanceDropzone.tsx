@@ -141,7 +141,9 @@ export function AttendanceDropzone({
       // Finalize and navigate to preview
       const { finalizeAttendanceUploadAction } = await import('@/features/attendance-upload/actions/attendance.actions')
       const finalResult = await finalizeAttendanceUploadAction({
-        ...result.data,
+        tempFilePath,
+        fileName,
+        fileType,
         payrollWeekStartDate: payrollWeek.start,
         payrollWeekEndDate: payrollWeek.end,
         payrollWeekSource: payrollWeek.source,
