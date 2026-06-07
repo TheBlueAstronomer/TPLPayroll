@@ -8,19 +8,20 @@ import {
   CalendarBlank,
   Eye,
   ArrowsClockwise,
+  SpinnerGap,
 } from '@phosphor-icons/react'
 import { AttendanceDropzone } from './AttendanceDropzone'
 import { WeekSelectionDialog } from './WeekSelectionDialog'
 import { EmployeeVerificationDialog } from './EmployeeVerificationDialog'
 import type { VerificationDialogState } from './EmployeeVerificationDialog'
 import {
-  parseAttendanceWithDatesAction,
+  parseFromStorageWithDatesAction,
   finalizeAttendanceUploadAction,
   getEmployeesForMatchingAction,
+  getRecordsFromStorageAction,
 } from '@/features/attendance-upload/actions/attendance.actions'
 import {
   createAttendanceUploadSessionAction,
-  resumeAttendanceUploadSessionAction,
 } from '@/features/attendance-upload/actions/session.actions'
 import type { AttendanceUploadRow, EmployeeOption } from '@/features/attendance-upload/actions/attendance.actions'
 import type {
@@ -69,8 +70,20 @@ function StatusBadge({ status }: { status: string }) {
 type DialogState =
   | { type: 'none' }
   | {
+      // Transitional: records are being fetched from Storage after session resume.
+      // Shows a loading overlay instead of immediately opening the dialog.
+      type: 'resuming'
+      storageKey: string
+      fileName: string
+      fileType: string
+      payrollWeekStartDate: string
+      payrollWeekEndDate: string
+      payrollWeekSource: PayrollWeekSource
+      initialState: VerificationDialogState
+    }
+  | {
       type: 'week_required'
-      tempFilePath: string
+      storageKey: string
       fileName: string
       fileType: string
     }
@@ -81,22 +94,25 @@ type DialogState =
       payrollWeekStartDate: string
       payrollWeekEndDate: string
       payrollWeekSource: PayrollWeekSource
-      tempFilePath: string
+      storageKey: string
       fileName: string
       fileType: string
       initialState?: VerificationDialogState
       pendingOnboardBlockKeys?: string[]
     }
 
+// ─── InitialDialogState ───────────────────────────────────────────────────────
+// Lean struct passed as an RSC prop — deliberately has NO records[] array.
+// Records are fetched client-side via getRecordsFromStorageAction to avoid
+// the Vercel 4.5 MB RSC payload limit on large spreadsheets.
+
 export interface InitialDialogState {
-  records: MatchedAttendanceRecord[]
-  summary: ImportSummary
+  storageKey: string
+  fileName: string
+  fileType: string
   payrollWeekStartDate: string
   payrollWeekEndDate: string
   payrollWeekSource: PayrollWeekSource
-  tempFilePath: string
-  fileName: string
-  fileType: string
   dialogState: VerificationDialogState
 }
 
@@ -104,8 +120,8 @@ export interface InitialDialogState {
 
 interface AttendanceUploadClientProps {
   initialUploads: AttendanceUploadRow[]
-  /** When set, the verification dialog opens immediately seeded with prior decisions.
-   * Used after returning from the "Add Employee" onboarding flow. */
+  /** When set, the verification dialog resumes after returning from the
+   *  "Add Employee" onboarding flow. Contains only lean metadata — no records[]. */
   initialDialogState?: InitialDialogState | null
 }
 
@@ -129,25 +145,36 @@ export function AttendanceUploadClient({
   }, [])
 
   // ── Hydrate from server-provided session resume ────────────────────────────
+  // initialDialogState is LEAN (no records[]). We set a 'resuming' state that
+  // shows a spinner, fetch records via a Server Action, then open the dialog.
   useEffect(() => {
     if (hydratedFromSession.current) return
     if (!initialDialogState) return
     hydratedFromSession.current = true
-    loadEmployeeOptions(initialDialogState.records)
+
+    const {
+      storageKey,
+      fileName,
+      fileType,
+      payrollWeekStartDate,
+      payrollWeekEndDate,
+      payrollWeekSource,
+      dialogState,
+    } = initialDialogState
+
+    // Show loading overlay immediately
     setDialog({
-      type: 'verify_required',
-      records: initialDialogState.records,
-      summary: initialDialogState.summary,
-      payrollWeekStartDate: initialDialogState.payrollWeekStartDate,
-      payrollWeekEndDate: initialDialogState.payrollWeekEndDate,
-      payrollWeekSource: initialDialogState.payrollWeekSource,
-      tempFilePath: initialDialogState.tempFilePath,
-      fileName: initialDialogState.fileName,
-      fileType: initialDialogState.fileType,
-      initialState: initialDialogState.dialogState,
-      pendingOnboardBlockKeys: [],
+      type: 'resuming',
+      storageKey,
+      fileName,
+      fileType,
+      payrollWeekStartDate,
+      payrollWeekEndDate,
+      payrollWeekSource,
+      initialState: dialogState,
     })
-    // Clear resume params from URL so a refresh doesn't re-trigger resume.
+
+    // Clear resume params from URL so a refresh doesn't re-trigger resume
     const params = new URLSearchParams(searchParams.toString())
     if (params.has('resumeSession') || params.has('newEmployeeId')) {
       params.delete('resumeSession')
@@ -155,11 +182,42 @@ export function AttendanceUploadClient({
       const qs = params.toString()
       router.replace(qs ? `/attendance?${qs}` : '/attendance')
     }
+
+    // Fetch records from Storage (Server Action response — no 4.5 MB cap on response)
+    getRecordsFromStorageAction(
+      storageKey,
+      payrollWeekStartDate,
+      payrollWeekEndDate,
+      fileName,
+      fileType
+    ).then((result) => {
+      if (!result.ok) {
+        setProcessingError(result.error ?? 'Failed to resume upload session.')
+        setDialog({ type: 'none' })
+        return
+      }
+      const { records, summary } = result.data
+      const unmatched = records.filter((r) => r.matchStatus !== 'MATCHED')
+      loadEmployeeOptions(records)
+      setDialog({
+        type: 'verify_required',
+        records: unmatched,
+        summary,
+        payrollWeekStartDate,
+        payrollWeekEndDate,
+        payrollWeekSource,
+        storageKey,
+        fileName,
+        fileType,
+        initialState: dialogState,
+        pendingOnboardBlockKeys: [],
+      })
+    })
   }, [initialDialogState, loadEmployeeOptions, router, searchParams])
 
   const handleWeekRequired = useCallback(
-    (tempFilePath: string, fileName: string, fileType: string) => {
-      setDialog({ type: 'week_required', tempFilePath, fileName, fileType })
+    (storageKey: string, fileName: string, fileType: string) => {
+      setDialog({ type: 'week_required', storageKey, fileName, fileType })
     },
     []
   )
@@ -171,7 +229,7 @@ export function AttendanceUploadClient({
       payrollWeekStartDate: string
       payrollWeekEndDate: string
       payrollWeekSource: PayrollWeekSource
-      tempFilePath: string
+      storageKey: string
       fileName: string
       fileType: string
     }) => {
@@ -184,12 +242,12 @@ export function AttendanceUploadClient({
   const handleWeekConfirm = useCallback(
     async (startDate: string, endDate: string) => {
       if (dialog.type !== 'week_required') return
-      const { tempFilePath, fileName, fileType } = dialog
+      const { storageKey, fileName, fileType } = dialog
       setDialog({ type: 'none' })
       setProcessingError(null)
 
-      const result = await parseAttendanceWithDatesAction(
-        tempFilePath,
+      const result = await parseFromStorageWithDatesAction(
+        storageKey,
         startDate,
         endDate,
         fileName,
@@ -217,7 +275,7 @@ export function AttendanceUploadClient({
           payrollWeekStartDate: startDate,
           payrollWeekEndDate: endDate,
           payrollWeekSource: 'MANUAL',
-          tempFilePath,
+          storageKey,
           fileName,
           fileType,
         })
@@ -225,7 +283,7 @@ export function AttendanceUploadClient({
       }
 
       const finalResult = await finalizeAttendanceUploadAction({
-        tempFilePath,
+        storageKey,
         fileName,
         fileType,
         payrollWeekStartDate: startDate,
@@ -252,12 +310,19 @@ export function AttendanceUploadClient({
       rejectedBlockKeys: string[]
     ) => {
       if (dialog.type !== 'verify_required') return
-      const { tempFilePath, fileName, fileType, payrollWeekStartDate, payrollWeekEndDate, payrollWeekSource, records, summary } = dialog
+      const {
+        storageKey,
+        fileName,
+        fileType,
+        payrollWeekStartDate,
+        payrollWeekEndDate,
+        payrollWeekSource,
+      } = dialog
       setDialog({ type: 'none' })
       setProcessingError(null)
 
       const finalResult = await finalizeAttendanceUploadAction({
-        tempFilePath,
+        storageKey,
         fileName,
         fileType,
         payrollWeekStartDate,
@@ -287,7 +352,7 @@ export function AttendanceUploadClient({
       const blockKey = getBlockKey(record)
 
       const result = await createAttendanceUploadSessionAction({
-        tempFilePath: dialog.tempFilePath,
+        storageKey: dialog.storageKey,
         fileName: dialog.fileName,
         fileType: dialog.fileType,
         payrollWeekStartDate: dialog.payrollWeekStartDate,
@@ -305,7 +370,7 @@ export function AttendanceUploadClient({
         return
       }
 
-      // Mark the row as pending while we navigate away.
+      // Mark the row as pending while we navigate away
       setDialog((prev) =>
         prev.type === 'verify_required'
           ? {
@@ -332,6 +397,17 @@ export function AttendanceUploadClient({
 
   return (
     <>
+      {/* ── Resuming overlay ──────────────────────────────────────────────── */}
+      {dialog.type === 'resuming' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 p-8 rounded-2xl bg-white border border-zinc-100 shadow-xl">
+            <SpinnerGap size={32} className="text-emerald-500 animate-spin" />
+            <p className="text-sm font-medium text-zinc-700">Resuming your upload session…</p>
+            <p className="text-xs text-zinc-400">Re-matching employees from your spreadsheet</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Recent uploads table ─────────────────────────────────────────── */}
       <div className="mb-2">
         <p className="text-sm font-medium text-zinc-900 mb-4">Recent Uploads</p>
@@ -378,7 +454,9 @@ export function AttendanceUploadClient({
                         View
                       </button>
                       <button
-                        onClick={() => document.getElementById('attendance-dropzone-trigger')?.click()}
+                        onClick={() =>
+                          document.getElementById('attendance-dropzone-trigger')?.click()
+                        }
                         className="inline-flex items-center gap-1.5 text-sm text-zinc-600 border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 rounded-lg px-2.5 py-1.5 transition-colors"
                       >
                         <ArrowsClockwise size={14} />
@@ -402,7 +480,10 @@ export function AttendanceUploadClient({
       )}
 
       {/* ── Dropzone ─────────────────────────────────────────────────────── */}
-      <AttendanceDropzone onWeekRequired={handleWeekRequired} onVerificationRequired={handleVerificationRequired} />
+      <AttendanceDropzone
+        onWeekRequired={handleWeekRequired}
+        onVerificationRequired={handleVerificationRequired}
+      />
 
       {/* ── Dialogs ──────────────────────────────────────────────────────── */}
       {dialog.type === 'week_required' && (

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { CorrectionFlow } from '../CorrectionFlow'
 import type { InitiateCorrectionResult } from '@/features/payroll-correction/types/correction.types'
-import { parseAttendanceFileAction, finalizeAttendanceUploadAction, getEmployeesForMatchingAction } from '@/features/attendance-upload/actions/attendance.actions'
+import { finalizeAttendanceUploadAction, getEmployeesForMatchingAction, getPresignedUploadUrlAction, parseFromStorageAction } from '@/features/attendance-upload/actions/attendance.actions'
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -14,8 +14,9 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('@/features/attendance-upload/actions/attendance.actions', () => ({
-  parseAttendanceFileAction: vi.fn(),
-  parseAttendanceWithDatesAction: vi.fn(),
+  getPresignedUploadUrlAction: vi.fn(),
+  parseFromStorageAction: vi.fn(),
+  parseFromStorageWithDatesAction: vi.fn(),
   finalizeAttendanceUploadAction: vi.fn(),
   getEmployeesForMatchingAction: vi.fn(),
 }))
@@ -48,6 +49,21 @@ const MOCK_CORRECTION_DATA: InitiateCorrectionResult = {
 describe('CorrectionFlow — Attendance Re-upload Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+
+    // Mock XMLHttpRequest so the XHR PUT to Supabase Storage resolves immediately in jsdom.
+    // Must be a class (not a plain object) because AttendanceDropzone calls `new XMLHttpRequest()`.
+    class MockXHR {
+      status = 200
+      upload = { onprogress: null as any }
+      onload: (() => void) | null = null
+      onerror: (() => void) | null = null
+      open = vi.fn()
+      setRequestHeader = vi.fn()
+      send = vi.fn().mockImplementation(() => {
+        setTimeout(() => this.onload?.(), 0)
+      })
+    }
+    ;(globalThis as any).XMLHttpRequest = MockXHR
   })
 
   // ── Test 1: Renders interactive dropzone when ATTENDANCE is selected ──────
@@ -72,11 +88,15 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
     // Select Attendance
     fireEvent.click(screen.getByRole('checkbox', { name: /attendance/i }))
 
-    // Mock mismatched parser result
-    vi.mocked(parseAttendanceFileAction).mockResolvedValue({
+    // Mock 3-phase upload: presigned URL → (browser PUT is bypassed in tests) → server parse
+    vi.mocked(getPresignedUploadUrlAction).mockResolvedValue({
+      ok: true,
+      data: { signedUrl: 'https://storage.test/signed-url', storageKey: 'attendance/uuid_attendance.xlsx', token: 'tok' },
+    })
+    vi.mocked(parseFromStorageAction).mockResolvedValue({
       ok: true,
       data: {
-        tempFilePath: '/tmp/attendance.xlsx',
+        storageKey: 'attendance/uuid_attendance.xlsx',
         fileName: 'attendance.xlsx',
         fileType: 'xlsx',
         payrollWeek: {
@@ -86,15 +106,9 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
         },
         records: [],
         summary: {
-          total: 0,
-          matched: 0,
-          unmatched: 0,
-          inactive: 0,
-          resignedBeforeWeek: 0,
-          rejectedUnmatched: 0,
-          needsVerification: 0,
-          errors: 0,
-          isBlocked: false,
+          total: 0, matched: 0, unmatched: 0, inactive: 0,
+          resignedBeforeWeek: 0, rejectedUnmatched: 0,
+          needsVerification: 0, errors: 0, isBlocked: false,
         },
       },
     })
@@ -105,9 +119,9 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
 
     fireEvent.change(fileInput, { target: { files: [file] } })
 
-    // Click Parse & Preview button in Dropzone
-    const parseBtn = screen.getByRole('button', { name: /parse & preview/i })
-    fireEvent.click(parseBtn)
+    // Click Upload & Preview button in Dropzone
+    const uploadBtn = screen.getByRole('button', { name: /upload & preview/i })
+    fireEvent.click(uploadBtn)
 
     // Verify validation error is shown
     await waitFor(() => {
@@ -126,11 +140,15 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
     const recalculateBtn = screen.getByRole('button', { name: /recalculate & preview/i })
     expect(recalculateBtn).toBeDisabled()
 
-    // Mock correct parser result
-    vi.mocked(parseAttendanceFileAction).mockResolvedValue({
+    // Mock 3-phase upload: presigned URL → (browser PUT is bypassed in tests) → server parse
+    vi.mocked(getPresignedUploadUrlAction).mockResolvedValue({
+      ok: true,
+      data: { signedUrl: 'https://storage.test/signed-url', storageKey: 'attendance/uuid_attendance.xlsx', token: 'tok' },
+    })
+    vi.mocked(parseFromStorageAction).mockResolvedValue({
       ok: true,
       data: {
-        tempFilePath: '/tmp/attendance.xlsx',
+        storageKey: 'attendance/uuid_attendance.xlsx',
         fileName: 'attendance.xlsx',
         fileType: 'xlsx',
         payrollWeek: {
@@ -140,15 +158,9 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
         },
         records: [],
         summary: {
-          total: 0,
-          matched: 0,
-          unmatched: 0,
-          inactive: 0,
-          resignedBeforeWeek: 0,
-          rejectedUnmatched: 0,
-          needsVerification: 0,
-          errors: 0,
-          isBlocked: false,
+          total: 0, matched: 0, unmatched: 0, inactive: 0,
+          resignedBeforeWeek: 0, rejectedUnmatched: 0,
+          needsVerification: 0, errors: 0, isBlocked: false,
         },
       },
     })
@@ -164,8 +176,8 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
     const fileInput = document.getElementById('attendance-dropzone-trigger')!
     fireEvent.change(fileInput, { target: { files: [file] } })
 
-    const parseBtn = screen.getByRole('button', { name: /parse & preview/i })
-    fireEvent.click(parseBtn)
+    const uploadBtn = screen.getByRole('button', { name: /upload & preview/i })
+    fireEvent.click(uploadBtn)
 
     // Wait for finalize action to be called and recalculate button to be enabled
     await waitFor(() => {
@@ -201,10 +213,14 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
       employeeDbId: null,
     }
 
-    vi.mocked(parseAttendanceFileAction).mockResolvedValue({
+    vi.mocked(getPresignedUploadUrlAction).mockResolvedValue({
+      ok: true,
+      data: { signedUrl: 'https://storage.test/signed-url', storageKey: 'attendance/uuid_attendance.xlsx', token: 'tok' },
+    })
+    vi.mocked(parseFromStorageAction).mockResolvedValue({
       ok: true,
       data: {
-        tempFilePath: '/tmp/attendance.xlsx',
+        storageKey: 'attendance/uuid_attendance.xlsx',
         fileName: 'attendance.xlsx',
         fileType: 'xlsx',
         payrollWeek: {
@@ -214,15 +230,9 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
         },
         records: [unmatchedRecord],
         summary: {
-          total: 1,
-          matched: 0,
-          unmatched: 1,
-          inactive: 0,
-          resignedBeforeWeek: 0,
-          rejectedUnmatched: 0,
-          needsVerification: 1,
-          errors: 0,
-          isBlocked: true,
+          total: 1, matched: 0, unmatched: 1, inactive: 0,
+          resignedBeforeWeek: 0, rejectedUnmatched: 0,
+          needsVerification: 1, errors: 0, isBlocked: true,
         },
       },
     })
@@ -232,8 +242,8 @@ describe('CorrectionFlow — Attendance Re-upload Integration', () => {
     const fileInput = document.getElementById('attendance-dropzone-trigger')!
     fireEvent.change(fileInput, { target: { files: [file] } })
 
-    const parseBtn = screen.getByRole('button', { name: /parse & preview/i })
-    fireEvent.click(parseBtn)
+    const uploadBtn = screen.getByRole('button', { name: /upload & preview/i })
+    fireEvent.click(uploadBtn)
 
     // Dialog should open
     await waitFor(() => {

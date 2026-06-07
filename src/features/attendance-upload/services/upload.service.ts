@@ -1,6 +1,9 @@
-import * as fsModule from 'fs'
 import { randomUUID } from 'crypto'
 import prisma from '@/lib/prisma'
+import {
+  deleteFile,
+  ATTENDANCE_BUCKET,
+} from '@/lib/supabase-storage'
 import type { AttendanceUpload } from '@prisma/client'
 import type {
   MatchedAttendanceRecord,
@@ -11,7 +14,7 @@ import type {
 // ─── createAttendanceUpload ───────────────────────────────────────────────────
 
 export interface CreateUploadParams {
-  newFilePath: string
+  storageKey: string             // Supabase Storage key (replaces newFilePath)
   newFileName: string
   fileType: string
   payrollWeekStartDate: Date
@@ -26,7 +29,7 @@ export async function createAttendanceUpload(
   params: CreateUploadParams
 ): Promise<AttendanceUploadResult> {
   const {
-    newFilePath,
+    storageKey,
     newFileName,
     fileType,
     payrollWeekStartDate,
@@ -51,7 +54,7 @@ export async function createAttendanceUpload(
         payrollWeekSource,
         status,
         isActiveForPayrollWeek: true,
-        sourceFilePath: newFilePath,
+        sourceStorageKey: storageKey,
       },
     }),
   ]
@@ -83,9 +86,12 @@ export async function replaceAttendanceUpload(
 ): Promise<AttendanceUploadResult> {
   const { previousUpload, ...createParams } = params
 
-  // Delete previous file immediately (outside transaction — best-effort)
-  if (fsModule.existsSync(previousUpload.sourceFilePath)) {
-    fsModule.unlinkSync(previousUpload.sourceFilePath)
+  // Best-effort delete of the old file from Supabase Storage.
+  // This runs outside the DB transaction — if it fails the DB row is still updated.
+  if (previousUpload.sourceStorageKey) {
+    void deleteFile(ATTENDANCE_BUCKET, previousUpload.sourceStorageKey).catch((err) => {
+      console.error('[upload.service] Failed to delete old storage file:', err)
+    })
   }
 
   const uploadId = randomUUID()
@@ -112,7 +118,7 @@ export async function replaceAttendanceUpload(
         payrollWeekSource: createParams.payrollWeekSource,
         status: createParams.status,
         isActiveForPayrollWeek: true,
-        sourceFilePath: createParams.newFilePath,
+        sourceStorageKey: createParams.storageKey,
       },
     }),
   ]

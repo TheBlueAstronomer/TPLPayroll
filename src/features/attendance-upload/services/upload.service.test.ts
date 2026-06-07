@@ -1,14 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-vi.mock('fs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs')>()
-  return {
-    ...actual,
-    default: { ...actual, existsSync: vi.fn(), unlinkSync: vi.fn() },
-    existsSync: vi.fn(),
-    unlinkSync: vi.fn(),
-  }
-})
+// Mock Supabase Storage — replaceAttendanceUpload now calls deleteFile
+vi.mock('@/lib/supabase-storage', () => ({
+  deleteFile: vi.fn().mockResolvedValue(undefined),
+  ATTENDANCE_BUCKET: 'attendance-files',
+}))
 
 vi.mock('@/lib/prisma', () => ({
   default: {
@@ -25,7 +21,8 @@ vi.mock('@/lib/prisma', () => ({
 
 import { replaceAttendanceUpload } from './upload.service'
 import prisma from '@/lib/prisma'
-import * as fs from 'fs'
+import * as supabaseStorage from '@/lib/supabase-storage'
+import type { MatchedAttendanceRecord } from '@/features/attendance-upload/types/attendance.types'
 
 describe('upload.service - replaceAttendanceUpload', () => {
   beforeEach(() => {
@@ -38,15 +35,14 @@ describe('upload.service - replaceAttendanceUpload', () => {
     })
   })
 
-  it('should deactivate the old upload and create a new one in a transaction', async () => {
-    // 1. Arrange
+  it('should deactivate the old upload, delete old Storage file, and create a new one', async () => {
     const oldUploadId = 'old-id'
     const payrollWeekStart = new Date('2025-05-01T00:00:00Z')
     const payrollWeekEnd = new Date('2025-05-07T00:00:00Z')
 
     const previousUpload = {
       id: oldUploadId,
-      sourceFilePath: '/tmp/old.xlsx',
+      sourceStorageKey: 'attendance/old-uuid_attendance.xlsx',
       isActiveForPayrollWeek: true,
       payrollWeekStartDate: payrollWeekStart,
       payrollWeekEndDate: payrollWeekEnd,
@@ -54,7 +50,7 @@ describe('upload.service - replaceAttendanceUpload', () => {
 
     const params = {
       previousUpload,
-      newFilePath: '/tmp/new.xlsx',
+      storageKey: 'attendance/new-uuid_attendance.xlsx',
       newFileName: 'new.xlsx',
       fileType: 'xlsx',
       payrollWeekStartDate: payrollWeekStart,
@@ -73,21 +69,17 @@ describe('upload.service - replaceAttendanceUpload', () => {
       payrollWeekStartISO: '2025-05-01',
     }
 
-    // Mock fs calls
-    const existsSpy = vi.mocked(fs.existsSync).mockReturnValue(true)
-    const unlinkSpy = vi.mocked(fs.unlinkSync).mockImplementation(() => {})
-
-    // Mock Prisma
     vi.mocked(prisma.attendanceUpload.update).mockResolvedValue({ id: oldUploadId, isActiveForPayrollWeek: false } as any)
-    vi.mocked(prisma.attendanceUpload.create).mockResolvedValue({ id: 'new-id-1', ...params, isActiveForPayrollWeek: true } as any)
+    vi.mocked(prisma.attendanceUpload.create).mockResolvedValue({ id: 'new-id-1', isActiveForPayrollWeek: true } as any)
     vi.mocked(prisma.attendanceRecord.createMany).mockResolvedValue({ count: 1 } as any)
 
-    // 2. Act
     const result = await replaceAttendanceUpload(params)
 
-    // 3. Assert
-    expect(existsSpy).toHaveBeenCalledWith(previousUpload.sourceFilePath)
-    expect(unlinkSpy).toHaveBeenCalledWith(previousUpload.sourceFilePath)
+    // Storage file deleted for the previous upload
+    expect(supabaseStorage.deleteFile).toHaveBeenCalledWith(
+      'attendance-files',
+      previousUpload.sourceStorageKey
+    )
 
     expect(prisma.attendanceUpload.update).toHaveBeenCalledWith({
       where: { id: oldUploadId },
@@ -98,47 +90,41 @@ describe('upload.service - replaceAttendanceUpload', () => {
       data: expect.objectContaining({
         fileName: 'new.xlsx',
         isActiveForPayrollWeek: true,
+        sourceStorageKey: params.storageKey,
       }),
     })
 
     expect(prisma.attendanceRecord.createMany).toHaveBeenCalled()
-
-    // C. Result
     expect(result.uploadId).toBeDefined()
     expect(result.isActiveForPayrollWeek).toBe(true)
   })
 
-  it('should still proceed if the old file does not exist', async () => {
-    // Arrange
+  it('should still proceed if the previous upload has no Storage key (legacy row)', async () => {
     const previousUpload = {
       id: 'old-id',
-      sourceFilePath: '/tmp/missing.xlsx',
+      sourceStorageKey: null, // legacy row — no storage key
     } as any
 
     const params = {
       previousUpload,
-      newFilePath: '/tmp/new.xlsx',
+      storageKey: 'attendance/new-uuid_attendance.xlsx',
       newFileName: 'new.xlsx',
       fileType: 'xlsx',
       payrollWeekStartDate: new Date(),
       payrollWeekEndDate: new Date(),
       payrollWeekSource: 'AUTO' as const,
       status: 'READY',
-      records: [],
+      records: [] as MatchedAttendanceRecord[],
       payrollWeekStartISO: '2025-05-01',
     }
-
-    const existsSpy = vi.mocked(fs.existsSync).mockReturnValue(false)
-    const unlinkSpy = vi.mocked(fs.unlinkSync).mockImplementation(() => {})
 
     vi.mocked(prisma.attendanceUpload.update).mockResolvedValue({} as any)
     vi.mocked(prisma.attendanceUpload.create).mockResolvedValue({ id: 'new-id' } as any)
 
-    // Act
     await replaceAttendanceUpload(params)
 
-    // Assert
-    expect(unlinkSpy).not.toHaveBeenCalled()
+    // No delete attempted for legacy rows with no storage key
+    expect(supabaseStorage.deleteFile).not.toHaveBeenCalled()
     expect(prisma.attendanceUpload.update).toHaveBeenCalled()
   })
 })

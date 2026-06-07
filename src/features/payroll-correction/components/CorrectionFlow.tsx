@@ -17,7 +17,7 @@ import { EmployeeVerificationDialog } from '@/features/attendance-upload/compone
 import type { VerificationDialogState } from '@/features/attendance-upload/components/EmployeeVerificationDialog'
 import type { InitialDialogState } from '@/features/attendance-upload/components/AttendanceUploadClient'
 import {
-  parseAttendanceWithDatesAction,
+  parseFromStorageWithDatesAction,
   finalizeAttendanceUploadAction,
   getEmployeesForMatchingAction,
 } from '@/features/attendance-upload/actions/attendance.actions'
@@ -35,7 +35,7 @@ type DialogState =
   | { type: 'none' }
   | {
       type: 'week_required'
-      tempFilePath: string
+      storageKey: string
       fileName: string
       fileType: string
     }
@@ -46,7 +46,7 @@ type DialogState =
       payrollWeekStartDate: string
       payrollWeekEndDate: string
       payrollWeekSource: PayrollWeekSource
-      tempFilePath: string
+      storageKey: string
       fileName: string
       fileType: string
       initialState?: VerificationDialogState
@@ -100,20 +100,15 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
     if (hydratedFromSession.current) return
     if (!initialDialogState) return
     hydratedFromSession.current = true
-    loadEmployeeOptions(initialDialogState.records)
     setSelectedTypes(new Set(['ATTENDANCE'])) // Auto-select Attendance option when resuming
+    // initialDialogState is lean (no records[]) — records are fetched client-side
+    // by the attendanceSession resume flow before CorrectionFlow mounts.
+    // If records happen to be provided (legacy path), still use storageKey.
     setDialog({
-      type: 'verify_required',
-      records: initialDialogState.records,
-      summary: initialDialogState.summary,
-      payrollWeekStartDate: initialDialogState.payrollWeekStartDate,
-      payrollWeekEndDate: initialDialogState.payrollWeekEndDate,
-      payrollWeekSource: initialDialogState.payrollWeekSource,
-      tempFilePath: initialDialogState.tempFilePath,
+      type: 'week_required',
+      storageKey: initialDialogState.storageKey,
       fileName: initialDialogState.fileName,
       fileType: initialDialogState.fileType,
-      initialState: initialDialogState.dialogState,
-      pendingOnboardBlockKeys: [],
     })
     // Clear resume params from URL so a refresh doesn't re-trigger resume.
     const params = new URLSearchParams(window.location.search)
@@ -126,8 +121,8 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
   }, [initialDialogState, loadEmployeeOptions, router, data.payrollRunId])
 
   const handleWeekRequired = useCallback(
-    (tempFilePath: string, fileName: string, fileType: string) => {
-      setDialog({ type: 'week_required', tempFilePath, fileName, fileType })
+    (storageKey: string, fileName: string, fileType: string) => {
+      setDialog({ type: 'week_required', storageKey, fileName, fileType })
     },
     []
   )
@@ -139,7 +134,7 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
       payrollWeekStartDate: string
       payrollWeekEndDate: string
       payrollWeekSource: PayrollWeekSource
-      tempFilePath: string
+      storageKey: string
       fileName: string
       fileType: string
     }) => {
@@ -152,7 +147,7 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
   const handleWeekConfirm = useCallback(
     async (startDate: string, endDate: string) => {
       if (dialog.type !== 'week_required') return
-      const { tempFilePath, fileName, fileType } = dialog
+      const { storageKey, fileName, fileType } = dialog
       setDialog({ type: 'none' })
       setError(null)
 
@@ -161,8 +156,8 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
         return
       }
 
-      const result = await parseAttendanceWithDatesAction(
-        tempFilePath,
+      const result = await parseFromStorageWithDatesAction(
+        storageKey,
         startDate,
         endDate,
         fileName,
@@ -190,7 +185,7 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
           payrollWeekStartDate: startDate,
           payrollWeekEndDate: endDate,
           payrollWeekSource: 'MANUAL',
-          tempFilePath,
+          storageKey,
           fileName,
           fileType,
         })
@@ -198,7 +193,7 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
       }
 
       const finalResult = await finalizeAttendanceUploadAction({
-        tempFilePath,
+        storageKey,
         fileName,
         fileType,
         payrollWeekStartDate: startDate,
@@ -223,12 +218,12 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
       rejectedBlockKeys: string[]
     ) => {
       if (dialog.type !== 'verify_required') return
-      const { tempFilePath, fileName, fileType, payrollWeekStartDate, payrollWeekEndDate, payrollWeekSource } = dialog
+      const { storageKey, fileName, fileType, payrollWeekStartDate, payrollWeekEndDate, payrollWeekSource } = dialog
       setDialog({ type: 'none' })
       setError(null)
 
       const finalResult = await finalizeAttendanceUploadAction({
-        tempFilePath,
+        storageKey,
         fileName,
         fileType,
         payrollWeekStartDate,
@@ -257,7 +252,7 @@ export function CorrectionFlow({ data, weekLabel, initialDialogState }: Correcti
       const blockKey = getBlockKey(record)
 
       const result = await createAttendanceUploadSessionAction({
-        tempFilePath: dialog.tempFilePath,
+        storageKey: dialog.storageKey,
         fileName: dialog.fileName,
         fileType: dialog.fileType,
         payrollWeekStartDate: dialog.payrollWeekStartDate,

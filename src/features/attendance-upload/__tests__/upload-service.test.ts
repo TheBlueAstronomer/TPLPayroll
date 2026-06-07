@@ -22,20 +22,15 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-// ─── Mock fs ──────────────────────────────────────────────────────────────────
+// ─── Mock Supabase Storage (replaces fs) ─────────────────────────────────────
 
-vi.mock('fs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs')>()
-  return {
-    ...actual,
-    default: { ...actual, existsSync: vi.fn(() => true), unlinkSync: vi.fn() },
-    existsSync: vi.fn(() => true),
-    unlinkSync: vi.fn(),
-  }
-})
+vi.mock('@/lib/supabase-storage', () => ({
+  deleteFile: vi.fn().mockResolvedValue(undefined),
+  ATTENDANCE_BUCKET: 'attendance-files',
+}))
 
 import prisma from '@/lib/prisma'
-import * as fsModule from 'fs'
+import * as supabaseStorage from '@/lib/supabase-storage'
 import { replaceAttendanceUpload } from '@/features/attendance-upload/services/upload.service'
 import type { MatchedAttendanceRecord } from '@/features/attendance-upload/types/attendance.types'
 
@@ -53,7 +48,7 @@ function makeUpload(overrides: Partial<AttendanceUpload> = {}): AttendanceUpload
     isActiveForPayrollWeek: true,
     uploadedBy: null,
     uploadedAt: new Date(),
-    sourceFilePath: '/tmp/old.xlsx',
+    sourceStorageKey: 'attendance/old-uuid_old.xlsx',
     ...overrides,
   }
 }
@@ -82,15 +77,15 @@ describe('replaceAttendanceUpload', () => {
     vi.clearAllMocks()
   })
 
-  it('deletes the previous file when replacing', async () => {
-    const previousUpload = makeUpload({ sourceFilePath: '/tmp/old.xlsx' })
+  it('deletes the previous file from Supabase Storage when replacing', async () => {
+    const previousUpload = makeUpload({ sourceStorageKey: 'attendance/old-uuid_old.xlsx' })
     vi.mocked(prisma.attendanceUpload.update).mockResolvedValue({ id: 'upload-new', isActiveForPayrollWeek: true } as never)
     vi.mocked(prisma.attendanceUpload.create).mockResolvedValue({ id: 'upload-new', isActiveForPayrollWeek: true } as never)
     vi.mocked(prisma.attendanceRecord.createMany).mockResolvedValue({ count: 1 } as never)
 
     await replaceAttendanceUpload({
       previousUpload,
-      newFilePath: '/tmp/new.xlsx',
+      storageKey: 'attendance/new-uuid_new.xlsx',
       newFileName: 'new.xlsx',
       fileType: 'xlsx',
       payrollWeekStartDate: new Date('2025-03-06'),
@@ -101,7 +96,11 @@ describe('replaceAttendanceUpload', () => {
       payrollWeekStartISO: '2025-03-06',
     })
 
-    expect(fsModule.unlinkSync).toHaveBeenCalledWith('/tmp/old.xlsx')
+    // Verify old Storage file is deleted
+    expect(supabaseStorage.deleteFile).toHaveBeenCalledWith(
+      'attendance-files',
+      'attendance/old-uuid_old.xlsx'
+    )
   })
 
   it('deactivates the previous upload record', async () => {
@@ -116,7 +115,7 @@ describe('replaceAttendanceUpload', () => {
 
     await replaceAttendanceUpload({
       previousUpload,
-      newFilePath: '/tmp/new.xlsx',
+      storageKey: 'attendance/new-uuid_new.xlsx',
       newFileName: 'new.xlsx',
       fileType: 'xlsx',
       payrollWeekStartDate: new Date('2025-03-06'),
@@ -135,7 +134,7 @@ describe('replaceAttendanceUpload', () => {
     )
   })
 
-  it('creates new upload record as active', async () => {
+  it('creates new upload record as active with the new storageKey', async () => {
     const previousUpload = makeUpload()
     let capturedTxCreate: ReturnType<typeof vi.fn> | undefined
 
@@ -147,7 +146,7 @@ describe('replaceAttendanceUpload', () => {
 
     await replaceAttendanceUpload({
       previousUpload,
-      newFilePath: '/tmp/new.xlsx',
+      storageKey: 'attendance/new-uuid_new.xlsx',
       newFileName: 'new.xlsx',
       fileType: 'xlsx',
       payrollWeekStartDate: new Date('2025-03-06'),
@@ -160,7 +159,10 @@ describe('replaceAttendanceUpload', () => {
 
     expect(capturedTxCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ isActiveForPayrollWeek: true }),
+        data: expect.objectContaining({
+          isActiveForPayrollWeek: true,
+          sourceStorageKey: 'attendance/new-uuid_new.xlsx',
+        }),
       })
     )
   })
