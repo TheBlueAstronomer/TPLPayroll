@@ -229,7 +229,7 @@ export async function approveAdjustmentApplication(applicationId: string) {
   if (!app) {
     throw new AdjustmentServiceError('APPLICATION_NOT_FOUND', `Application "${applicationId}" not found`)
   }
-  if (app.approvalStatus !== 'PENDING') {
+  if (app.approvalStatus !== 'PENDING' && app.approvalStatus !== 'SKIPPED') {
     throw new AdjustmentServiceError(
       'INVALID_APPROVAL_STATUS',
       `Application is already ${app.approvalStatus.toLowerCase()}`,
@@ -261,6 +261,17 @@ export async function approveAdjustmentApplication(applicationId: string) {
 
   const now = new Date()
 
+  // If we are approving a skipped application, delete its carry-forward application if it exists
+  if (app.approvalStatus === 'SKIPPED' && app.carriedForwardToPayrollWeekStartDate) {
+    await prisma.payrollAdjustmentApplication.deleteMany({
+      where: {
+        payrollAdjustmentId: adj.id,
+        payrollWeekStartDate: app.carriedForwardToPayrollWeekStartDate,
+        approvalStatus: 'PENDING',
+      },
+    })
+  }
+
   // Mark current application as approved
   const updated = await prisma.payrollAdjustmentApplication.update({
     where: { id: applicationId },
@@ -268,6 +279,7 @@ export async function approveAdjustmentApplication(applicationId: string) {
       approvalStatus: 'APPROVED',
       appliedAt: now,
       appliedAmount,
+      carriedForwardToPayrollWeekStartDate: null,
     },
   })
 
@@ -378,6 +390,14 @@ export async function approveAdjustmentApplication(applicationId: string) {
     }
   }
 
+  // ── ONE_TIME: complete the adjustment immediately ───────────────────────
+  if (adj.recurrenceType === 'ONE_TIME') {
+    await prisma.payrollAdjustment.update({
+      where: { id: adj.id },
+      data: { status: 'COMPLETED' },
+    })
+  }
+
   return {
     ...updated,
     appliedAmount: Number(updated.appliedAmount),
@@ -397,7 +417,7 @@ export async function skipAdjustmentApplication(applicationId: string) {
   if (!app) {
     throw new AdjustmentServiceError('APPLICATION_NOT_FOUND', `Application "${applicationId}" not found`)
   }
-  if (app.approvalStatus !== 'PENDING') {
+  if (app.approvalStatus !== 'PENDING' && app.approvalStatus !== 'APPROVED') {
     throw new AdjustmentServiceError(
       'INVALID_APPROVAL_STATUS',
       `Application is already ${app.approvalStatus.toLowerCase()}`,
@@ -406,6 +426,32 @@ export async function skipAdjustmentApplication(applicationId: string) {
 
   const adj = app.payrollAdjustment
   const now = new Date()
+
+  // ── Undo effects if skipping an already approved application ────────────
+  let restoredRemainingBalance: number | null = null
+  let revertStatusToActive = false
+
+  if (app.approvalStatus === 'APPROVED') {
+    const isTotalBalance = adj.recurrenceEndType === 'TOTAL_BALANCE'
+    const isFixedWeeks = adj.recurrenceEndType === 'FIXED_WEEKS'
+    const appliedAmount = Number(app.appliedAmount)
+
+    if ((isTotalBalance || isFixedWeeks) && adj.remainingBalance !== null) {
+      const currentRemaining = Number(adj.remainingBalance)
+      restoredRemainingBalance = currentRemaining + appliedAmount
+
+      // Cap the restored balance at the original total if known
+      if (adj.totalBalance !== null) {
+         restoredRemainingBalance = Math.min(restoredRemainingBalance, Number(adj.totalBalance))
+      }
+    }
+
+    // If the adjustment was completed, revert it to ACTIVE since we are skipping an application
+    // and thus creating a carry-forward (meaning it's not done yet).
+    if (adj.status === 'COMPLETED') {
+      revertStatusToActive = true
+    }
+  }
 
   const nextWeekStart = addDays(app.payrollWeekStartDate, 7)
   const nextWeekEnd = addDays(app.payrollWeekEndDate, 7)
@@ -445,6 +491,8 @@ export async function skipAdjustmentApplication(applicationId: string) {
     where: { id: adj.id },
     data: {
       skippedCarryForwardCount: adj.skippedCarryForwardCount + 1,
+      ...(restoredRemainingBalance !== null ? { remainingBalance: restoredRemainingBalance } : {}),
+      ...(revertStatusToActive ? { status: 'ACTIVE' } : {}),
     },
   })
 

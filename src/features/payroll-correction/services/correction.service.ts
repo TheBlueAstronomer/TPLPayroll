@@ -18,8 +18,27 @@ import {
 // ─── prepareAdjustmentsForCorrection ───────────────────────────────────────────
 
 export async function prepareAdjustmentsForCorrection(payrollRunId: string): Promise<void> {
+  // Look up the run's week so we can also target unlinked applications
+  const run = await prisma.payrollRun.findUnique({
+    where: { id: payrollRunId },
+    select: { payrollWeekStartDate: true },
+  })
+
   await prisma.payrollAdjustmentApplication.updateMany({
-    where: { payrollRunId },
+    where: {
+      OR: [
+        // Applications already linked to this payroll run
+        { payrollRunId },
+        // New applications created after approval (payrollRunId is null)
+        ...(run
+          ? [{
+              payrollWeekStartDate: run.payrollWeekStartDate,
+              payrollRunId: null,
+              approvalStatus: 'PENDING' as const,
+            }]
+          : []),
+      ],
+    },
     data: {
       approvalStatus: 'PENDING',
       isReversed: false,
@@ -72,11 +91,15 @@ export async function initiateCorrection(
     },
   })
 
-  // Load adjustment applications for this week
+  // Load adjustment applications for this week — includes both previously-linked
+  // applications AND new ones created after the payroll was approved (payrollRunId=null)
   const adjustmentApps = await prisma.payrollAdjustmentApplication.findMany({
     where: {
       payrollWeekStartDate: run.payrollWeekStartDate,
-      payrollRunId: run.id,
+      OR: [
+        { payrollRunId: run.id },
+        { payrollRunId: null, approvalStatus: 'PENDING' },
+      ],
     },
     include: {
       payrollAdjustment: { select: { adjustmentType: true, amount: true, reason: true } },
@@ -435,10 +458,21 @@ export async function recalculateAndCreateRevision(
       },
     }),
 
-    // Update adjustment applications to point to the new revision ID
+    // Update adjustment applications to point to the new revision ID.
+    // Also link any newly approved applications that weren't previously attached.
     prisma.payrollAdjustmentApplication.updateMany({
-      where: { payrollRunId: run.id },
-      data: { payrollRevisionId: newRevisionId },
+      where: {
+        OR: [
+          { payrollRunId: run.id },
+          {
+            payrollWeekStartDate: weekStart,
+            approvalStatus: 'APPROVED',
+            isReversed: false,
+            payrollRunId: null,
+          },
+        ],
+      },
+      data: { payrollRunId: run.id, payrollRevisionId: newRevisionId },
     }),
   ]
 
