@@ -1,0 +1,2798 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "cleanupDatabase",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L20",
+      "id": "utils_db_cleanupdatabase",
+      "community": 246,
+      "norm_label": "cleanupdatabase"
+    },
+    {
+      "label": "seedAdjustmentTestData",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L44",
+      "id": "utils_db_seedadjustmenttestdata",
+      "community": 252,
+      "norm_label": "seedadjustmenttestdata"
+    },
+    {
+      "label": "seedPayrollTestData",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L166",
+      "id": "utils_db_seedpayrolltestdata",
+      "community": 255,
+      "norm_label": "seedpayrolltestdata"
+    },
+    {
+      "label": "seedApprovedPayrollData",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L333",
+      "id": "utils_db_seedapprovedpayrolldata",
+      "community": 253,
+      "norm_label": "seedapprovedpayrolldata"
+    },
+    {
+      "label": "getInvoiceSnapshotCount",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L481",
+      "id": "utils_db_getinvoicesnapshotcount",
+      "community": 249,
+      "norm_label": "getinvoicesnapshotcount"
+    },
+    {
+      "label": "getCleanedSnapshotCount",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L486",
+      "id": "utils_db_getcleanedsnapshotcount",
+      "community": 247,
+      "norm_label": "getcleanedsnapshotcount"
+    },
+    {
+      "label": "seedTestData",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L493",
+      "id": "utils_db_seedtestdata",
+      "community": 256,
+      "norm_label": "seedtestdata"
+    },
+    {
+      "label": "seedApprovedPayrollForCorrection",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L559",
+      "id": "utils_db_seedapprovedpayrollforcorrection",
+      "community": 254,
+      "norm_label": "seedapprovedpayrollforcorrection"
+    },
+    {
+      "label": "getRevisionCount",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L702",
+      "id": "utils_db_getrevisioncount",
+      "community": 251,
+      "norm_label": "getrevisioncount"
+    },
+    {
+      "label": "getCurrentRevision",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L710",
+      "id": "utils_db_getcurrentrevision",
+      "community": 248,
+      "norm_label": "getcurrentrevision"
+    },
+    {
+      "label": "getPayrollRunStatus",
+      "file_type": "code",
+      "source_file": "TPLPayroll/e2e/utils/db.ts",
+      "source_location": "L718",
+      "id": "utils_db_getpayrollrunstatus",
+      "community": 250,
+      "norm_label": "getpayrollrunstatus"
+    },
+    {
+      "label": "generateMetadata",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/adjustments/[id]/edit/page.tsx",
+      "source_location": "L14",
+      "id": "tplpayroll_src_app_adjustments_id_edit_page_tsx_edit_page_generatemetadata",
+      "community": 166,
+      "norm_label": "generatemetadata"
+    },
+    {
+      "label": "AdjustmentEditPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/adjustments/[id]/edit/page.tsx",
+      "source_location": "L26",
+      "id": "edit_page_adjustmenteditpage",
+      "community": 71,
+      "norm_label": "adjustmenteditpage"
+    },
+    {
+      "label": "generateMetadata",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/adjustments/[id]/page.tsx",
+      "source_location": "L16",
+      "id": "tplpayroll_src_app_adjustments_id_page_tsx_id_page_generatemetadata",
+      "community": 167,
+      "norm_label": "generatemetadata"
+    },
+    {
+      "label": "AdjustmentDetailPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/adjustments/[id]/page.tsx",
+      "source_location": "L28",
+      "id": "id_page_adjustmentdetailpage",
+      "community": 76,
+      "norm_label": "adjustmentdetailpage"
+    },
+    {
+      "label": "NewAdjustmentPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/adjustments/new/page.tsx",
+      "source_location": "L8",
+      "id": "new_page_newadjustmentpage",
+      "community": 81,
+      "norm_label": "newadjustmentpage"
+    },
+    {
+      "label": "AdjustmentsPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/adjustments/page.tsx",
+      "source_location": "L12",
+      "id": "adjustments_page_adjustmentspage",
+      "community": 53,
+      "norm_label": "adjustmentspage"
+    },
+    {
+      "label": "GET",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/api/audit-logs/route.ts",
+      "source_location": "L4",
+      "id": "audit_logs_route_get",
+      "community": 57,
+      "norm_label": "get"
+    },
+    {
+      "label": "GET",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/api/employees/export/route.ts",
+      "source_location": "L5",
+      "id": "export_route_get",
+      "community": 74,
+      "norm_label": "get"
+    },
+    {
+      "label": "POST",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/api/payroll/reports/[payrollRunId]/cleanup/route.ts",
+      "source_location": "L4",
+      "id": "cleanup_route_post",
+      "community": 58,
+      "norm_label": "post"
+    },
+    {
+      "label": "GET",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/api/payroll/reports/[payrollRunId]/slips/route.ts",
+      "source_location": "L5",
+      "id": "slips_route_get",
+      "community": 164,
+      "norm_label": "get"
+    },
+    {
+      "label": "GET",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/api/payroll/reports/[payrollRunId]/summary/route.ts",
+      "source_location": "L5",
+      "id": "summary_route_get",
+      "community": 165,
+      "norm_label": "get"
+    },
+    {
+      "label": "generateMetadata",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/attendance/[id]/preview/page.tsx",
+      "source_location": "L15",
+      "id": "tplpayroll_src_app_attendance_id_preview_page_tsx_preview_page_generatemetadata",
+      "community": 168,
+      "norm_label": "generatemetadata"
+    },
+    {
+      "label": "AttendancePreviewPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/attendance/[id]/preview/page.tsx",
+      "source_location": "L20",
+      "id": "preview_page_attendancepreviewpage",
+      "community": 84,
+      "norm_label": "attendancepreviewpage"
+    },
+    {
+      "label": "AttendancePage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/attendance/page.tsx",
+      "source_location": "L18",
+      "id": "attendance_page_attendancepage",
+      "community": 55,
+      "norm_label": "attendancepage"
+    },
+    {
+      "label": "AuditLogPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/audit-log/page.tsx",
+      "source_location": "L13",
+      "id": "audit_log_page_auditlogpage",
+      "community": 56,
+      "norm_label": "auditlogpage"
+    },
+    {
+      "label": "generateMetadata",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/employees/[id]/edit/page.tsx",
+      "source_location": "L14",
+      "id": "tplpayroll_src_app_employees_id_edit_page_tsx_edit_page_generatemetadata",
+      "community": 169,
+      "norm_label": "generatemetadata"
+    },
+    {
+      "label": "EditEmployeePage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/employees/[id]/edit/page.tsx",
+      "source_location": "L26",
+      "id": "edit_page_editemployeepage",
+      "community": 72,
+      "norm_label": "editemployeepage"
+    },
+    {
+      "label": "generateMetadata",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/employees/[id]/page.tsx",
+      "source_location": "L14",
+      "id": "tplpayroll_src_app_employees_id_page_tsx_id_page_generatemetadata",
+      "community": 170,
+      "norm_label": "generatemetadata"
+    },
+    {
+      "label": "EmployeeProfilePage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/employees/[id]/page.tsx",
+      "source_location": "L27",
+      "id": "id_page_employeeprofilepage",
+      "community": 77,
+      "norm_label": "employeeprofilepage"
+    },
+    {
+      "label": "ImportPreviewPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/employees/import/preview/page.tsx",
+      "source_location": "L8",
+      "id": "preview_page_importpreviewpage",
+      "community": 85,
+      "norm_label": "importpreviewpage"
+    },
+    {
+      "label": "NewEmployeePage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/employees/new/page.tsx",
+      "source_location": "L17",
+      "id": "new_page_newemployeepage",
+      "community": 82,
+      "norm_label": "newemployeepage"
+    },
+    {
+      "label": "EmployeesPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/employees/page.tsx",
+      "source_location": "L12",
+      "id": "employees_page_employeespage",
+      "community": 73,
+      "norm_label": "employeespage"
+    },
+    {
+      "label": "generateMetadata",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/history/[recordId]/page.tsx",
+      "source_location": "L14",
+      "id": "recordid_page_generatemetadata",
+      "community": 87,
+      "norm_label": "generatemetadata"
+    },
+    {
+      "label": "PayrollHistoryDetailPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/history/[recordId]/page.tsx",
+      "source_location": "L27",
+      "id": "recordid_page_payrollhistorydetailpage",
+      "community": 88,
+      "norm_label": "payrollhistorydetailpage"
+    },
+    {
+      "label": "PayrollHistoryPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/history/page.tsx",
+      "source_location": "L23",
+      "id": "history_page_payrollhistorypage",
+      "community": 75,
+      "norm_label": "payrollhistorypage"
+    },
+    {
+      "label": "RootLayout",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/layout.tsx",
+      "source_location": "L21",
+      "id": "app_layout_rootlayout",
+      "community": 54,
+      "norm_label": "rootlayout"
+    },
+    {
+      "label": "generateMetadata",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/payroll/generate/[weekId]/page.tsx",
+      "source_location": "L9",
+      "id": "weekid_page_generatemetadata",
+      "community": 258,
+      "norm_label": "generatemetadata"
+    },
+    {
+      "label": "PayrollGeneratePage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/payroll/generate/[weekId]/page.tsx",
+      "source_location": "L14",
+      "id": "weekid_page_payrollgeneratepage",
+      "community": 259,
+      "norm_label": "payrollgeneratepage"
+    },
+    {
+      "label": "generateMetadata",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/payroll/run/[payrollRunId]/correct/page.tsx",
+      "source_location": "L17",
+      "id": "correct_page_generatemetadata",
+      "community": 67,
+      "norm_label": "generatemetadata"
+    },
+    {
+      "label": "PayrollCorrectionPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/payroll/run/[payrollRunId]/correct/page.tsx",
+      "source_location": "L27",
+      "id": "correct_page_payrollcorrectionpage",
+      "community": 68,
+      "norm_label": "payrollcorrectionpage"
+    },
+    {
+      "label": "generateMetadata",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/payroll/run/[payrollRunId]/correct/preview/page.tsx",
+      "source_location": "L14",
+      "id": "tplpayroll_src_app_payroll_run_payrollrunid_correct_preview_page_tsx_preview_page_generatemetadata",
+      "community": 171,
+      "norm_label": "generatemetadata"
+    },
+    {
+      "label": "RevisedPreviewPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/payroll/run/[payrollRunId]/correct/preview/page.tsx",
+      "source_location": "L24",
+      "id": "preview_page_revisedpreviewpage",
+      "community": 86,
+      "norm_label": "revisedpreviewpage"
+    },
+    {
+      "label": "generateMetadata",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/payroll/run/[payrollRunId]/page.tsx",
+      "source_location": "L20",
+      "id": "payrollrunid_page_generatemetadata",
+      "community": 83,
+      "norm_label": "generatemetadata"
+    },
+    {
+      "label": "SettingsPage",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/app/settings/page.tsx",
+      "source_location": "L17",
+      "id": "settings_page_settingspage",
+      "community": 163,
+      "norm_label": "settingspage"
+    },
+    {
+      "label": "DashboardCardSkeleton",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/components/dashboard/DashboardCardSkeleton.tsx",
+      "source_location": "L5",
+      "id": "dashboard_dashboardcardskeleton_dashboardcardskeleton",
+      "community": 69,
+      "norm_label": "dashboardcardskeleton"
+    },
+    {
+      "label": "DashboardError",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/components/dashboard/DashboardError.tsx",
+      "source_location": "L7",
+      "id": "dashboard_dashboarderror_dashboarderror",
+      "community": 70,
+      "norm_label": "dashboarderror"
+    },
+    {
+      "label": "AppShell",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/components/layout/AppShell.tsx",
+      "source_location": "L18",
+      "id": "layout_appshell_appshell",
+      "community": 78,
+      "norm_label": "appshell"
+    },
+    {
+      "label": "Sidebar",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/components/layout/Sidebar.tsx",
+      "source_location": "L33",
+      "id": "layout_sidebar_sidebar",
+      "community": 79,
+      "norm_label": "sidebar"
+    },
+    {
+      "label": "ParseAttendanceResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L35",
+      "id": "actions_attendance_actions_parseattendanceresult",
+      "community": 1,
+      "norm_label": "parseattendanceresult"
+    },
+    {
+      "label": "parseAttendanceFileAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L44",
+      "id": "actions_attendance_actions_parseattendancefileaction",
+      "community": 22,
+      "norm_label": "parseattendancefileaction"
+    },
+    {
+      "label": "FinalizeUploadInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L120",
+      "id": "actions_attendance_actions_finalizeuploadinput",
+      "community": 0,
+      "norm_label": "finalizeuploadinput"
+    },
+    {
+      "label": "finalizeAttendanceUploadAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L134",
+      "id": "actions_attendance_actions_finalizeattendanceuploadaction",
+      "community": 17,
+      "norm_label": "finalizeattendanceuploadaction"
+    },
+    {
+      "label": "parseAttendanceWithDatesAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L231",
+      "id": "actions_attendance_actions_parseattendancewithdatesaction",
+      "community": 23,
+      "norm_label": "parseattendancewithdatesaction"
+    },
+    {
+      "label": "EmployeeOption",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L278",
+      "id": "actions_attendance_actions_employeeoption",
+      "community": 16,
+      "norm_label": "employeeoption"
+    },
+    {
+      "label": "getEmployeesForMatchingAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L284",
+      "id": "actions_attendance_actions_getemployeesformatchingaction",
+      "community": 21,
+      "norm_label": "getemployeesformatchingaction"
+    },
+    {
+      "label": "AttendanceUploadRow",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L294",
+      "id": "actions_attendance_actions_attendanceuploadrow",
+      "community": 14,
+      "norm_label": "attendanceuploadrow"
+    },
+    {
+      "label": "getAttendanceUploadsAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L303",
+      "id": "actions_attendance_actions_getattendanceuploadsaction",
+      "community": 19,
+      "norm_label": "getattendanceuploadsaction"
+    },
+    {
+      "label": "AttendancePreviewData",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L325",
+      "id": "actions_attendance_actions_attendancepreviewdata",
+      "community": 13,
+      "norm_label": "attendancepreviewdata"
+    },
+    {
+      "label": "getAttendanceUploadPreviewAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L337",
+      "id": "actions_attendance_actions_getattendanceuploadpreviewaction",
+      "community": 18,
+      "norm_label": "getattendanceuploadpreviewaction"
+    },
+    {
+      "label": "CreateUploadSessionInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L463",
+      "id": "actions_attendance_actions_createuploadsessioninput",
+      "community": 0,
+      "norm_label": "createuploadsessioninput"
+    },
+    {
+      "label": "createAttendanceUploadSessionAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L477",
+      "id": "actions_attendance_actions_createattendanceuploadsessionaction",
+      "community": 15,
+      "norm_label": "createattendanceuploadsessionaction"
+    },
+    {
+      "label": "getAttendanceUploadSessionAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L516",
+      "id": "actions_attendance_actions_getattendanceuploadsessionaction",
+      "community": 20,
+      "norm_label": "getattendanceuploadsessionaction"
+    },
+    {
+      "label": "ResumedDialogState",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L537",
+      "id": "actions_attendance_actions_resumeddialogstate",
+      "community": 0,
+      "norm_label": "resumeddialogstate"
+    },
+    {
+      "label": "resumeAttendanceUploadSessionAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L551",
+      "id": "actions_attendance_actions_resumeattendanceuploadsessionaction",
+      "community": 24,
+      "norm_label": "resumeattendanceuploadsessionaction"
+    },
+    {
+      "label": "CreateAttendanceUploadSessionInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/attendance-upload-session.service.ts",
+      "source_location": "L16",
+      "id": "services_attendance_upload_session_service_createattendanceuploadsessioninput",
+      "community": 2,
+      "norm_label": "createattendanceuploadsessioninput"
+    },
+    {
+      "label": "createAttendanceUploadSession",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/attendance-upload-session.service.ts",
+      "source_location": "L27",
+      "id": "services_attendance_upload_session_service_createattendanceuploadsession",
+      "community": 97,
+      "norm_label": "createattendanceuploadsession"
+    },
+    {
+      "label": "loadAttendanceUploadSession",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/attendance-upload-session.service.ts",
+      "source_location": "L43",
+      "id": "services_attendance_upload_session_service_loadattendanceuploadsession",
+      "community": 98,
+      "norm_label": "loadattendanceuploadsession"
+    },
+    {
+      "label": "ResumedSessionState",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/attendance-upload-session.service.ts",
+      "source_location": "L49",
+      "id": "services_attendance_upload_session_service_resumedsessionstate",
+      "community": 2,
+      "norm_label": "resumedsessionstate"
+    },
+    {
+      "label": "resumeAttendanceUploadSession",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/attendance-upload-session.service.ts",
+      "source_location": "L63",
+      "id": "services_attendance_upload_session_service_resumeattendanceuploadsession",
+      "community": 99,
+      "norm_label": "resumeattendanceuploadsession"
+    },
+    {
+      "label": "matchEmployees",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/employee-matcher.service.ts",
+      "source_location": "L22",
+      "id": "services_employee_matcher_service_matchemployees",
+      "community": 113,
+      "norm_label": "matchemployees"
+    },
+    {
+      "label": "validateAttendanceFile",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/file-validator.service.ts",
+      "source_location": "L3",
+      "id": "services_file_validator_service_validateattendancefile",
+      "community": 124,
+      "norm_label": "validateattendancefile"
+    },
+    {
+      "label": "computeImportSummary",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/import-summary.service.ts",
+      "source_location": "L6",
+      "id": "services_import_summary_service_computeimportsummary",
+      "community": 129,
+      "norm_label": "computeimportsummary"
+    },
+    {
+      "label": "SessionDecisions",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload-session.service.ts",
+      "source_location": "L11",
+      "id": "services_upload_session_service_sessiondecisions",
+      "community": 2,
+      "norm_label": "sessiondecisions"
+    },
+    {
+      "label": "CreateUploadSessionParams",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload-session.service.ts",
+      "source_location": "L17",
+      "id": "services_upload_session_service_createuploadsessionparams",
+      "community": 0,
+      "norm_label": "createuploadsessionparams"
+    },
+    {
+      "label": "createUploadSession",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload-session.service.ts",
+      "source_location": "L29",
+      "id": "services_upload_session_service_createuploadsession",
+      "community": 157,
+      "norm_label": "createuploadsession"
+    },
+    {
+      "label": "LoadedUploadSession",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload-session.service.ts",
+      "source_location": "L57",
+      "id": "services_upload_session_service_loadeduploadsession",
+      "community": 0,
+      "norm_label": "loadeduploadsession"
+    },
+    {
+      "label": "loadUploadSession",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload-session.service.ts",
+      "source_location": "L71",
+      "id": "services_upload_session_service_loaduploadsession",
+      "community": 159,
+      "norm_label": "loaduploadsession"
+    },
+    {
+      "label": "expireUploadSession",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload-session.service.ts",
+      "source_location": "L107",
+      "id": "services_upload_session_service_expireuploadsession",
+      "community": 158,
+      "norm_label": "expireuploadsession"
+    },
+    {
+      "label": "pruneExpiredSessions",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload-session.service.ts",
+      "source_location": "L113",
+      "id": "services_upload_session_service_pruneexpiredsessions",
+      "community": 160,
+      "norm_label": "pruneexpiredsessions"
+    },
+    {
+      "label": "CreateUploadParams",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload.service.ts",
+      "source_location": "L13",
+      "id": "services_upload_service_createuploadparams",
+      "community": 1,
+      "norm_label": "createuploadparams"
+    },
+    {
+      "label": "createAttendanceUpload",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload.service.ts",
+      "source_location": "L25",
+      "id": "services_upload_service_createattendanceupload",
+      "community": 155,
+      "norm_label": "createattendanceupload"
+    },
+    {
+      "label": "ReplaceUploadParams",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload.service.ts",
+      "source_location": "L77",
+      "id": "services_upload_service_replaceuploadparams",
+      "community": 1,
+      "norm_label": "replaceuploadparams"
+    },
+    {
+      "label": "replaceAttendanceUpload",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload.service.ts",
+      "source_location": "L81",
+      "id": "services_upload_service_replaceattendanceupload",
+      "community": 156,
+      "norm_label": "replaceattendanceupload"
+    },
+    {
+      "label": "detectPayrollWeek",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/week-detector.service.ts",
+      "source_location": "L94",
+      "id": "services_week_detector_service_detectpayrollweek",
+      "community": 161,
+      "norm_label": "detectpayrollweek"
+    },
+    {
+      "label": "WorkbookParseResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/workbook-parser.service.ts",
+      "source_location": "L155",
+      "id": "services_workbook_parser_service_workbookparseresult",
+      "community": 1,
+      "norm_label": "workbookparseresult"
+    },
+    {
+      "label": "parseAttendanceWorkbook",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/workbook-parser.service.ts",
+      "source_location": "L159",
+      "id": "services_workbook_parser_service_parseattendanceworkbook",
+      "community": 162,
+      "norm_label": "parseattendanceworkbook"
+    },
+    {
+      "label": "AttendanceFileErrorCode",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L5",
+      "id": "types_attendance_types_attendancefileerrorcode",
+      "community": 187,
+      "norm_label": "attendancefileerrorcode"
+    },
+    {
+      "label": "PayrollWeekSource",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L9",
+      "id": "types_attendance_types_payrollweeksource",
+      "community": 0,
+      "norm_label": "payrollweeksource"
+    },
+    {
+      "label": "PayrollWeekDetectionResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L11",
+      "id": "types_attendance_types_payrollweekdetectionresult",
+      "community": 1,
+      "norm_label": "payrollweekdetectionresult"
+    },
+    {
+      "label": "DailyHours",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L22",
+      "id": "types_attendance_types_dailyhours",
+      "community": 190,
+      "norm_label": "dailyhours"
+    },
+    {
+      "label": "ParsedAttendanceBlock",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L33",
+      "id": "types_attendance_types_parsedattendanceblock",
+      "community": 1,
+      "norm_label": "parsedattendanceblock"
+    },
+    {
+      "label": "MatchStatus",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L47",
+      "id": "types_attendance_types_matchstatus",
+      "community": 192,
+      "norm_label": "matchstatus"
+    },
+    {
+      "label": "getBlockKey",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L55",
+      "id": "types_attendance_types_getblockkey",
+      "community": 191,
+      "norm_label": "getblockkey"
+    },
+    {
+      "label": "VerificationDecision",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L59",
+      "id": "types_attendance_types_verificationdecision",
+      "community": 0,
+      "norm_label": "verificationdecision"
+    },
+    {
+      "label": "MatchedAttendanceRecord",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L61",
+      "id": "types_attendance_types_matchedattendancerecord",
+      "community": 1,
+      "norm_label": "matchedattendancerecord"
+    },
+    {
+      "label": "ImportSummary",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L70",
+      "id": "types_attendance_types_importsummary",
+      "community": 0,
+      "norm_label": "importsummary"
+    },
+    {
+      "label": "AttendanceUploadResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L84",
+      "id": "types_attendance_types_attendanceuploadresult",
+      "community": 189,
+      "norm_label": "attendanceuploadresult"
+    },
+    {
+      "label": "AttendanceServiceError",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L102",
+      "id": "types_attendance_types_attendanceserviceerror",
+      "community": 188,
+      "norm_label": "attendanceserviceerror"
+    },
+    {
+      "label": "ActionResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L114",
+      "id": "types_attendance_types_actionresult",
+      "community": 186,
+      "norm_label": "actionresult"
+    },
+    {
+      "label": "getAuditLogs",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/audit-logging/services/audit-log.service.ts",
+      "source_location": "L4",
+      "id": "services_audit_log_service_getauditlogs",
+      "community": 100,
+      "norm_label": "getauditlogs"
+    },
+    {
+      "label": "AuditLogRecord",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/audit-logging/types/audit-log.types.ts",
+      "source_location": "L1",
+      "id": "types_audit_log_types_auditlogrecord",
+      "community": 194,
+      "norm_label": "auditlogrecord"
+    },
+    {
+      "label": "AuditLogListOptions",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/audit-logging/types/audit-log.types.ts",
+      "source_location": "L10",
+      "id": "types_audit_log_types_auditloglistoptions",
+      "community": 193,
+      "norm_label": "auditloglistoptions"
+    },
+    {
+      "label": "PaginatedAuditLogList",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/audit-logging/types/audit-log.types.ts",
+      "source_location": "L17",
+      "id": "types_audit_log_types_paginatedauditloglist",
+      "community": 195,
+      "norm_label": "paginatedauditloglist"
+    },
+    {
+      "label": "ActionResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/actions/import-export.actions.ts",
+      "source_location": "L9",
+      "id": "actions_import_export_actions_actionresult",
+      "community": 42,
+      "norm_label": "actionresult"
+    },
+    {
+      "label": "parseImportFileAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/actions/import-export.actions.ts",
+      "source_location": "L15",
+      "id": "actions_import_export_actions_parseimportfileaction",
+      "community": 44,
+      "norm_label": "parseimportfileaction"
+    },
+    {
+      "label": "executeImportAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/actions/import-export.actions.ts",
+      "source_location": "L41",
+      "id": "actions_import_export_actions_executeimportaction",
+      "community": 43,
+      "norm_label": "executeimportaction"
+    },
+    {
+      "label": "FixInvalidRowDialog",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/components/FixInvalidRowDialog.tsx",
+      "source_location": "L74",
+      "id": "components_fixinvalidrowdialog_fixinvalidrowdialog",
+      "community": 62,
+      "norm_label": "fixinvalidrowdialog"
+    },
+    {
+      "label": "generateExportWorkbook",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/services/export.service.ts",
+      "source_location": "L10",
+      "id": "services_export_service_generateexportworkbook",
+      "community": 123,
+      "norm_label": "generateexportworkbook"
+    },
+    {
+      "label": "mapActiveValue",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/services/import.service.ts",
+      "source_location": "L17",
+      "id": "services_import_service_mapactivevalue",
+      "community": 126,
+      "norm_label": "mapactivevalue"
+    },
+    {
+      "label": "validateImportFile",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/services/import.service.ts",
+      "source_location": "L26",
+      "id": "services_import_service_validateimportfile",
+      "community": 128,
+      "norm_label": "validateimportfile"
+    },
+    {
+      "label": "parseImportFile",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/services/import.service.ts",
+      "source_location": "L175",
+      "id": "services_import_service_parseimportfile",
+      "community": 127,
+      "norm_label": "parseimportfile"
+    },
+    {
+      "label": "executeImport",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/services/import.service.ts",
+      "source_location": "L225",
+      "id": "services_import_service_executeimport",
+      "community": 125,
+      "norm_label": "executeimport"
+    },
+    {
+      "label": "ImportFileErrorCode",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L31",
+      "id": "types_import_export_types_importfileerrorcode",
+      "community": 220,
+      "norm_label": "importfileerrorcode"
+    },
+    {
+      "label": "ImportRowErrorCode",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L33",
+      "id": "types_import_export_types_importrowerrorcode",
+      "community": 223,
+      "norm_label": "importrowerrorcode"
+    },
+    {
+      "label": "ImportRowData",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L46",
+      "id": "types_import_export_types_importrowdata",
+      "community": 222,
+      "norm_label": "importrowdata"
+    },
+    {
+      "label": "ImportRowAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L68",
+      "id": "types_import_export_types_importrowaction",
+      "community": 221,
+      "norm_label": "importrowaction"
+    },
+    {
+      "label": "ValidImportRow",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L70",
+      "id": "types_import_export_types_validimportrow",
+      "community": 226,
+      "norm_label": "validimportrow"
+    },
+    {
+      "label": "InvalidImportRow",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L77",
+      "id": "types_import_export_types_invalidimportrow",
+      "community": 224,
+      "norm_label": "invalidimportrow"
+    },
+    {
+      "label": "FixRowFormValues",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L85",
+      "id": "types_import_export_types_fixrowformvalues",
+      "community": 218,
+      "norm_label": "fixrowformvalues"
+    },
+    {
+      "label": "DuplicateImportRow",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L94",
+      "id": "types_import_export_types_duplicateimportrow",
+      "community": 216,
+      "norm_label": "duplicateimportrow"
+    },
+    {
+      "label": "ParseImportResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L103",
+      "id": "types_import_export_types_parseimportresult",
+      "community": 225,
+      "norm_label": "parseimportresult"
+    },
+    {
+      "label": "ExecuteImportResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L112",
+      "id": "types_import_export_types_executeimportresult",
+      "community": 217,
+      "norm_label": "executeimportresult"
+    },
+    {
+      "label": "ImportExportServiceError",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/types/import-export.types.ts",
+      "source_location": "L134",
+      "id": "types_import_export_types_importexportserviceerror",
+      "community": 219,
+      "norm_label": "importexportserviceerror"
+    },
+    {
+      "label": "applyRowFix",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-import-export/utils/row-fix.utils.ts",
+      "source_location": "L8",
+      "id": "utils_row_fix_utils_applyrowfix",
+      "community": 257,
+      "norm_label": "applyrowfix"
+    },
+    {
+      "label": "createEmployeeAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/actions/employee.actions.ts",
+      "source_location": "L51",
+      "id": "actions_employee_actions_createemployeeaction",
+      "community": 35,
+      "norm_label": "createemployeeaction"
+    },
+    {
+      "label": "updateEmployeeAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/actions/employee.actions.ts",
+      "source_location": "L64",
+      "id": "actions_employee_actions_updateemployeeaction",
+      "community": 41,
+      "norm_label": "updateemployeeaction"
+    },
+    {
+      "label": "getEmployeeListAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/actions/employee.actions.ts",
+      "source_location": "L78",
+      "id": "actions_employee_actions_getemployeelistaction",
+      "community": 39,
+      "norm_label": "getemployeelistaction"
+    },
+    {
+      "label": "getDistinctDesignationsAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/actions/employee.actions.ts",
+      "source_location": "L91",
+      "id": "actions_employee_actions_getdistinctdesignationsaction",
+      "community": 36,
+      "norm_label": "getdistinctdesignationsaction"
+    },
+    {
+      "label": "getDistinctSitesAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/actions/employee.actions.ts",
+      "source_location": "L100",
+      "id": "actions_employee_actions_getdistinctsitesaction",
+      "community": 37,
+      "norm_label": "getdistinctsitesaction"
+    },
+    {
+      "label": "getEmployeeByIdAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/actions/employee.actions.ts",
+      "source_location": "L111",
+      "id": "actions_employee_actions_getemployeebyidaction",
+      "community": 38,
+      "norm_label": "getemployeebyidaction"
+    },
+    {
+      "label": "getEmployeeWageHistoryAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/actions/employee.actions.ts",
+      "source_location": "L124",
+      "id": "actions_employee_actions_getemployeewagehistoryaction",
+      "community": 40,
+      "norm_label": "getemployeewagehistoryaction"
+    },
+    {
+      "label": "bulkUpdateStatusAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/actions/employee.actions.ts",
+      "source_location": "L137",
+      "id": "actions_employee_actions_bulkupdatestatusaction",
+      "community": 34,
+      "norm_label": "bulkupdatestatusaction"
+    },
+    {
+      "label": "bulkUpdateHourlyRateAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/actions/employee.actions.ts",
+      "source_location": "L150",
+      "id": "actions_employee_actions_bulkupdatehourlyrateaction",
+      "community": 33,
+      "norm_label": "bulkupdatehourlyrateaction"
+    },
+    {
+      "label": "BulkActionToolbar",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/components/BulkActionToolbar.tsx",
+      "source_location": "L13",
+      "id": "components_bulkactiontoolbar_bulkactiontoolbar",
+      "community": 60,
+      "norm_label": "bulkactiontoolbar"
+    },
+    {
+      "label": "AttendanceReturnContext",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/components/EmployeeForm.tsx",
+      "source_location": "L24",
+      "id": "components_employeeform_attendancereturncontext",
+      "community": 61,
+      "norm_label": "attendancereturncontext"
+    },
+    {
+      "label": "StatusBadge",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/components/StatusBadge.tsx",
+      "source_location": "L35",
+      "id": "components_statusbadge_statusbadge",
+      "community": 66,
+      "norm_label": "statusbadge"
+    },
+    {
+      "label": "createEmployee",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/services/employee.service.ts",
+      "source_location": "L73",
+      "id": "services_employee_service_createemployee",
+      "community": 116,
+      "norm_label": "createemployee"
+    },
+    {
+      "label": "getEmployeeList",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/services/employee.service.ts",
+      "source_location": "L192",
+      "id": "services_employee_service_getemployeelist",
+      "community": 120,
+      "norm_label": "getemployeelist"
+    },
+    {
+      "label": "getEmployeeById",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/services/employee.service.ts",
+      "source_location": "L242",
+      "id": "services_employee_service_getemployeebyid",
+      "community": 119,
+      "norm_label": "getemployeebyid"
+    },
+    {
+      "label": "getEmployeeWageHistory",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/services/employee.service.ts",
+      "source_location": "L252",
+      "id": "services_employee_service_getemployeewagehistory",
+      "community": 121,
+      "norm_label": "getemployeewagehistory"
+    },
+    {
+      "label": "updateEmployee",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/services/employee.service.ts",
+      "source_location": "L271",
+      "id": "services_employee_service_updateemployee",
+      "community": 122,
+      "norm_label": "updateemployee"
+    },
+    {
+      "label": "bulkUpdateStatus",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/services/employee.service.ts",
+      "source_location": "L434",
+      "id": "services_employee_service_bulkupdatestatus",
+      "community": 115,
+      "norm_label": "bulkupdatestatus"
+    },
+    {
+      "label": "bulkUpdateHourlyRate",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/services/employee.service.ts",
+      "source_location": "L521",
+      "id": "services_employee_service_bulkupdatehourlyrate",
+      "community": 114,
+      "norm_label": "bulkupdatehourlyrate"
+    },
+    {
+      "label": "getDistinctDesignations",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/services/employee.service.ts",
+      "source_location": "L614",
+      "id": "services_employee_service_getdistinctdesignations",
+      "community": 117,
+      "norm_label": "getdistinctdesignations"
+    },
+    {
+      "label": "getDistinctSites",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/services/employee.service.ts",
+      "source_location": "L624",
+      "id": "services_employee_service_getdistinctsites",
+      "community": 118,
+      "norm_label": "getdistinctsites"
+    },
+    {
+      "label": "EmployeeStatus",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L5",
+      "id": "types_employee_types_employeestatus",
+      "community": 211,
+      "norm_label": "employeestatus"
+    },
+    {
+      "label": "CreateEmployeeInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L30",
+      "id": "types_employee_types_createemployeeinput",
+      "community": 206,
+      "norm_label": "createemployeeinput"
+    },
+    {
+      "label": "UpdateEmployeeInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L36",
+      "id": "types_employee_types_updateemployeeinput",
+      "community": 214,
+      "norm_label": "updateemployeeinput"
+    },
+    {
+      "label": "BulkStatusUpdateInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L49",
+      "id": "types_employee_types_bulkstatusupdateinput",
+      "community": 205,
+      "norm_label": "bulkstatusupdateinput"
+    },
+    {
+      "label": "BulkHourlyRateUpdateInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L57",
+      "id": "types_employee_types_bulkhourlyrateupdateinput",
+      "community": 203,
+      "norm_label": "bulkhourlyrateupdateinput"
+    },
+    {
+      "label": "BulkOperationResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L59",
+      "id": "types_employee_types_bulkoperationresult",
+      "community": 204,
+      "norm_label": "bulkoperationresult"
+    },
+    {
+      "label": "SortableField",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L68",
+      "id": "types_employee_types_sortablefield",
+      "community": 213,
+      "norm_label": "sortablefield"
+    },
+    {
+      "label": "EmployeeListOptions",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L70",
+      "id": "types_employee_types_employeelistoptions",
+      "community": 208,
+      "norm_label": "employeelistoptions"
+    },
+    {
+      "label": "EmployeeListItem",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L81",
+      "id": "types_employee_types_employeelistitem",
+      "community": 207,
+      "norm_label": "employeelistitem"
+    },
+    {
+      "label": "PaginatedEmployeeList",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L93",
+      "id": "types_employee_types_paginatedemployeelist",
+      "community": 212,
+      "norm_label": "paginatedemployeelist"
+    },
+    {
+      "label": "EmployeeRecord",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L102",
+      "id": "types_employee_types_employeerecord",
+      "community": 209,
+      "norm_label": "employeerecord"
+    },
+    {
+      "label": "WageHistoryEntry",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L126",
+      "id": "types_employee_types_wagehistoryentry",
+      "community": 215,
+      "norm_label": "wagehistoryentry"
+    },
+    {
+      "label": "EmployeeServiceError",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/types/employee.types.ts",
+      "source_location": "L138",
+      "id": "types_employee_types_employeeserviceerror",
+      "community": 210,
+      "norm_label": "employeeserviceerror"
+    },
+    {
+      "label": "computePageRange",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/employee-management/utils/computePageRange.ts",
+      "source_location": "L1",
+      "id": "utils_computepagerange_computepagerange",
+      "community": 245,
+      "norm_label": "computepagerange"
+    },
+    {
+      "label": "createAdjustmentAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/actions/adjustment.actions.ts",
+      "source_location": "L44",
+      "id": "actions_adjustment_actions_createadjustmentaction",
+      "community": 7,
+      "norm_label": "createadjustmentaction"
+    },
+    {
+      "label": "getAdjustmentListAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/actions/adjustment.actions.ts",
+      "source_location": "L57",
+      "id": "actions_adjustment_actions_getadjustmentlistaction",
+      "community": 9,
+      "norm_label": "getadjustmentlistaction"
+    },
+    {
+      "label": "getAdjustmentDetailAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/actions/adjustment.actions.ts",
+      "source_location": "L70",
+      "id": "actions_adjustment_actions_getadjustmentdetailaction",
+      "community": 8,
+      "norm_label": "getadjustmentdetailaction"
+    },
+    {
+      "label": "approveAdjustmentApplicationAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/actions/adjustment.actions.ts",
+      "source_location": "L83",
+      "id": "actions_adjustment_actions_approveadjustmentapplicationaction",
+      "community": 5,
+      "norm_label": "approveadjustmentapplicationaction"
+    },
+    {
+      "label": "skipAdjustmentApplicationAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/actions/adjustment.actions.ts",
+      "source_location": "L96",
+      "id": "actions_adjustment_actions_skipadjustmentapplicationaction",
+      "community": 11,
+      "norm_label": "skipadjustmentapplicationaction"
+    },
+    {
+      "label": "getAdjustmentsForWeekReviewAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/actions/adjustment.actions.ts",
+      "source_location": "L109",
+      "id": "actions_adjustment_actions_getadjustmentsforweekreviewaction",
+      "community": 10,
+      "norm_label": "getadjustmentsforweekreviewaction"
+    },
+    {
+      "label": "updateAdjustmentAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/actions/adjustment.actions.ts",
+      "source_location": "L122",
+      "id": "actions_adjustment_actions_updateadjustmentaction",
+      "community": 12,
+      "norm_label": "updateadjustmentaction"
+    },
+    {
+      "label": "cancelAdjustmentAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/actions/adjustment.actions.ts",
+      "source_location": "L136",
+      "id": "actions_adjustment_actions_canceladjustmentaction",
+      "community": 6,
+      "norm_label": "canceladjustmentaction"
+    },
+    {
+      "label": "createAdjustment",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/services/adjustment.service.ts",
+      "source_location": "L47",
+      "id": "services_adjustment_service_createadjustment",
+      "community": 91,
+      "norm_label": "createadjustment"
+    },
+    {
+      "label": "getAdjustmentList",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/services/adjustment.service.ts",
+      "source_location": "L129",
+      "id": "services_adjustment_service_getadjustmentlist",
+      "community": 93,
+      "norm_label": "getadjustmentlist"
+    },
+    {
+      "label": "getAdjustmentDetail",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/services/adjustment.service.ts",
+      "source_location": "L169",
+      "id": "services_adjustment_service_getadjustmentdetail",
+      "community": 92,
+      "norm_label": "getadjustmentdetail"
+    },
+    {
+      "label": "approveAdjustmentApplication",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/services/adjustment.service.ts",
+      "source_location": "L223",
+      "id": "services_adjustment_service_approveadjustmentapplication",
+      "community": 89,
+      "norm_label": "approveadjustmentapplication"
+    },
+    {
+      "label": "skipAdjustmentApplication",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/services/adjustment.service.ts",
+      "source_location": "L391",
+      "id": "services_adjustment_service_skipadjustmentapplication",
+      "community": 95,
+      "norm_label": "skipadjustmentapplication"
+    },
+    {
+      "label": "getAdjustmentsForWeekReview",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/services/adjustment.service.ts",
+      "source_location": "L461",
+      "id": "services_adjustment_service_getadjustmentsforweekreview",
+      "community": 94,
+      "norm_label": "getadjustmentsforweekreview"
+    },
+    {
+      "label": "updateAdjustment",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/services/adjustment.service.ts",
+      "source_location": "L512",
+      "id": "services_adjustment_service_updateadjustment",
+      "community": 96,
+      "norm_label": "updateadjustment"
+    },
+    {
+      "label": "cancelAdjustment",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/services/adjustment.service.ts",
+      "source_location": "L608",
+      "id": "services_adjustment_service_canceladjustment",
+      "community": 90,
+      "norm_label": "canceladjustment"
+    },
+    {
+      "label": "AdjustmentType",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L5",
+      "id": "types_adjustment_types_adjustmenttype",
+      "community": 178,
+      "norm_label": "adjustmenttype"
+    },
+    {
+      "label": "RecurrenceType",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L6",
+      "id": "types_adjustment_types_recurrencetype",
+      "community": 183,
+      "norm_label": "recurrencetype"
+    },
+    {
+      "label": "RecurrenceEndType",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L7",
+      "id": "types_adjustment_types_recurrenceendtype",
+      "community": 182,
+      "norm_label": "recurrenceendtype"
+    },
+    {
+      "label": "AdjustmentStatus",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L8",
+      "id": "types_adjustment_types_adjustmentstatus",
+      "community": 177,
+      "norm_label": "adjustmentstatus"
+    },
+    {
+      "label": "ApprovalStatus",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L9",
+      "id": "types_adjustment_types_approvalstatus",
+      "community": 179,
+      "norm_label": "approvalstatus"
+    },
+    {
+      "label": "CreateAdjustmentInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L28",
+      "id": "types_adjustment_types_createadjustmentinput",
+      "community": 180,
+      "norm_label": "createadjustmentinput"
+    },
+    {
+      "label": "UpdateAdjustmentInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L46",
+      "id": "types_adjustment_types_updateadjustmentinput",
+      "community": 184,
+      "norm_label": "updateadjustmentinput"
+    },
+    {
+      "label": "AdjustmentListOptions",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L50",
+      "id": "types_adjustment_types_adjustmentlistoptions",
+      "community": 175,
+      "norm_label": "adjustmentlistoptions"
+    },
+    {
+      "label": "AdjustmentListItem",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L58",
+      "id": "types_adjustment_types_adjustmentlistitem",
+      "community": 174,
+      "norm_label": "adjustmentlistitem"
+    },
+    {
+      "label": "PaginatedAdjustmentList",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L74",
+      "id": "types_adjustment_types_paginatedadjustmentlist",
+      "community": 181,
+      "norm_label": "paginatedadjustmentlist"
+    },
+    {
+      "label": "AdjustmentApplicationRecord",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L83",
+      "id": "types_adjustment_types_adjustmentapplicationrecord",
+      "community": 172,
+      "norm_label": "adjustmentapplicationrecord"
+    },
+    {
+      "label": "AdjustmentDetailRecord",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L100",
+      "id": "types_adjustment_types_adjustmentdetailrecord",
+      "community": 173,
+      "norm_label": "adjustmentdetailrecord"
+    },
+    {
+      "label": "WeeklyReviewItem",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L125",
+      "id": "types_adjustment_types_weeklyreviewitem",
+      "community": 185,
+      "norm_label": "weeklyreviewitem"
+    },
+    {
+      "label": "AdjustmentServiceError",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-adjustments/types/adjustment.types.ts",
+      "source_location": "L143",
+      "id": "types_adjustment_types_adjustmentserviceerror",
+      "community": 176,
+      "norm_label": "adjustmentserviceerror"
+    },
+    {
+      "label": "beginPayrollCorrectionAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/actions/correction.actions.ts",
+      "source_location": "L44",
+      "id": "actions_correction_actions_beginpayrollcorrectionaction",
+      "community": 27,
+      "norm_label": "beginpayrollcorrectionaction"
+    },
+    {
+      "label": "initiateCorrectionAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/actions/correction.actions.ts",
+      "source_location": "L54",
+      "id": "actions_correction_actions_initiatecorrectionaction",
+      "community": 30,
+      "norm_label": "initiatecorrectionaction"
+    },
+    {
+      "label": "reverseAdjustmentAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/actions/correction.actions.ts",
+      "source_location": "L67",
+      "id": "actions_correction_actions_reverseadjustmentaction",
+      "community": 32,
+      "norm_label": "reverseadjustmentaction"
+    },
+    {
+      "label": "approveSkippedAdjustmentAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/actions/correction.actions.ts",
+      "source_location": "L80",
+      "id": "actions_correction_actions_approveskippedadjustmentaction",
+      "community": 26,
+      "norm_label": "approveskippedadjustmentaction"
+    },
+    {
+      "label": "recalculateAndCreateRevisionAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/actions/correction.actions.ts",
+      "source_location": "L93",
+      "id": "actions_correction_actions_recalculateandcreaterevisionaction",
+      "community": 31,
+      "norm_label": "recalculateandcreaterevisionaction"
+    },
+    {
+      "label": "approveRevisionAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/actions/correction.actions.ts",
+      "source_location": "L106",
+      "id": "actions_correction_actions_approverevisionaction",
+      "community": 25,
+      "norm_label": "approverevisionaction"
+    },
+    {
+      "label": "getRevisionHistoryAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/actions/correction.actions.ts",
+      "source_location": "L119",
+      "id": "actions_correction_actions_getrevisionhistoryaction",
+      "community": 29,
+      "norm_label": "getrevisionhistoryaction"
+    },
+    {
+      "label": "getRevisionEmployeesAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/actions/correction.actions.ts",
+      "source_location": "L132",
+      "id": "actions_correction_actions_getrevisionemployeesaction",
+      "community": 28,
+      "norm_label": "getrevisionemployeesaction"
+    },
+    {
+      "label": "prepareAdjustmentsForCorrection",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/services/correction.service.ts",
+      "source_location": "L20",
+      "id": "services_correction_service_prepareadjustmentsforcorrection",
+      "community": 106,
+      "norm_label": "prepareadjustmentsforcorrection"
+    },
+    {
+      "label": "initiateCorrection",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/services/correction.service.ts",
+      "source_location": "L36",
+      "id": "services_correction_service_initiatecorrection",
+      "community": 105,
+      "norm_label": "initiatecorrection"
+    },
+    {
+      "label": "reverseAdjustmentApplication",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/services/correction.service.ts",
+      "source_location": "L126",
+      "id": "services_correction_service_reverseadjustmentapplication",
+      "community": 108,
+      "norm_label": "reverseadjustmentapplication"
+    },
+    {
+      "label": "approveSkippedAdjustment",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/services/correction.service.ts",
+      "source_location": "L151",
+      "id": "services_correction_service_approveskippedadjustment",
+      "community": 102,
+      "norm_label": "approveskippedadjustment"
+    },
+    {
+      "label": "recalculateAndCreateRevision",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/services/correction.service.ts",
+      "source_location": "L182",
+      "id": "services_correction_service_recalculateandcreaterevision",
+      "community": 107,
+      "norm_label": "recalculateandcreaterevision"
+    },
+    {
+      "label": "approveRevision",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/services/correction.service.ts",
+      "source_location": "L458",
+      "id": "services_correction_service_approverevision",
+      "community": 101,
+      "norm_label": "approverevision"
+    },
+    {
+      "label": "getRevisionHistory",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/services/correction.service.ts",
+      "source_location": "L489",
+      "id": "services_correction_service_getrevisionhistory",
+      "community": 104,
+      "norm_label": "getrevisionhistory"
+    },
+    {
+      "label": "getRevisionEmployees",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/services/correction.service.ts",
+      "source_location": "L515",
+      "id": "services_correction_service_getrevisionemployees",
+      "community": 103,
+      "norm_label": "getrevisionemployees"
+    },
+    {
+      "label": "CorrectionType",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L5",
+      "id": "types_correction_types_correctiontype",
+      "community": 200,
+      "norm_label": "correctiontype"
+    },
+    {
+      "label": "InitiateCorrectionResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L9",
+      "id": "types_correction_types_initiatecorrectionresult",
+      "community": 3,
+      "norm_label": "initiatecorrectionresult"
+    },
+    {
+      "label": "CorrectionAdjustmentItem",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L25",
+      "id": "types_correction_types_correctionadjustmentitem",
+      "community": 197,
+      "norm_label": "correctionadjustmentitem"
+    },
+    {
+      "label": "CreateRevisionInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L41",
+      "id": "types_correction_types_createrevisioninput",
+      "community": 201,
+      "norm_label": "createrevisioninput"
+    },
+    {
+      "label": "CreateRevisionResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L53",
+      "id": "types_correction_types_createrevisionresult",
+      "community": 3,
+      "norm_label": "createrevisionresult"
+    },
+    {
+      "label": "RevisedEmployeeRow",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L63",
+      "id": "types_correction_types_revisedemployeerow",
+      "community": 4,
+      "norm_label": "revisedemployeerow"
+    },
+    {
+      "label": "RevisionHistoryItem",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L73",
+      "id": "types_correction_types_revisionhistoryitem",
+      "community": 202,
+      "norm_label": "revisionhistoryitem"
+    },
+    {
+      "label": "ApproveRevisionResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L90",
+      "id": "types_correction_types_approverevisionresult",
+      "community": 196,
+      "norm_label": "approverevisionresult"
+    },
+    {
+      "label": "CorrectionErrorCode",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L99",
+      "id": "types_correction_types_correctionerrorcode",
+      "community": 198,
+      "norm_label": "correctionerrorcode"
+    },
+    {
+      "label": "CorrectionServiceError",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L108",
+      "id": "types_correction_types_correctionserviceerror",
+      "community": 199,
+      "norm_label": "correctionserviceerror"
+    },
+    {
+      "label": "getAvailablePayrollWeeksAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/actions/payroll.actions.ts",
+      "source_location": "L39",
+      "id": "actions_payroll_actions_getavailablepayrollweeksaction",
+      "community": 48,
+      "norm_label": "getavailablepayrollweeksaction"
+    },
+    {
+      "label": "checkAttendanceReadinessAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/actions/payroll.actions.ts",
+      "source_location": "L50",
+      "id": "actions_payroll_actions_checkattendancereadinessaction",
+      "community": 47,
+      "norm_label": "checkattendancereadinessaction"
+    },
+    {
+      "label": "getPendingAdjustmentsForWeekAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/actions/payroll.actions.ts",
+      "source_location": "L64",
+      "id": "actions_payroll_actions_getpendingadjustmentsforweekaction",
+      "community": 49,
+      "norm_label": "getpendingadjustmentsforweekaction"
+    },
+    {
+      "label": "calculatePayrollAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/actions/payroll.actions.ts",
+      "source_location": "L78",
+      "id": "actions_payroll_actions_calculatepayrollaction",
+      "community": 46,
+      "norm_label": "calculatepayrollaction"
+    },
+    {
+      "label": "approvePayrollAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/actions/payroll.actions.ts",
+      "source_location": "L92",
+      "id": "actions_payroll_actions_approvepayrollaction",
+      "community": 45,
+      "norm_label": "approvepayrollaction"
+    },
+    {
+      "label": "AdjustmentReviewStepWrapper",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/components/AdjustmentReviewStepWrapper.tsx",
+      "source_location": "L14",
+      "id": "components_adjustmentreviewstepwrapper_adjustmentreviewstepwrapper",
+      "community": 59,
+      "norm_label": "adjustmentreviewstepwrapper"
+    },
+    {
+      "label": "calculateRegularPay",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/services/payroll.service.ts",
+      "source_location": "L17",
+      "id": "services_payroll_service_calculateregularpay",
+      "community": 138,
+      "norm_label": "calculateregularpay"
+    },
+    {
+      "label": "calculateOvertimePay",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/services/payroll.service.ts",
+      "source_location": "L26",
+      "id": "services_payroll_service_calculateovertimepay",
+      "community": 136,
+      "norm_label": "calculateovertimepay"
+    },
+    {
+      "label": "calculateNetPayable",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/services/payroll.service.ts",
+      "source_location": "L35",
+      "id": "services_payroll_service_calculatenetpayable",
+      "community": 135,
+      "norm_label": "calculatenetpayable"
+    },
+    {
+      "label": "getAvailablePayrollWeeks",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/services/payroll.service.ts",
+      "source_location": "L45",
+      "id": "services_payroll_service_getavailablepayrollweeks",
+      "community": 140,
+      "norm_label": "getavailablepayrollweeks"
+    },
+    {
+      "label": "checkAttendanceReadiness",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/services/payroll.service.ts",
+      "source_location": "L117",
+      "id": "services_payroll_service_checkattendancereadiness",
+      "community": 139,
+      "norm_label": "checkattendancereadiness"
+    },
+    {
+      "label": "getPendingAdjustmentsForWeek",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/services/payroll.service.ts",
+      "source_location": "L151",
+      "id": "services_payroll_service_getpendingadjustmentsforweek",
+      "community": 141,
+      "norm_label": "getpendingadjustmentsforweek"
+    },
+    {
+      "label": "calculatePayroll",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/services/payroll.service.ts",
+      "source_location": "L161",
+      "id": "services_payroll_service_calculatepayroll",
+      "community": 137,
+      "norm_label": "calculatepayroll"
+    },
+    {
+      "label": "approvePayroll",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/services/payroll.service.ts",
+      "source_location": "L313",
+      "id": "services_payroll_service_approvepayroll",
+      "community": 134,
+      "norm_label": "approvepayroll"
+    },
+    {
+      "label": "AttendanceWeekStatus",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/types/payroll.types.ts",
+      "source_location": "L3",
+      "id": "types_payroll_types_attendanceweekstatus",
+      "community": 233,
+      "norm_label": "attendanceweekstatus"
+    },
+    {
+      "label": "PayrollRunStatus",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/types/payroll.types.ts",
+      "source_location": "L4",
+      "id": "types_payroll_types_payrollrunstatus",
+      "community": 234,
+      "norm_label": "payrollrunstatus"
+    },
+    {
+      "label": "PayrollWeekItem",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/types/payroll.types.ts",
+      "source_location": "L6",
+      "id": "types_payroll_types_payrollweekitem",
+      "community": 237,
+      "norm_label": "payrollweekitem"
+    },
+    {
+      "label": "AttendanceReadinessResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/types/payroll.types.ts",
+      "source_location": "L20",
+      "id": "types_payroll_types_attendancereadinessresult",
+      "community": 232,
+      "norm_label": "attendancereadinessresult"
+    },
+    {
+      "label": "EmployeePayrollRow",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/types/payroll.types.ts",
+      "source_location": "L31",
+      "id": "types_payroll_types_employeepayrollrow",
+      "community": 4,
+      "norm_label": "employeepayrollrow"
+    },
+    {
+      "label": "PayrollSummaryTotals",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/types/payroll.types.ts",
+      "source_location": "L52",
+      "id": "types_payroll_types_payrollsummarytotals",
+      "community": 3,
+      "norm_label": "payrollsummarytotals"
+    },
+    {
+      "label": "PayrollSummary",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/types/payroll.types.ts",
+      "source_location": "L62",
+      "id": "types_payroll_types_payrollsummary",
+      "community": 236,
+      "norm_label": "payrollsummary"
+    },
+    {
+      "label": "ApprovePayrollResult",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/types/payroll.types.ts",
+      "source_location": "L71",
+      "id": "types_payroll_types_approvepayrollresult",
+      "community": 231,
+      "norm_label": "approvepayrollresult"
+    },
+    {
+      "label": "PayrollServiceError",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-generation/types/payroll.types.ts",
+      "source_location": "L82",
+      "id": "types_payroll_types_payrollserviceerror",
+      "community": 235,
+      "norm_label": "payrollserviceerror"
+    },
+    {
+      "label": "PayrollHistoryFilter",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-history/components/PayrollHistoryFilter.tsx",
+      "source_location": "L9",
+      "id": "components_payrollhistoryfilter_payrollhistoryfilter",
+      "community": 63,
+      "norm_label": "payrollhistoryfilter"
+    },
+    {
+      "label": "PayrollHistorySearch",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-history/components/PayrollHistorySearch.tsx",
+      "source_location": "L7",
+      "id": "components_payrollhistorysearch_payrollhistorysearch",
+      "community": 64,
+      "norm_label": "payrollhistorysearch"
+    },
+    {
+      "label": "searchPayrollHistory",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-history/services/payroll-history.service.ts",
+      "source_location": "L9",
+      "id": "services_payroll_history_service_searchpayrollhistory",
+      "community": 133,
+      "norm_label": "searchpayrollhistory"
+    },
+    {
+      "label": "getPayrollHistoryByWeek",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-history/services/payroll-history.service.ts",
+      "source_location": "L55",
+      "id": "services_payroll_history_service_getpayrollhistorybyweek",
+      "community": 131,
+      "norm_label": "getpayrollhistorybyweek"
+    },
+    {
+      "label": "getApprovedPayrollWeeks",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-history/services/payroll-history.service.ts",
+      "source_location": "L93",
+      "id": "services_payroll_history_service_getapprovedpayrollweeks",
+      "community": 130,
+      "norm_label": "getapprovedpayrollweeks"
+    },
+    {
+      "label": "getPayrollRecordDetail",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-history/services/payroll-history.service.ts",
+      "source_location": "L107",
+      "id": "services_payroll_history_service_getpayrollrecorddetail",
+      "community": 132,
+      "norm_label": "getpayrollrecorddetail"
+    },
+    {
+      "label": "PayrollHistoryRow",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-history/types/payroll-history.types.ts",
+      "source_location": "L1",
+      "id": "types_payroll_history_types_payrollhistoryrow",
+      "community": 229,
+      "norm_label": "payrollhistoryrow"
+    },
+    {
+      "label": "PayrollHistoryDailyAttendance",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-history/types/payroll-history.types.ts",
+      "source_location": "L18",
+      "id": "types_payroll_history_types_payrollhistorydailyattendance",
+      "community": 228,
+      "norm_label": "payrollhistorydailyattendance"
+    },
+    {
+      "label": "PayrollHistoryAdjustment",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-history/types/payroll-history.types.ts",
+      "source_location": "L24",
+      "id": "types_payroll_history_types_payrollhistoryadjustment",
+      "community": 227,
+      "norm_label": "payrollhistoryadjustment"
+    },
+    {
+      "label": "PayrollRecordDetail",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-history/types/payroll-history.types.ts",
+      "source_location": "L30",
+      "id": "types_payroll_history_types_payrollrecorddetail",
+      "community": 230,
+      "norm_label": "payrollrecorddetail"
+    },
+    {
+      "label": "markReportFilesCleanedAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/actions/report.actions.ts",
+      "source_location": "L29",
+      "id": "actions_report_actions_markreportfilescleanedaction",
+      "community": 50,
+      "norm_label": "markreportfilescleanedaction"
+    },
+    {
+      "label": "formatSlipDate",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L44",
+      "id": "services_report_service_formatslipdate",
+      "community": 145,
+      "norm_label": "formatslipdate"
+    },
+    {
+      "label": "formatZipFileName",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L50",
+      "id": "services_report_service_formatzipfilename",
+      "community": 147,
+      "norm_label": "formatzipfilename"
+    },
+    {
+      "label": "formatSlipPdfName",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L54",
+      "id": "services_report_service_formatslippdfname",
+      "community": 146,
+      "norm_label": "formatslippdfname"
+    },
+    {
+      "label": "formatCurrencyPdf",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L59",
+      "id": "services_report_service_formatcurrencypdf",
+      "community": 143,
+      "norm_label": "formatcurrencypdf"
+    },
+    {
+      "label": "formatHours",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L67",
+      "id": "services_report_service_formathours",
+      "community": 144,
+      "norm_label": "formathours"
+    },
+    {
+      "label": "buildSlipData",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L71",
+      "id": "services_report_service_buildslipdata",
+      "community": 142,
+      "norm_label": "buildslipdata"
+    },
+    {
+      "label": "generatePayrollSummaryPdf",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L179",
+      "id": "services_report_service_generatepayrollsummarypdf",
+      "community": 150,
+      "norm_label": "generatepayrollsummarypdf"
+    },
+    {
+      "label": "generatePayrollSlipPdf",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L278",
+      "id": "services_report_service_generatepayrollslippdf",
+      "community": 148,
+      "norm_label": "generatepayrollslippdf"
+    },
+    {
+      "label": "generatePayrollSlipsZip",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L428",
+      "id": "services_report_service_generatepayrollslipszip",
+      "community": 149,
+      "norm_label": "generatepayrollslipszip"
+    },
+    {
+      "label": "saveInvoiceSnapshots",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L537",
+      "id": "services_report_service_saveinvoicesnapshots",
+      "community": 152,
+      "norm_label": "saveinvoicesnapshots"
+    },
+    {
+      "label": "markInvoiceSnapshotsCleaned",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/services/report.service.ts",
+      "source_location": "L561",
+      "id": "services_report_service_markinvoicesnapshotscleaned",
+      "community": 151,
+      "norm_label": "markinvoicesnapshotscleaned"
+    },
+    {
+      "label": "DailyAttendanceRow",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/types/report.types.ts",
+      "source_location": "L1",
+      "id": "types_report_types_dailyattendancerow",
+      "community": 238,
+      "norm_label": "dailyattendancerow"
+    },
+    {
+      "label": "PayrollSlipData",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/types/report.types.ts",
+      "source_location": "L14",
+      "id": "types_report_types_payrollslipdata",
+      "community": 239,
+      "norm_label": "payrollslipdata"
+    },
+    {
+      "label": "ReportServiceError",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/payroll-reports/types/report.types.ts",
+      "source_location": "L39",
+      "id": "types_report_types_reportserviceerror",
+      "community": 240,
+      "norm_label": "reportserviceerror"
+    },
+    {
+      "label": "getSettingsAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/settings/actions/settings.actions.ts",
+      "source_location": "L30",
+      "id": "actions_settings_actions_getsettingsaction",
+      "community": 51,
+      "norm_label": "getsettingsaction"
+    },
+    {
+      "label": "updateSettingsAction",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/settings/actions/settings.actions.ts",
+      "source_location": "L41",
+      "id": "actions_settings_actions_updatesettingsaction",
+      "community": 52,
+      "norm_label": "updatesettingsaction"
+    },
+    {
+      "label": "SettingsSkeleton",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/settings/components/SettingsSkeleton.tsx",
+      "source_location": "L1",
+      "id": "components_settingsskeleton_settingsskeleton",
+      "community": 65,
+      "norm_label": "settingsskeleton"
+    },
+    {
+      "label": "getSettings",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/settings/services/settings.service.ts",
+      "source_location": "L22",
+      "id": "services_settings_service_getsettings",
+      "community": 153,
+      "norm_label": "getsettings"
+    },
+    {
+      "label": "updateSettings",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/settings/services/settings.service.ts",
+      "source_location": "L34",
+      "id": "services_settings_service_updatesettings",
+      "community": 154,
+      "norm_label": "updatesettings"
+    },
+    {
+      "label": "DayOfWeek",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/settings/types/settings.types.ts",
+      "source_location": "L4",
+      "id": "types_settings_types_dayofweek",
+      "community": 242,
+      "norm_label": "dayofweek"
+    },
+    {
+      "label": "UpdateSettingsInput",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/settings/types/settings.types.ts",
+      "source_location": "L10",
+      "id": "types_settings_types_updatesettingsinput",
+      "community": 244,
+      "norm_label": "updatesettingsinput"
+    },
+    {
+      "label": "AppSettings",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/settings/types/settings.types.ts",
+      "source_location": "L12",
+      "id": "types_settings_types_appsettings",
+      "community": 241,
+      "norm_label": "appsettings"
+    },
+    {
+      "label": "SettingsServiceError",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/features/settings/types/settings.types.ts",
+      "source_location": "L18",
+      "id": "types_settings_types_settingsserviceerror",
+      "community": 243,
+      "norm_label": "settingsserviceerror"
+    },
+    {
+      "label": "cn",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/lib/utils.ts",
+      "source_location": "L4",
+      "id": "lib_utils_cn",
+      "community": 80,
+      "norm_label": "cn"
+    },
+    {
+      "label": "countActiveEmployees",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/services/dashboard.service.ts",
+      "source_location": "L6",
+      "id": "services_dashboard_service_countactiveemployees",
+      "community": 109,
+      "norm_label": "countactiveemployees"
+    },
+    {
+      "label": "getLatestPayrollTotal",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/services/dashboard.service.ts",
+      "source_location": "L16",
+      "id": "services_dashboard_service_getlatestpayrolltotal",
+      "community": 112,
+      "norm_label": "getlatestpayrolltotal"
+    },
+    {
+      "label": "countPendingAttendanceErrors",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/services/dashboard.service.ts",
+      "source_location": "L43",
+      "id": "services_dashboard_service_countpendingattendanceerrors",
+      "community": 111,
+      "norm_label": "countpendingattendanceerrors"
+    },
+    {
+      "label": "countPendingAdjustmentApprovals",
+      "file_type": "code",
+      "source_file": "TPLPayroll/src/services/dashboard.service.ts",
+      "source_location": "L58",
+      "id": "services_dashboard_service_countpendingadjustmentapprovals",
+      "community": 110,
+      "norm_label": "countpendingadjustmentapprovals"
+    }
+  ],
+  "links": [
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_parseattendanceresult",
+      "target": "types_attendance_types_importsummary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_parseattendanceresult",
+      "target": "types_attendance_types_matchedattendancerecord",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_parseattendanceresult",
+      "target": "types_attendance_types_payrollweekdetectionresult",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L128",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_finalizeuploadinput",
+      "target": "types_attendance_types_importsummary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L127",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_finalizeuploadinput",
+      "target": "types_attendance_types_matchedattendancerecord",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L126",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_finalizeuploadinput",
+      "target": "types_attendance_types_payrollweeksource",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L129",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_finalizeuploadinput",
+      "target": "types_attendance_types_verificationdecision",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L469",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_createuploadsessioninput",
+      "target": "types_attendance_types_payrollweeksource",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L470",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_createuploadsessioninput",
+      "target": "types_attendance_types_verificationdecision",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L545",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_resumeddialogstate",
+      "target": "types_attendance_types_importsummary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L544",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_resumeddialogstate",
+      "target": "types_attendance_types_matchedattendancerecord",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L543",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_resumeddialogstate",
+      "target": "types_attendance_types_payrollweeksource",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/actions/attendance.actions.ts",
+      "source_location": "L546",
+      "weight": 1.0,
+      "source": "actions_attendance_actions_resumeddialogstate",
+      "target": "types_attendance_types_verificationdecision",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/attendance-upload-session.service.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "services_attendance_upload_session_service_createattendanceuploadsessioninput",
+      "target": "services_upload_session_service_sessiondecisions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/attendance-upload-session.service.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "services_attendance_upload_session_service_resumedsessionstate",
+      "target": "services_upload_session_service_sessiondecisions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload-session.service.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "services_upload_session_service_sessiondecisions",
+      "target": "types_attendance_types_verificationdecision",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload-session.service.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "services_upload_session_service_createuploadsessionparams",
+      "target": "types_attendance_types_payrollweeksource",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload-session.service.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "services_upload_session_service_loadeduploadsession",
+      "target": "types_attendance_types_payrollweeksource",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload.service.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "services_upload_service_createuploadparams",
+      "target": "types_attendance_types_matchedattendancerecord",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload.service.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "services_upload_service_createuploadparams",
+      "target": "types_attendance_types_payrollweeksource",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "context": "type",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/upload.service.ts",
+      "source_location": "L77",
+      "weight": 1.0,
+      "source": "services_upload_service_replaceuploadparams",
+      "target": "services_upload_service_createuploadparams",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/services/workbook-parser.service.ts",
+      "source_location": "L156",
+      "weight": 1.0,
+      "source": "services_workbook_parser_service_workbookparseresult",
+      "target": "types_attendance_types_parsedattendanceblock",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "context": "type",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/attendance-upload/types/attendance.types.ts",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "types_attendance_types_matchedattendancerecord",
+      "target": "types_attendance_types_parsedattendanceblock",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "types_correction_types_initiatecorrectionresult",
+      "target": "types_payroll_types_payrollsummarytotals",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "types_correction_types_createrevisionresult",
+      "target": "types_payroll_types_payrollsummarytotals",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "context": "type",
+      "confidence": "EXTRACTED",
+      "source_file": "TPLPayroll/src/features/payroll-correction/types/correction.types.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "types_correction_types_revisedemployeerow",
+      "target": "types_payroll_types_employeepayrollrow",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": []
+}
