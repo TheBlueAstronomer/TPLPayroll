@@ -55,6 +55,7 @@ import {
   recalculateAndCreateRevision,
   approveRevision,
   getRevisionHistory,
+  prepareAdjustmentsForCorrection,
 } from '@/features/payroll-correction/services/correction.service'
 import { CorrectionServiceError } from '@/features/payroll-correction/types/correction.types'
 
@@ -478,5 +479,93 @@ describe('getRevisionHistory', () => {
     const result = await getRevisionHistory('run-uuid-1')
 
     expect(result).toHaveLength(0)
+  })
+})
+
+// ─── Regression: Post-payroll adjustments visible during correction ──────────
+
+describe('post-payroll adjustments (created after approval)', () => {
+  describe('initiateCorrection', () => {
+    it('includes unlinked PENDING adjustment applications for the same week', async () => {
+      const run = makePayrollRun()
+      const revision = makeRevision()
+      vi.mocked(prisma.payrollRun.findUnique).mockResolvedValue({
+        ...run,
+        revisions: [revision],
+      } as never)
+      vi.mocked(prisma.payrollRunEmployee.findMany).mockResolvedValue([
+        makeRunEmployee(),
+      ] as never)
+
+      // Mock returns both: one previously-linked app AND one new unlinked PENDING app
+      const linkedApp = {
+        ...makeAdjApplication({ id: 'app-linked', approvalStatus: 'PENDING' }),
+        payrollAdjustment: { adjustmentType: 'DEDUCTION', amount: 500, reason: 'Advance recovery' },
+        employee: { employeeName: 'Kavitha Rajan', employeeId: 'EMP-001' },
+      }
+      const newUnlinkedApp = {
+        ...makeAdjApplication({
+          id: 'app-new',
+          payrollRunId: null,
+          payrollRevisionId: null,
+          approvalStatus: 'PENDING',
+          approvedAt: null,
+          appliedAt: null,
+        }),
+        payrollAdjustment: { adjustmentType: 'ADDITION', amount: 200, reason: 'Bonus' },
+        employee: { employeeName: 'Kavitha Rajan', employeeId: 'EMP-001' },
+      }
+
+      vi.mocked(prisma.payrollAdjustmentApplication.findMany).mockResolvedValue([
+        linkedApp,
+        newUnlinkedApp,
+      ] as never)
+
+      const result = await initiateCorrection('run-uuid-1')
+
+      // Verify the query used the OR clause to fetch both linked and unlinked apps
+      expect(vi.mocked(prisma.payrollAdjustmentApplication.findMany)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            payrollWeekStartDate: WEEK_START,
+            OR: [
+              { payrollRunId: 'run-uuid-1' },
+              { payrollRunId: null, approvalStatus: 'PENDING' },
+            ],
+          }),
+        }),
+      )
+
+      // Both apps should be returned
+      expect(result.adjustmentApplications).toHaveLength(2)
+      expect(result.adjustmentApplications.map((a) => a.applicationId)).toContain('app-linked')
+      expect(result.adjustmentApplications.map((a) => a.applicationId)).toContain('app-new')
+    })
+  })
+
+  describe('prepareAdjustmentsForCorrection', () => {
+    it('resets both linked and unlinked PENDING apps for the payroll week', async () => {
+      vi.mocked(prisma.payrollRun.findUnique).mockResolvedValue({
+        payrollWeekStartDate: WEEK_START,
+      } as never)
+      vi.mocked(prisma.payrollAdjustmentApplication.updateMany).mockResolvedValue({ count: 2 } as never)
+
+      await prepareAdjustmentsForCorrection('run-uuid-1')
+
+      expect(vi.mocked(prisma.payrollAdjustmentApplication.updateMany)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              { payrollRunId: 'run-uuid-1' },
+              expect.objectContaining({
+                payrollWeekStartDate: WEEK_START,
+                payrollRunId: null,
+                approvalStatus: 'PENDING',
+              }),
+            ]),
+          }),
+        }),
+      )
+    })
   })
 })
