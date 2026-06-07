@@ -224,7 +224,6 @@ export function AttendanceUploadClient({
         return
       }
 
-      const { tempFilePath, fileName, fileType } = result.data
       const finalResult = await finalizeAttendanceUploadAction({
         tempFilePath,
         fileName,
