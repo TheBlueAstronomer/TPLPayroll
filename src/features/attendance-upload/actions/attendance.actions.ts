@@ -124,8 +124,8 @@ export interface FinalizeUploadInput {
   payrollWeekStartDate: string // ISO date string YYYY-MM-DD
   payrollWeekEndDate: string
   payrollWeekSource: PayrollWeekSource
-  records: MatchedAttendanceRecord[]
-  summary: ImportSummary
+  records?: MatchedAttendanceRecord[]
+  summary?: ImportSummary
   verificationDecisions?: Record<string, VerificationDecision> // employeeDbId → decision
   manualMatchDecisions?: Record<string, string> // blockKey → employeeDbId
   rejectedBlockKeys?: string[] // blockKeys of UNMATCHED records explicitly rejected
@@ -147,13 +147,28 @@ export async function finalizeAttendanceUploadAction(
     rejectedBlockKeys = [],
   } = input
 
+  let finalRecords = records
+  if (!finalRecords) {
+    const parsed = await parseAttendanceWithDatesAction(
+      tempFilePath,
+      payrollWeekStartDate,
+      payrollWeekEndDate,
+      fileName,
+      fileType
+    )
+    if (!parsed.ok) {
+      return { ok: false, error: parsed.error }
+    }
+    finalRecords = parsed.data.records
+  }
+
   const weekStart = new Date(payrollWeekStartDate + 'T00:00:00Z')
   const weekEnd = new Date(payrollWeekEndDate + 'T00:00:00Z')
 
   const rejectedKeySet = new Set(rejectedBlockKeys)
 
   // Apply manual matches and rejections to UNMATCHED records
-  const recordsWithManualMatches = records.map((r) => {
+  const recordsWithManualMatches = finalRecords.map((r) => {
     if (r.matchStatus !== 'UNMATCHED') return r
     const blockKey = getBlockKey(r)
     const matchedId = manualMatchDecisions[blockKey]
