@@ -62,7 +62,7 @@ export function formatCurrencyPdf(amount: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount)
-  return `Rs.${formatted}`
+  return `₹${formatted}`
 }
 
 export function formatHours(hours: number): string {
@@ -175,7 +175,117 @@ export function buildSlipData(params: {
   }
 }
 
-// ── PDF generation ───────────────────────────────────────────────────────────
+export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{ buffer: Buffer; fileName: string }> {
+  const run = await prisma.payrollRun.findUnique({
+    where: { id: payrollRunId },
+    include: {
+      revisions: { where: { isCurrent: true }, take: 1 },
+      runEmployees: {
+        where: { payrollRevision: { isCurrent: true } },
+        include: {
+          employee: {
+            select: {
+              id: true,
+              employeeId: true,
+              employeeName: true,
+              designation: true,
+              site: true,
+              gPay: true,
+              bankAccount: true,
+            },
+          },
+        },
+        orderBy: { employee: { employeeId: 'asc' } },
+      },
+    },
+  })
+
+  if (!run) {
+    throw new ReportServiceError('PAYROLL_RUN_NOT_FOUND', `Payroll run ${payrollRunId} not found`)
+  }
+  if (run.status !== 'APPROVED' && run.status !== 'REVISED') {
+    throw new ReportServiceError('PAYROLL_NOT_APPROVED', `Payroll run ${payrollRunId} is not approved`)
+  }
+
+  const weekStartStr = run.payrollWeekStartDate.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+  const weekEndStr = run.payrollWeekEndDate.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+  const generatedAtStr = new Date().toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+
+  const headerRow = [
+    { text: 'ID', style: 'tableHeader' },
+    { text: 'Employee', style: 'tableHeader' },
+    { text: 'GPay', style: 'tableHeader' },
+    { text: 'Bank Acct', style: 'tableHeader' },
+    { text: 'Reg Pay', style: 'tableHeader', alignment: 'right' },
+    { text: 'OT Pay', style: 'tableHeader', alignment: 'right' },
+    { text: 'Additions', style: 'tableHeader', alignment: 'right' },
+    { text: 'Deductions', style: 'tableHeader', alignment: 'right' },
+    { text: 'Net Pay', style: 'tableHeader', alignment: 'right' },
+  ]
+
+  const dataRows = run.runEmployees.map((re) => [
+    { text: re.employee.employeeId, font: 'Courier' },
+    { text: re.employee.employeeName, font: 'Helvetica' },
+    { text: re.employee.gPay ?? '-', font: 'Courier' },
+    { text: re.employee.bankAccount ?? '-', font: 'Courier' },
+    { text: formatCurrencyPdf(Number(re.regularPay)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.overtimePay)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.additions)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.deductions)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.netPayable)), font: 'Courier', alignment: 'right' },
+  ])
+
+  const totalsRow = [
+    { text: 'TOTALS', colSpan: 4, style: 'totalsLabel', font: 'Helvetica' },
+    {}, {}, {},
+    { text: formatCurrencyPdf(Number(run.totalRegularPay)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalOvertimePay)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalAdditions)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalDeductions)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalNetPayable)), font: 'Courier', alignment: 'right', bold: true },
+  ]
+
+  const docDef: TDocumentDefinitions = {
+    pageOrientation: 'landscape',
+    defaultStyle: { font: 'Helvetica', fontSize: 8 },
+    styles: {
+      title: { fontSize: 14, bold: true, alignment: 'center', font: 'Helvetica' },
+      subtitle: { fontSize: 9, alignment: 'center', font: 'Helvetica', color: '#555555' },
+      tableHeader: { bold: true, font: 'Helvetica', fillColor: '#dddddd' },
+      totalsLabel: { bold: true, font: 'Helvetica' },
+    },
+    content: [
+      { text: 'PAYROLL SUMMARY', style: 'title', marginBottom: 4 },
+      { text: `Week: ${weekStartStr} – ${weekEndStr}`, style: 'subtitle' },
+      { text: `Generated: ${generatedAtStr}`, style: 'subtitle', marginBottom: 8 },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+          body: [headerRow, ...dataRows, totalsRow],
+        },
+        layout: 'lightHorizontalLines',
+      } as Content,
+    ],
+  }
+
+  const buffer = await toPdfBuffer(docDef)
+  const fileName = `payroll_summary_${formatSlipDate(run.payrollWeekStartDate)}-${formatSlipDate(run.payrollWeekEndDate)}.pdf`
+
+  return { buffer, fileName }
+}
 
 export async function generatePayrollSummaryXlsx(payrollRunId: string): Promise<{ buffer: Buffer; fileName: string }> {
   const run = await prisma.payrollRun.findUnique({
@@ -393,14 +503,14 @@ export async function generatePayrollSlipPdf(slip: PayrollSlipData): Promise<Buf
     ],
     [
       {
-        text: `Regular Pay (${formatHours(slip.regularHours)} hrs x Rs.${formatHours(slip.hourlyRateUsed)})`,
+        text: `Regular Pay (${formatHours(slip.regularHours)} hrs x ₹${formatHours(slip.hourlyRateUsed)})`,
         font: 'Helvetica',
       },
       { text: formatCurrencyPdf(slip.regularPay), font: 'Courier', alignment: 'right' },
     ],
     [
       {
-        text: `OT Pay (${formatHours(slip.overtimeHours)} hrs x Rs.${formatHours(slip.hourlyRateUsed)})`,
+        text: `OT Pay (${formatHours(slip.overtimeHours)} hrs x ₹${formatHours(slip.hourlyRateUsed)})`,
         font: 'Helvetica',
       },
       { text: formatCurrencyPdf(slip.overtimePay), font: 'Courier', alignment: 'right' },
