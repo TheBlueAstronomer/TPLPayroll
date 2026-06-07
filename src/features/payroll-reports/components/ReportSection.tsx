@@ -129,12 +129,12 @@ export function ReportSection({ payrollRunId, employeeCount }: ReportSectionProp
         
         {/* Split Button with Dropdown */}
         <div ref={dropdownContainerRef} className="relative inline-flex items-center shrink-0">
-          <div className="inline-flex items-center rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden transition-colors duration-200 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500">
+          <div className="inline-flex items-center rounded-xl border border-zinc-200 transition-transform active:scale-[0.98]">
             <button
               type="button"
               onClick={() => triggerSummaryDownload('xlsx')}
               disabled={summaryLoading}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 transition-colors border-r border-zinc-100 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-l-xl px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900 border-r border-zinc-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:bg-zinc-50"
             >
               {summaryLoading ? (
                 <CircleNotch size={14} className="animate-spin" />
@@ -147,7 +147,7 @@ export function ReportSection({ payrollRunId, employeeCount }: ReportSectionProp
               type="button"
               onClick={() => setShowDropdown((v) => !v)}
               disabled={summaryLoading}
-              className="inline-flex items-center px-2 py-2 hover:bg-zinc-50 text-zinc-500 hover:text-zinc-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 transition-colors cursor-pointer"
+              className="inline-flex items-center rounded-r-xl px-2 py-1.5 text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-700 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:bg-zinc-50"
               aria-label="Select summary report format"
             >
               <CaretDown size={14} className={`transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
