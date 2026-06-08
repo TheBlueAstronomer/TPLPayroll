@@ -1,0 +1,28 @@
+# generateMetadata Node
+
+> 4 nodes
+
+## Key Concepts
+
+- **2. PLATFORM MODE RULE** (4 connections) — `.agents/skills/imagegen-frontend-mobile/SKILL.md`
+- **iOS-native premium** (1 connections) — `.agents/skills/imagegen-frontend-mobile/SKILL.md`
+- **Android-native premium** (1 connections) — `.agents/skills/imagegen-frontend-mobile/SKILL.md`
+- **Cross-platform premium neutral** (1 connections) — `.agents/skills/imagegen-frontend-mobile/SKILL.md`
+
+## Relationships
+
+- [[createAdjustmentAction Node]] (1 shared connections)
+
+## Source Files
+
+- `.agents/skills/imagegen-frontend-mobile/SKILL.md`
+
+## Audit Trail
+
+- EXTRACTED: 7 (100%)
+- INFERRED: 0 (0%)
+- AMBIGUOUS: 0 (0%)
+
+---
+
+*Part of the graphify knowledge wiki. See [[index]] to navigate.*
