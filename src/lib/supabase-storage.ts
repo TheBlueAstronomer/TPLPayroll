@@ -8,14 +8,26 @@
  *     to the browser.
  */
 
-const STORAGE_URL = `${process.env.SUPABASE_URL}/storage/v1`
+import fs from 'fs'
+import path from 'path'
+import os from 'os'
+
+const isMock = !process.env.SUPABASE_URL
+const STORAGE_URL = isMock ? '' : `${process.env.SUPABASE_URL}/storage/v1`
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
 
-function authHeader() {
+function authHeader(): Record<string, string> {
+  if (isMock) return {}
   return {
     Authorization: `Bearer ${SERVICE_KEY}`,
     apikey: SERVICE_KEY,
   }
+}
+
+// ─── Local Mock Helpers ───────────────────────────────────────────────────────
+
+function getMockFilePath(bucket: string, storageKey: string) {
+  return path.join(os.tmpdir(), 'tpl-payroll-mock-storage', bucket, storageKey)
 }
 
 // ─── createPresignedUploadUrl ─────────────────────────────────────────────────
@@ -33,6 +45,15 @@ export async function createPresignedUploadUrl(
   storageKey: string,
   expiresIn = 300 // seconds — 5 minutes is plenty for a direct browser PUT
 ): Promise<PresignedUploadUrl> {
+  if (isMock) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    return {
+      signedUrl: `${baseUrl}/api/mock-storage/${bucket}/${storageKey}`,
+      storageKey,
+      token: 'mock-token',
+    }
+  }
+
   const res = await fetch(
     `${STORAGE_URL}/object/upload/sign/${bucket}/${storageKey}`,
     {
@@ -67,6 +88,11 @@ export async function downloadFileAsBuffer(
   bucket: string,
   storageKey: string
 ): Promise<Buffer> {
+  if (isMock) {
+    const filePath = getMockFilePath(bucket, storageKey)
+    return fs.promises.readFile(filePath)
+  }
+
   const res = await fetch(`${STORAGE_URL}/object/${bucket}/${storageKey}`, {
     headers: authHeader(),
   })
@@ -89,6 +115,11 @@ export async function deleteFile(
   bucket: string,
   storageKey: string
 ): Promise<void> {
+  if (isMock) {
+    const filePath = getMockFilePath(bucket, storageKey)
+    return fs.promises.unlink(filePath).catch(() => {})
+  }
+
   const res = await fetch(`${STORAGE_URL}/object/${bucket}/${storageKey}`, {
     method: 'DELETE',
     headers: authHeader(),
@@ -109,6 +140,16 @@ export async function fileExists(
   bucket: string,
   storageKey: string
 ): Promise<boolean> {
+  if (isMock) {
+    const filePath = getMockFilePath(bucket, storageKey)
+    try {
+      await fs.promises.access(filePath)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const res = await fetch(`${STORAGE_URL}/object/info/${bucket}/${storageKey}`, {
     method: 'GET',
     headers: authHeader(),
