@@ -43,6 +43,9 @@ secrets
 # vercel
 .vercel
 
+#supabase
+supabase
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

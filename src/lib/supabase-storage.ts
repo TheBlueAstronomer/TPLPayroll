@@ -71,14 +71,42 @@ export async function createPresignedUploadUrl(
     throw new Error(`Failed to create presigned upload URL: ${res.status} ${body}`)
   }
 
-  const data = (await res.json()) as { signedURL: string; token: string }
+  const data = (await res.json()) as {
+    url?: string
+    signedURL?: string
+    signedUrl?: string
+    token?: string
+  }
 
-  // Supabase returns a relative path — construct the full URL
-  const signedUrl = data.signedURL.startsWith('http')
-    ? data.signedURL
-    : `${process.env.SUPABASE_URL}${data.signedURL}`
+  const rawUrl = data.signedURL || data.signedUrl || data.url
+  if (!rawUrl) {
+    throw new Error('Supabase Storage API response did not contain a URL field.')
+  }
 
-  return { signedUrl, storageKey, token: data.token }
+  // Construct the absolute signed URL robustly
+  let signedUrl = ''
+  if (rawUrl.startsWith('http')) {
+    signedUrl = rawUrl
+  } else {
+    // Supabase REST API may return a relative path that doesn't start with /storage/v1
+    const relativePath = rawUrl.startsWith('/storage/v1')
+      ? rawUrl
+      : `/storage/v1${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`
+    signedUrl = `${process.env.SUPABASE_URL}${relativePath}`
+  }
+
+  // Retrieve the token, fallback to extracting it from the query parameters of the URL if needed
+  let token = data.token || ''
+  if (!token) {
+    try {
+      const parsedUrl = new URL(signedUrl)
+      token = parsedUrl.searchParams.get('token') || ''
+    } catch (err) {
+      console.error('[createPresignedUploadUrl] Failed to parse token from URL:', err)
+    }
+  }
+
+  return { signedUrl, storageKey, token }
 }
 
 // ─── downloadFileAsBuffer ─────────────────────────────────────────────────────
