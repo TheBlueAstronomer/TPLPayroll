@@ -175,17 +175,15 @@ test.describe('E02: Sorting, Filtering, and Pagination E2E Tests', () => {
     // Navigate to page 2 first
     const page2Button = page.locator('button:has-text("2")')
     await page2Button.click()
-    await page.waitForTimeout(500)
 
-    await expect(page.locator('text=Showing 11–12 of 12')).toBeVisible()
+    await expect(page.locator('text=Showing 11–12 of 12')).toBeVisible({ timeout: 5000 })
 
     // Change Site filter
     const siteFilter = page.locator('select#employee-site-filter')
     await siteFilter.selectOption('North Gate')
-    await page.waitForTimeout(500)
 
     // Verify page resets to 1 (North Gate has 4 employees, showing 1-4 of 4)
-    await expect(page.locator('text=Showing 1–4 of 4')).toBeVisible()
+    await expect(page.locator('text=Showing 1–4 of 4')).toBeVisible({ timeout: 5000 })
   })
 
   // ─── Dynamic Pagination ───────────────────────────────────────────────────
@@ -201,10 +199,9 @@ test.describe('E02: Sorting, Filtering, and Pagination E2E Tests', () => {
 
     // Click Page 2 button
     await page2Button.click()
-    await page.waitForTimeout(500)
 
     // Table updates to page 2 (showing 11–12 of 12)
-    await expect(page.locator('text=Showing 11–12 of 12')).toBeVisible()
+    await expect(page.locator('text=Showing 11–12 of 12')).toBeVisible({ timeout: 5000 })
     await expect(page2Button).toHaveClass(/bg-emerald-50/)
   })
 })

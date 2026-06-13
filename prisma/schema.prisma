@@ -83,7 +83,7 @@ model AttendanceUpload {
   isActiveForPayrollWeek Boolean  @default(true)
   uploadedBy             String?
   uploadedAt             DateTime @default(now())
-  sourceFilePath         String
+  sourceStorageKey       String?  // Supabase Storage key (nullable for legacy rows)
 
   attendanceRecords AttendanceRecord[]
 }
@@ -241,7 +241,7 @@ model InvoiceSnapshot {
 
 model AttendanceUploadSession {
   id              String   @id @default(uuid())
-  tempFilePath    String
+  storageKey      String   // Supabase Storage key within attendance-files bucket
   fileName        String
   fileType        String
   weekStart       String // YYYY-MM-DD

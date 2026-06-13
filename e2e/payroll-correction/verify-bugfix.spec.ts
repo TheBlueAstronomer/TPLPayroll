@@ -51,7 +51,7 @@ test.describe('E2E: Attendance Re-upload in Payroll Correction Verification', ()
     const attendancePath = path.join(process.cwd(), 'test_data/26Mar_01Apr - AttendReport.xls')
     console.log('Uploading attendance report:', attendancePath)
     await page.setInputFiles('input[type="file"]', attendancePath)
-    await page.click('button:has-text("Parse & Preview")')
+    await page.click('button:has-text("Upload & Preview")')
 
     // Wait for the verification dialog and resolve it by rejecting all unmatched employees
     const verifyDialog = page.locator('text=Manual Verification Required')
@@ -149,8 +149,8 @@ test.describe('E2E: Attendance Re-upload in Payroll Correction Verification', ()
     // Wait for the re-uploaded file to be staged in dropzone
     await expect(page.locator('.font-mono:has-text("26Mar_01Apr - AttendReport.xls")')).toBeVisible({ timeout: 5000 })
 
-    console.log('Clicking Parse & Preview in correction dropzone...')
-    await page.click('button:has-text("Parse & Preview")')
+    console.log('Clicking Upload & Preview in correction dropzone...')
+    await page.click('button:has-text("Upload & Preview")')
 
     // ASSERTION: Verify that the parsing spinner finishes and is NOT stuck on parsing attendance file indefinitely!
     console.log('Checking that it does not hang on parsing...')

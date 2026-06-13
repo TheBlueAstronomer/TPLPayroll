@@ -51,13 +51,13 @@ test.describe.serial('Payroll Correction Flow', () => {
     await page.fill('#correction-reason', 'Advance recovery was applied in error')
 
     // Select "Adjustments" correction type
-    await page.click('text=Adjustments')
+    await page.locator('label:has-text("Adjustments")').click()
 
     // Adjustment section should appear with the deduction
     await expect(page.locator('text=Advance recovery seed')).toBeVisible({ timeout: 5000 })
 
     // The deduction should show as Pending now
-    await expect(page.locator('text=Pending')).toBeVisible()
+    await expect(page.locator('text=Pending').first()).toBeVisible()
 
     // Skip the deduction instead of reversing
     await page.click('button:has-text("Skip")')

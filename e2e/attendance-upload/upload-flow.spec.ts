@@ -1,7 +1,12 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
+import prisma, { cleanupDatabase, seedTestData } from '../utils/db'
 
 test.describe('Attendance Upload Flow', () => {
+  test.beforeAll(async () => {
+    await cleanupDatabase()
+    await seedTestData()
+  })
 
   test('should upload a valid attendance file and show preview', async ({ page }) => {
     // Go to attendance page
@@ -17,8 +22,21 @@ test.describe('Attendance Upload Flow', () => {
     // Verify file name is shown in dropzone
     await expect(page.locator('.bg-zinc-50:has-text("attendance-test.xlsx")')).toBeVisible();
 
-    // Click Parse & Preview
-    await page.click('button:has-text("Parse & Preview")');
+    // Click Upload & Preview
+    await page.click('button:has-text("Upload & Preview")');
+
+    // Wait for the verification dialog
+    const verifyDialog = page.locator('text=Manual Verification Required');
+    await verifyDialog.waitFor({ state: 'visible', timeout: 20000 });
+
+    // Reject all unmatched employees to proceed
+    const unmatchedRowsVerification = page.locator('div.border:has(button:has-text("Reject"))');
+    const count = await unmatchedRowsVerification.count();
+    for (let i = 0; i < count; i++) {
+      await unmatchedRowsVerification.nth(i).locator('button:has-text("Reject")').click();
+      await page.waitForTimeout(50);
+    }
+    await page.click('button:has-text("Confirm Selections")');
 
     // Wait for navigation to preview page (it takes a few seconds for parsing)
     await expect(page).toHaveURL(/\/attendance\/.*\/preview/, { timeout: 15000 });
@@ -45,12 +63,12 @@ test.describe('Attendance Upload Flow', () => {
     const resignedRow = page.locator('tr:has-text("Resigned Employee")');
     await expect(resignedRow).toContainText('Resigned');
     
-    // Unknown Person should show as unmatched
+    // Unknown Person was rejected in the manual verification step, but because rejected unmatched records are NOT saved in the database, the Preview page just re-parses the file and shows them as Unmatched.
     const unmatchedRow = page.locator('tr:has-text("Unknown Person")');
     await expect(unmatchedRow).toContainText('Unmatched');
 
-    // The summary banner should indicate that payroll is blocked
-    await expect(page.locator('text=Payroll Blocked')).toBeVisible();
+    // Since the unmatched employee was rejected, they are no longer blocking payroll
+    await expect(page.locator('text=Ready for Payroll')).toBeVisible();
   });
 
   test('should allow replacing an upload for the same week', async ({ page }) => {
@@ -68,16 +86,21 @@ test.describe('Attendance Upload Flow', () => {
     const filePath = path.join(process.cwd(), 'e2e/fixtures/attendance-test.xlsx');
     await page.setInputFiles('input[type="file"]', filePath);
 
-    // Parse & Preview
-    await page.click('button:has-text("Parse & Preview")');
+    // Upload & Preview
+    await page.click('button:has-text("Upload & Preview")');
 
-    // Since it's the same week, it should show the confirmation dialog
-    // Actually, checking US-04.6: "show a confirmation dialog"
-    // Let's see if the implementation does this.
-    
-    // If the dialog is implemented:
-    // await expect(page.locator('text=replace existing attendance')).toBeVisible();
-    // await page.click('button:has-text("Confirm")');
+    // Wait for the verification dialog
+    const verifyDialog = page.locator('text=Manual Verification Required');
+    await verifyDialog.waitFor({ state: 'visible', timeout: 20000 });
+
+    // Reject all unmatched employees to proceed
+    const unmatchedRowsVerification = page.locator('div.border:has(button:has-text("Reject"))');
+    const count = await unmatchedRowsVerification.count();
+    for (let i = 0; i < count; i++) {
+      await unmatchedRowsVerification.nth(i).locator('button:has-text("Reject")').click();
+      await page.waitForTimeout(50);
+    }
+    await page.click('button:has-text("Confirm Selections")');
 
     // Wait for navigation
     await expect(page).toHaveURL(/\/attendance\/.*\/preview/, { timeout: 15000 });

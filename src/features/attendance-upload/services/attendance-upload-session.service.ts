@@ -14,7 +14,7 @@ import {
 export type { SessionDecisions, LoadedUploadSession }
 
 export interface CreateAttendanceUploadSessionInput {
-  tempFilePath: string
+  storageKey: string // Supabase Storage key (replaces tempFilePath)
   fileName: string
   fileType: string
   weekStart: string
@@ -28,7 +28,7 @@ export async function createAttendanceUploadSession(
   input: CreateAttendanceUploadSessionInput
 ): Promise<{ id: string }> {
   const session = await createUploadSession({
-    tempFilePath: input.tempFilePath,
+    storageKey: input.storageKey,
     fileName: input.fileName,
     fileType: input.fileType,
     weekStart: input.weekStart,
@@ -48,7 +48,7 @@ export async function loadAttendanceUploadSession(
 
 export interface ResumedSessionState {
   id: string
-  tempFilePath: string
+  storageKey: string // Supabase Storage key (replaces tempFilePath)
   fileName: string
   fileType: string
   weekStart: string
@@ -78,7 +78,7 @@ export async function resumeAttendanceUploadSession(
 
   return {
     id: session.id,
-    tempFilePath: session.tempFilePath,
+    storageKey: session.storageKey,
     fileName: session.fileName,
     fileType: session.fileType,
     weekStart: session.weekStart,

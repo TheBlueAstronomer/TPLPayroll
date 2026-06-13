@@ -20,20 +20,13 @@ vi.mock('@/features/attendance-upload/services/upload.service', () => ({
   replaceAttendanceUpload: vi.fn(async () => ({ uploadId: 'mock-upload-id' })),
 }))
 
-// Mock fs
-vi.mock('fs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs')>()
-  return {
-    ...actual,
-    default: {
-      ...actual,
-      existsSync: vi.fn(() => true),
-      readFileSync: vi.fn(() => Buffer.from('')),
-    },
-    existsSync: vi.fn(() => true),
-    readFileSync: vi.fn(() => Buffer.from('')),
-  }
-})
+// Mock Supabase Storage (finalizeAttendanceUploadAction now re-parses from Storage)
+vi.mock('@/lib/supabase-storage', () => ({
+  downloadFileAsBuffer: vi.fn(async () => Buffer.from('')),
+  deleteFile: vi.fn(async () => undefined),
+  fileExists: vi.fn(async () => true),
+  ATTENDANCE_BUCKET: 'attendance-files',
+}))
 
 // Mock xlsx
 vi.mock('xlsx', () => ({
@@ -68,54 +61,33 @@ describe('finalizeAttendanceUploadAction', () => {
     vi.clearAllMocks()
   })
 
-  it('works successfully when records and summary are provided directly', async () => {
-    const mockRecords = [
-      {
-        employeeName: 'John Doe',
-        site: null,
-        sourceSheetName: 'Sheet1',
-        sourceEmployeeBlockIndex: 0,
-        totalRegularHours: 40,
-        totalOvertimeHours: 0,
-        dailyHours: [],
-        parseErrors: [],
-        matchStatus: 'MATCHED' as const,
-        isBlocking: false,
-        employeeDbId: 'emp-1',
-      },
-    ]
-
+  it('re-parses from Storage, matches employees, and creates the upload', async () => {
     const result = await finalizeAttendanceUploadAction({
-      tempFilePath: '/tmp/test.xlsx',
+      storageKey: 'attendance/uuid_test.xlsx',
       fileName: 'test.xlsx',
       fileType: 'xlsx',
       payrollWeekStartDate: '2025-03-06',
       payrollWeekEndDate: '2025-03-12',
       payrollWeekSource: 'SHEET_CONTENT',
-      records: mockRecords,
-      summary: {
-        total: 1,
-        matched: 1,
-        unmatched: 0,
-        inactive: 0,
-        resignedBeforeWeek: 0,
-        rejectedUnmatched: 0,
-        needsVerification: 0,
-        errors: 0,
-        isBlocked: false,
-      },
     })
 
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.uploadId).toBe('mock-upload-id')
     }
+
+    // Verify it downloaded from Supabase Storage
+    const { downloadFileAsBuffer } = await import('@/lib/supabase-storage')
+    expect(downloadFileAsBuffer).toHaveBeenCalledWith(
+      'attendance-files',
+      'attendance/uuid_test.xlsx'
+    )
   })
 
-  it('re-parses from file and matches when records are omitted', async () => {
+  it('returns ok and creates upload when there are no employees to match', async () => {
     const result = await finalizeAttendanceUploadAction({
-      tempFilePath: '/tmp/test.xlsx',
-      fileName: 'test.xlsx',
+      storageKey: 'attendance/uuid_empty.xlsx',
+      fileName: 'empty.xlsx',
       fileType: 'xlsx',
       payrollWeekStartDate: '2025-03-06',
       payrollWeekEndDate: '2025-03-12',
@@ -123,11 +95,5 @@ describe('finalizeAttendanceUploadAction', () => {
     })
 
     expect(result.ok).toBe(true)
-    if (result.ok) {
-      expect(result.data.uploadId).toBe('mock-upload-id')
-    }
-
-    const { existsSync } = await import('fs')
-    expect(existsSync).toHaveBeenCalledWith('/tmp/test.xlsx')
   })
 })

@@ -62,15 +62,15 @@ export default async function PayrollCorrectionPage({ params, searchParams }: Pr
     )
     if (resumeResult.ok) {
       const d = resumeResult.data
+      // Lean prop — no records[]. CorrectionFlow fetches records client-side
+      // via the week_required → parseFromStorageWithDatesAction path.
       initialDialogState = {
-        records: d.records.filter((r) => r.matchStatus !== 'MATCHED'),
-        summary: d.summary,
+        storageKey: d.storageKey,
+        fileName: d.fileName,
+        fileType: d.fileType,
         payrollWeekStartDate: d.payrollWeekStartDate,
         payrollWeekEndDate: d.payrollWeekEndDate,
         payrollWeekSource: d.payrollWeekSource,
-        tempFilePath: d.tempFilePath,
-        fileName: d.fileName,
-        fileType: d.fileType,
         dialogState: {
           verificationDecisions: d.verificationDecisions,
           manualMatchDecisions: d.manualMatchDecisions,

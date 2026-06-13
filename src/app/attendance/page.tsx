@@ -6,7 +6,6 @@ import { resumeAttendanceUploadSessionAction } from '@/features/attendance-uploa
 
 export const dynamic = 'force-dynamic'
 
-
 export const metadata = {
   title: 'Attendance Upload — TPL Payroll',
 }
@@ -21,6 +20,10 @@ export default async function AttendancePage({ searchParams }: Props) {
   const result = await getAttendanceUploadsAction()
   const uploads = result.ok ? result.data : []
 
+  // initialDialogState is intentionally LEAN — no records[] array.
+  // Records are fetched client-side by AttendanceUploadClient via
+  // getRecordsFromStorageAction, keeping this RSC prop well under 4.5 MB
+  // even for spreadsheets with hundreds of employees.
   let initialDialogState: InitialDialogState | null = null
   if (resumeSession) {
     const resumeResult = await resumeAttendanceUploadSessionAction(
@@ -30,14 +33,12 @@ export default async function AttendancePage({ searchParams }: Props) {
     if (resumeResult.ok) {
       const d = resumeResult.data
       initialDialogState = {
-        records: d.records.filter((r) => r.matchStatus !== 'MATCHED'),
-        summary: d.summary,
+        storageKey: d.storageKey,
+        fileName: d.fileName,
+        fileType: d.fileType,
         payrollWeekStartDate: d.payrollWeekStartDate,
         payrollWeekEndDate: d.payrollWeekEndDate,
         payrollWeekSource: d.payrollWeekSource,
-        tempFilePath: d.tempFilePath,
-        fileName: d.fileName,
-        fileType: d.fileType,
         dialogState: {
           verificationDecisions: d.verificationDecisions,
           manualMatchDecisions: d.manualMatchDecisions,

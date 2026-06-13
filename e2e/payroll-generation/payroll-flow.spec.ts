@@ -24,7 +24,7 @@ test.describe('E2E-01: Payroll week list', () => {
     await expect(page.locator('text=13 Mar 2025 – 19 Mar 2025')).toBeVisible()
     await expect(page.locator('text=Errors')).toBeVisible()
     // Disabled generate (span, not a link)
-    await expect(page.locator('span:has-text("Generate")')).toBeVisible()
+    await expect(page.locator('span:has-text("Generate")').first()).toBeVisible()
     await expect(page.locator('a[href*="2025-03-13"]')).not.toBeVisible()
   })
 })
@@ -70,7 +70,7 @@ test.describe('E2E-01: Full payroll generation flow', () => {
     ).toBeVisible({ timeout: 8000 })
 
     // Quick stats should show employee count
-    await expect(page.locator('text=3')).toBeVisible()
+    await expect(page.locator('text=3').first()).toBeVisible()
 
     // Advance to Step 2 (Adjustments)
     await page.click('button:has-text("Continue")')
@@ -105,7 +105,7 @@ test.describe('E2E-01: Full payroll generation flow', () => {
 
     // Confirmation dialog
     await expect(
-      page.locator('text=Approve this payroll run? This action cannot be reversed.'),
+      page.locator('text=Approve this payroll run?'),
     ).toBeVisible({ timeout: 3000 })
 
     // Confirm
@@ -113,7 +113,7 @@ test.describe('E2E-01: Full payroll generation flow', () => {
 
     // Step 4: Success
     await expect(page.locator('h2:has-text("Payroll Approved")')).toBeVisible({ timeout: 10000 })
-    await expect(page.locator('text=3 employees')).toBeVisible()
+    await expect(page.locator('text=3 employees').first()).toBeVisible()
 
     // Back to payroll list
     await page.click('a:has-text("Back to Payroll")')

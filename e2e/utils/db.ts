@@ -34,7 +34,7 @@ export async function cleanupDatabase() {
     '"EmployeeImportBatch"',
   ];
   try {
-    await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables.join(', ')} RESTART IDENTITY CASCADE;`);
+    await prisma.$executeRawUnsafe(`DELETE FROM ${tables.join('; DELETE FROM ')};`);
   } catch (err) {
     console.error(`Cleanup failed:`, (err as Error).message);
     throw err;
@@ -246,7 +246,7 @@ export async function seedPayrollTestData() {
         payrollWeekSource: 'SHEET_CONTENT',
         status: 'READY',
         isActiveForPayrollWeek: true,
-        sourceFilePath: '/tmp/attendance-march-wk1.xlsx',
+
       },
     });
 
@@ -313,7 +313,7 @@ export async function seedPayrollTestData() {
         payrollWeekSource: 'SHEET_CONTENT',
         status: 'ERRORS',
         isActiveForPayrollWeek: true,
-        sourceFilePath: '/tmp/attendance-march-wk2.xlsx',
+
       },
     });
 
@@ -389,7 +389,7 @@ export async function seedApprovedPayrollData(): Promise<{ payrollRunId: string 
       payrollWeekSource: 'SHEET_CONTENT',
       status: 'READY',
       isActiveForPayrollWeek: true,
-      sourceFilePath: '/tmp/attendance-apr-wk1.xlsx',
+
     },
   });
 
@@ -605,8 +605,8 @@ export async function seedApprovedPayrollForCorrection(): Promise<{
 
   // Create attendance upload
   await client.query(
-    `INSERT INTO "AttendanceUpload" (id, "fileName", "fileType", "payrollWeekStartDate", "payrollWeekEndDate", "payrollWeekSource", status, "isActiveForPayrollWeek", "uploadedAt", "sourceFilePath")
-     VALUES ($1, 'attendance-apr-wk3.xlsx', 'xlsx', $2, $3, 'SHEET_CONTENT', 'READY', true, NOW(), '/tmp/attendance-apr-wk3.xlsx')`,
+    `INSERT INTO "AttendanceUpload" (id, "fileName", "fileType", "payrollWeekStartDate", "payrollWeekEndDate", "payrollWeekSource", status, "isActiveForPayrollWeek", "uploadedAt")
+     VALUES ($1, 'attendance-apr-wk3.xlsx', 'xlsx', $2, $3, 'SHEET_CONTENT', 'READY', true, NOW())`,
     [uploadId, weekStart, weekEnd]
   )
 
