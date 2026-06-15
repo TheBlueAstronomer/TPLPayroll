@@ -55,6 +55,7 @@ import {
   recalculateAndCreateRevision,
   approveRevision,
   getRevisionHistory,
+  prepareAdjustmentsForCorrection,
 } from '@/features/payroll-correction/services/correction.service'
 import { CorrectionServiceError } from '@/features/payroll-correction/types/correction.types'
 
@@ -312,16 +313,16 @@ describe('recalculateAndCreateRevision', () => {
       isCurrent: true,
     })
 
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn: unknown) => {
-      const tx: Record<string, Record<string, ReturnType<typeof vi.fn>>> = {
-        payrollRevision: {
-          update: vi.fn().mockResolvedValue(revision),
-          create: vi.fn().mockResolvedValue(newRevision),
-        },
-        payrollRunEmployee: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-        payrollRun: { update: vi.fn().mockResolvedValue({ ...run, currentRevisionNumber: 2 }) },
+    vi.mocked(prisma.payrollRevision.update).mockResolvedValue(revision as never)
+    vi.mocked(prisma.payrollRevision.create).mockResolvedValue(newRevision as never)
+    vi.mocked(prisma.payrollRunEmployee.createMany).mockResolvedValue({ count: 1 } as never)
+    vi.mocked(prisma.payrollRun.update).mockResolvedValue({ ...run, currentRevisionNumber: 2 } as never)
+
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
       }
-      return (fn as (tx: typeof tx) => unknown)(tx)
+      return promises as any
     })
 
     return { newRevision }
@@ -353,20 +354,7 @@ describe('recalculateAndCreateRevision', () => {
     // Verify the transaction was called
     expect(prisma.$transaction).toHaveBeenCalled()
 
-    // Get the transaction function and verify it was called with update
-    const txFn = vi.mocked(prisma.$transaction).mock.calls[0][0] as Function
-    const mockTx = {
-      payrollRevision: {
-        update: vi.fn().mockResolvedValue(makeRevision({ isCurrent: false, status: 'SUPERSEDED' })),
-        create: vi.fn().mockResolvedValue(makeRevision({ id: 'revision-uuid-2', revisionNumber: 2 })),
-      },
-      payrollRunEmployee: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      payrollRun: { update: vi.fn().mockResolvedValue(makePayrollRun({ currentRevisionNumber: 2 })) },
-    }
-
-    await txFn(mockTx)
-
-    expect(mockTx.payrollRevision.update).toHaveBeenCalledWith(
+    expect(prisma.payrollRevision.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'revision-uuid-1' },
         data: { isCurrent: false, status: 'SUPERSEDED' },
@@ -383,19 +371,7 @@ describe('recalculateAndCreateRevision', () => {
       correctionTypes: ['ADJUSTMENTS'],
     })
 
-    const txFn = vi.mocked(prisma.$transaction).mock.calls[0][0] as Function
-    const mockTx = {
-      payrollRevision: {
-        update: vi.fn().mockResolvedValue(makeRevision()),
-        create: vi.fn().mockResolvedValue(makeRevision({ id: 'revision-uuid-2', revisionNumber: 2, correctionReason: 'Wrong overtime hours for EMP-003' })),
-      },
-      payrollRunEmployee: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      payrollRun: { update: vi.fn().mockResolvedValue(makePayrollRun()) },
-    }
-
-    await txFn(mockTx)
-
-    expect(mockTx.payrollRevision.create).toHaveBeenCalledWith(
+    expect(prisma.payrollRevision.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           correctionReason: 'Wrong overtime hours for EMP-003',
@@ -413,19 +389,7 @@ describe('recalculateAndCreateRevision', () => {
       correctionTypes: ['ADJUSTMENTS'],
     })
 
-    const txFn = vi.mocked(prisma.$transaction).mock.calls[0][0] as Function
-    const mockTx = {
-      payrollRevision: {
-        update: vi.fn().mockResolvedValue(makeRevision()),
-        create: vi.fn().mockResolvedValue(makeRevision({ id: 'revision-uuid-2', revisionNumber: 2, correctionReason: null })),
-      },
-      payrollRunEmployee: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      payrollRun: { update: vi.fn().mockResolvedValue(makePayrollRun()) },
-    }
-
-    await txFn(mockTx)
-
-    expect(mockTx.payrollRevision.create).toHaveBeenCalledWith(
+    expect(prisma.payrollRevision.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           correctionReason: null,
@@ -515,5 +479,93 @@ describe('getRevisionHistory', () => {
     const result = await getRevisionHistory('run-uuid-1')
 
     expect(result).toHaveLength(0)
+  })
+})
+
+// ─── Regression: Post-payroll adjustments visible during correction ──────────
+
+describe('post-payroll adjustments (created after approval)', () => {
+  describe('initiateCorrection', () => {
+    it('includes unlinked PENDING adjustment applications for the same week', async () => {
+      const run = makePayrollRun()
+      const revision = makeRevision()
+      vi.mocked(prisma.payrollRun.findUnique).mockResolvedValue({
+        ...run,
+        revisions: [revision],
+      } as never)
+      vi.mocked(prisma.payrollRunEmployee.findMany).mockResolvedValue([
+        makeRunEmployee(),
+      ] as never)
+
+      // Mock returns both: one previously-linked app AND one new unlinked PENDING app
+      const linkedApp = {
+        ...makeAdjApplication({ id: 'app-linked', approvalStatus: 'PENDING' }),
+        payrollAdjustment: { adjustmentType: 'DEDUCTION', amount: 500, reason: 'Advance recovery' },
+        employee: { employeeName: 'Kavitha Rajan', employeeId: 'EMP-001' },
+      }
+      const newUnlinkedApp = {
+        ...makeAdjApplication({
+          id: 'app-new',
+          payrollRunId: null,
+          payrollRevisionId: null,
+          approvalStatus: 'PENDING',
+          approvedAt: null,
+          appliedAt: null,
+        }),
+        payrollAdjustment: { adjustmentType: 'ADDITION', amount: 200, reason: 'Bonus' },
+        employee: { employeeName: 'Kavitha Rajan', employeeId: 'EMP-001' },
+      }
+
+      vi.mocked(prisma.payrollAdjustmentApplication.findMany).mockResolvedValue([
+        linkedApp,
+        newUnlinkedApp,
+      ] as never)
+
+      const result = await initiateCorrection('run-uuid-1')
+
+      // Verify the query used the OR clause to fetch both linked and unlinked apps
+      expect(vi.mocked(prisma.payrollAdjustmentApplication.findMany)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            payrollWeekStartDate: WEEK_START,
+            OR: [
+              { payrollRunId: 'run-uuid-1' },
+              { payrollRunId: null, approvalStatus: 'PENDING' },
+            ],
+          }),
+        }),
+      )
+
+      // Both apps should be returned
+      expect(result.adjustmentApplications).toHaveLength(2)
+      expect(result.adjustmentApplications.map((a) => a.applicationId)).toContain('app-linked')
+      expect(result.adjustmentApplications.map((a) => a.applicationId)).toContain('app-new')
+    })
+  })
+
+  describe('prepareAdjustmentsForCorrection', () => {
+    it('resets both linked and unlinked PENDING apps for the payroll week', async () => {
+      vi.mocked(prisma.payrollRun.findUnique).mockResolvedValue({
+        payrollWeekStartDate: WEEK_START,
+      } as never)
+      vi.mocked(prisma.payrollAdjustmentApplication.updateMany).mockResolvedValue({ count: 2 } as never)
+
+      await prepareAdjustmentsForCorrection('run-uuid-1')
+
+      expect(vi.mocked(prisma.payrollAdjustmentApplication.updateMany)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              { payrollRunId: 'run-uuid-1' },
+              expect.objectContaining({
+                payrollWeekStartDate: WEEK_START,
+                payrollRunId: null,
+                approvalStatus: 'PENDING',
+              }),
+            ]),
+          }),
+        }),
+      )
+    })
   })
 })

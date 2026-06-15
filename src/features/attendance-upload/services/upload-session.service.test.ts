@@ -29,7 +29,7 @@ describe('upload-session.service', () => {
         .spyOn(prisma.attendanceUploadSession, 'create')
         .mockResolvedValue({
           id: 'sess-1',
-          tempFilePath: '/tmp/x.xlsx',
+          storageKey: 'attendance/uuid_x.xlsx',
           fileName: 'x.xlsx',
           fileType: 'xlsx',
           weekStart: '2026-05-04',
@@ -46,7 +46,7 @@ describe('upload-session.service', () => {
       } as any)
 
       const result = await createUploadSession({
-        tempFilePath: '/tmp/x.xlsx',
+        storageKey: 'attendance/uuid_x.xlsx',
         fileName: 'x.xlsx',
         fileType: 'xlsx',
         weekStart: '2026-05-04',
@@ -60,7 +60,7 @@ describe('upload-session.service', () => {
       expect(result.id).toBe('sess-1')
       expect(createSpy).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          tempFilePath: '/tmp/x.xlsx',
+          storageKey: 'attendance/uuid_x.xlsx',
           weekStart: '2026-05-04',
           weekSource: 'MANUAL',
           pendingBlockKey: 'Sheet1||5',
@@ -86,7 +86,7 @@ describe('upload-session.service', () => {
         .mockResolvedValue({ count: 3 } as any)
 
       await createUploadSession({
-        tempFilePath: '/tmp/x.xlsx',
+        storageKey: 'attendance/uuid_x.xlsx',
         fileName: 'x.xlsx',
         fileType: 'xlsx',
         weekStart: '2026-05-04',

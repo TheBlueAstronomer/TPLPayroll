@@ -17,15 +17,20 @@ vi.mock('@/lib/prisma', () => ({
     payrollAdjustmentApplication: {
       create: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
       deleteMany: vi.fn(),
+      count: vi.fn(),
+      aggregate: vi.fn(),
     },
     $transaction: vi.fn(),
   },
 }))
 
-import prisma from '@/lib/prisma'
+import _prisma from '@/lib/prisma'
+const prisma = _prisma as any
 import {
   createAdjustment,
   getAdjustmentList,
@@ -34,6 +39,7 @@ import {
   skipAdjustmentApplication,
   updateAdjustment,
   cancelAdjustment,
+  getAdjustmentsForWeekReview,
 } from '@/features/payroll-adjustments/services/adjustment.service'
 import { AdjustmentServiceError } from '@/features/payroll-adjustments/types/adjustment.types'
 
@@ -131,12 +137,14 @@ describe('createAdjustment — one-time', () => {
     const adj = makeAdjustment()
     const app = makeApplication()
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: { create: vi.fn().mockResolvedValue(adj) },
-        payrollAdjustmentApplication: { create: vi.fn().mockResolvedValue(app) },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockResolvedValue(adj as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(app as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises: any) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     // WHEN
     const result = await createAdjustment(validOneTimeInput)
@@ -153,17 +161,17 @@ describe('createAdjustment — one-time', () => {
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
 
     let capturedAppCreate: unknown = null
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: { create: vi.fn().mockResolvedValue(adj) },
-        payrollAdjustmentApplication: {
-          create: vi.fn().mockImplementation((args: unknown) => {
-            capturedAppCreate = args
-            return makeApplication()
-          }),
-        },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockResolvedValue(adj as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockImplementation((args: unknown) => {
+      capturedAppCreate = args
+      return Promise.resolve(makeApplication() as never)
+    })
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises: any) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     await createAdjustment(validOneTimeInput)
 
@@ -192,17 +200,17 @@ describe('createAdjustment — one-time', () => {
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
 
     let capturedCreate: unknown = null
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: {
-          create: vi.fn().mockImplementation((args: unknown) => {
-            capturedCreate = args
-            return adj
-          }),
-        },
-        payrollAdjustmentApplication: { create: vi.fn().mockResolvedValue(makeApplication()) },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockImplementation((args: unknown) => {
+      capturedCreate = args
+      return Promise.resolve(adj as never)
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises: any) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     await createAdjustment({ ...validOneTimeInput, amount: 1250.75 })
 
@@ -244,12 +252,14 @@ describe('createAdjustment — recurring', () => {
       endPayrollWeekStartDate: new Date('2025-04-03'),
     })
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: { create: vi.fn().mockResolvedValue(adj) },
-        payrollAdjustmentApplication: { create: vi.fn().mockResolvedValue(makeApplication()) },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockResolvedValue(adj as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises: any) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     const result = await createAdjustment(input)
 
@@ -274,17 +284,17 @@ describe('createAdjustment — recurring', () => {
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
 
     let capturedAdjCreate: unknown = null
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: {
-          create: vi.fn().mockImplementation((args: unknown) => {
-            capturedAdjCreate = args
-            return adj
-          }),
-        },
-        payrollAdjustmentApplication: { create: vi.fn().mockResolvedValue(makeApplication()) },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockImplementation((args: unknown) => {
+      capturedAdjCreate = args
+      return Promise.resolve(adj as never)
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises: any) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     const result = await createAdjustment(input)
 
@@ -313,17 +323,17 @@ describe('createAdjustment — recurring', () => {
     vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
 
     let capturedAdjCreate: unknown = null
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) =>
-      fn({
-        payrollAdjustment: {
-          create: vi.fn().mockImplementation((args: unknown) => {
-            capturedAdjCreate = args
-            return adj
-          }),
-        },
-        payrollAdjustmentApplication: { create: vi.fn().mockResolvedValue(makeApplication()) },
-      } as unknown as typeof prisma),
-    )
+    vi.mocked(prisma.payrollAdjustment.create).mockImplementation((args: unknown) => {
+      capturedAdjCreate = args
+      return Promise.resolve(adj as never)
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises: any) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises as any
+    })
 
     const result = await createAdjustment(input)
 
@@ -489,6 +499,7 @@ describe('approveAdjustmentApplication', () => {
   it('caps applied amount at remainingBalance for TOTAL_BALANCE adjustments', async () => {
     // GIVEN adjustment amount=2000, remainingBalance=1500
     const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
       recurrenceEndType: 'TOTAL_BALANCE',
       amount: 2000 as unknown as PayrollAdjustment['amount'],
       remainingBalance: 1500 as unknown as PayrollAdjustment['remainingBalance'],
@@ -523,6 +534,7 @@ describe('approveAdjustmentApplication', () => {
   it('sets adjustment status to COMPLETED when remainingBalance reaches 0', async () => {
     // GIVEN adjustment amount=2000, remainingBalance=1500
     const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
       recurrenceEndType: 'TOTAL_BALANCE',
       amount: 2000 as unknown as PayrollAdjustment['amount'],
       remainingBalance: 1500 as unknown as PayrollAdjustment['remainingBalance'],
@@ -552,6 +564,70 @@ describe('approveAdjustmentApplication', () => {
         remainingBalance: 0,
       }),
     })
+  })
+
+  it('sets ONE_TIME adjustment status to COMPLETED on approval', async () => {
+    // GIVEN a ONE_TIME adjustment
+    const adj = makeAdjustment({
+      recurrenceType: 'ONE_TIME',
+    })
+    const app = makeApplication({ approvalStatus: 'PENDING', payrollAdjustmentId: adj.id })
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.update).mockResolvedValue({
+      ...app,
+      approvalStatus: 'APPROVED',
+    } as never)
+
+    let capturedAdjUpdate: unknown = null
+    vi.mocked(prisma.payrollAdjustment.update).mockImplementation((args: unknown) => {
+      capturedAdjUpdate = args
+      return Promise.resolve({ ...adj, status: 'COMPLETED' } as never)
+    })
+
+    await approveAdjustmentApplication('app-uuid-1')
+
+    // THEN adjustment status = COMPLETED
+    expect(capturedAdjUpdate).toMatchObject({
+      data: expect.objectContaining({
+        status: 'COMPLETED',
+      }),
+    })
+  })
+
+  it('allows approving a SKIPPED application and deletes carry-forward next-week PENDING application', async () => {
+    // GIVEN a SKIPPED application that was carried forward to next week
+    const adj = makeAdjustment({ recurrenceType: 'ONE_TIME' })
+    const app = makeApplication({
+      approvalStatus: 'SKIPPED',
+      payrollAdjustmentId: adj.id,
+      carriedForwardToPayrollWeekStartDate: new Date('2025-03-13'),
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.update).mockResolvedValue({
+      ...app,
+      approvalStatus: 'APPROVED',
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.deleteMany).mockResolvedValue({ count: 1 } as never)
+    vi.mocked(prisma.payrollAdjustment.update).mockResolvedValue(adj)
+
+    await approveAdjustmentApplication('app-uuid-1')
+
+    // THEN the next-week PENDING application is deleted
+    expect(prisma.payrollAdjustmentApplication.deleteMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          payrollAdjustmentId: adj.id,
+          payrollWeekStartDate: new Date('2025-03-13'),
+          approvalStatus: 'PENDING',
+        },
+      }),
+    )
   })
 
   it('throws APPLICATION_NOT_FOUND when application does not exist', async () => {
@@ -688,6 +764,95 @@ describe('skipAdjustmentApplication', () => {
     })
   })
 
+  it('allows skipping an APPROVED ONE_TIME application and reverts status to ACTIVE', async () => {
+    const adj = makeAdjustment({ recurrenceType: 'ONE_TIME', status: 'COMPLETED' })
+    const app = makeApplication({
+      approvalStatus: 'APPROVED',
+      appliedAmount: 500 as unknown as PayrollAdjustmentApplication['appliedAmount'],
+      payrollAdjustmentId: adj.id,
+      payrollWeekStartDate: new Date('2025-03-06'),
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.update).mockResolvedValue({
+      ...app,
+      approvalStatus: 'SKIPPED',
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.findFirst).mockResolvedValue(null)
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+
+    let capturedAdjUpdate: unknown = null
+    vi.mocked(prisma.payrollAdjustment.update).mockImplementation((args: unknown) => {
+      capturedAdjUpdate = args
+      return Promise.resolve({ ...adj, status: 'ACTIVE' } as never)
+    })
+
+    await skipAdjustmentApplication('app-uuid-1')
+
+    // THEN adjustment status is reverted to ACTIVE
+    expect(capturedAdjUpdate).toMatchObject({
+      data: expect.objectContaining({
+        status: 'ACTIVE',
+      }),
+    })
+  })
+
+  it('allows skipping an APPROVED TOTAL_BALANCE application and restores remainingBalance', async () => {
+    const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
+      recurrenceEndType: 'TOTAL_BALANCE',
+      remainingBalance: 500 as unknown as PayrollAdjustment['remainingBalance'],
+      totalBalance: 2000 as unknown as PayrollAdjustment['totalBalance'],
+      status: 'ACTIVE',
+    })
+    const app = makeApplication({
+      approvalStatus: 'APPROVED',
+      appliedAmount: 500 as unknown as PayrollAdjustmentApplication['appliedAmount'],
+      payrollAdjustmentId: adj.id,
+      payrollWeekStartDate: new Date('2025-03-06'),
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.update).mockResolvedValue({
+      ...app,
+      approvalStatus: 'SKIPPED',
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.findFirst).mockResolvedValue(null)
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+
+    let capturedAdjUpdate: unknown = null
+    vi.mocked(prisma.payrollAdjustment.update).mockImplementation((args: unknown) => {
+      capturedAdjUpdate = args
+      return Promise.resolve(adj as never)
+    })
+
+    await skipAdjustmentApplication('app-uuid-1')
+
+    // THEN remainingBalance is restored by 500 (500 + 500 = 1000)
+    expect(capturedAdjUpdate).toMatchObject({
+      data: expect.objectContaining({
+        remainingBalance: 1000,
+      }),
+    })
+  })
+
+  it('throws INVALID_APPROVAL_STATUS when application is already SKIPPED', async () => {
+    const app = makeApplication({ approvalStatus: 'SKIPPED' })
+    const adj = makeAdjustment()
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+
+    await expect(skipAdjustmentApplication('app-uuid-1')).rejects.toMatchObject({
+      code: 'INVALID_APPROVAL_STATUS',
+    })
+  })
+
   it('throws APPLICATION_NOT_FOUND when application does not exist', async () => {
     vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue(null)
 
@@ -713,6 +878,9 @@ const validUpdateInput = {
 describe('updateAdjustment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(prisma.payrollAdjustmentApplication.aggregate).mockResolvedValue({
+      _sum: { appliedAmount: null },
+    } as never)
   })
 
   it('updates amount and reason on an ACTIVE adjustment with no approved applications', async () => {
@@ -889,3 +1057,442 @@ describe('cancelAdjustment', () => {
     })
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BF-01: FIXED_WEEKS — create stores weekly instalment, not full amount
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('BF-01 — createAdjustment FIXED_WEEKS splits amount evenly', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('stores per-week instalment (total ÷ weeks) in amount', async () => {
+    // GIVEN ₹8,000 total over 8 weeks → expect ₹1,000/week stored
+    const input = {
+      ...validOneTimeInput,
+      amount: 8000,
+      recurrenceType: 'RECURRING' as const,
+      recurrenceEndType: 'FIXED_WEEKS' as const,
+      totalRecurrenceWeeks: 8,
+    }
+    const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
+      recurrenceEndType: 'FIXED_WEEKS',
+      amount: 1000 as unknown as PayrollAdjustment['amount'],
+      totalBalance: 8000 as unknown as PayrollAdjustment['totalBalance'],
+      remainingBalance: 8000 as unknown as PayrollAdjustment['remainingBalance'],
+      totalRecurrenceWeeks: 8,
+    })
+
+    let capturedAdjCreate: unknown = null
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
+    vi.mocked(prisma.payrollAdjustment.create).mockImplementation((args: unknown) => {
+      capturedAdjCreate = args
+      return Promise.resolve(adj as never)
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises: any) => {
+      if (Array.isArray(promises)) return Promise.all(promises)
+      return promises as never
+    })
+
+    const result = await createAdjustment(input)
+
+    // amount stored = 1000 (weekly slice), not 8000 (total)
+    expect(result.amount).toBe(1000)
+    expect(capturedAdjCreate).toMatchObject({
+      data: expect.objectContaining({ amount: 1000 }),
+    })
+  })
+
+  it('stores original total in totalBalance for FIXED_WEEKS', async () => {
+    const input = {
+      ...validOneTimeInput,
+      amount: 8000,
+      recurrenceType: 'RECURRING' as const,
+      recurrenceEndType: 'FIXED_WEEKS' as const,
+      totalRecurrenceWeeks: 8,
+    }
+    const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
+      recurrenceEndType: 'FIXED_WEEKS',
+      amount: 1000 as unknown as PayrollAdjustment['amount'],
+      totalBalance: 8000 as unknown as PayrollAdjustment['totalBalance'],
+      remainingBalance: 8000 as unknown as PayrollAdjustment['remainingBalance'],
+      totalRecurrenceWeeks: 8,
+    })
+
+    let capturedAdjCreate: unknown = null
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
+    vi.mocked(prisma.payrollAdjustment.create).mockImplementation((args: unknown) => {
+      capturedAdjCreate = args
+      return Promise.resolve(adj as never)
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockResolvedValue(makeApplication() as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises: any) => {
+      if (Array.isArray(promises)) return Promise.all(promises)
+      return promises as never
+    })
+
+    await createAdjustment(input)
+
+    expect(capturedAdjCreate).toMatchObject({
+      data: expect.objectContaining({ totalBalance: 8000, remainingBalance: 8000 }),
+    })
+  })
+
+  it('sets first application appliedAmount to the weekly slice, not the total', async () => {
+    const input = {
+      ...validOneTimeInput,
+      amount: 8000,
+      recurrenceType: 'RECURRING' as const,
+      recurrenceEndType: 'FIXED_WEEKS' as const,
+      totalRecurrenceWeeks: 8,
+    }
+    const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
+      recurrenceEndType: 'FIXED_WEEKS',
+      amount: 1000 as unknown as PayrollAdjustment['amount'],
+      totalBalance: 8000 as unknown as PayrollAdjustment['totalBalance'],
+      remainingBalance: 8000 as unknown as PayrollAdjustment['remainingBalance'],
+      totalRecurrenceWeeks: 8,
+    })
+
+    let capturedAppCreate: unknown = null
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue(makeEmployee())
+    vi.mocked(prisma.payrollAdjustment.create).mockResolvedValue(adj as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockImplementation((args: unknown) => {
+      capturedAppCreate = args
+      return Promise.resolve(makeApplication() as never)
+    })
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises: any) => {
+      if (Array.isArray(promises)) return Promise.all(promises)
+      return promises as never
+    })
+
+    await createAdjustment(input)
+
+    // First application must use 1000, not 8000
+    expect(capturedAppCreate).toMatchObject({
+      data: expect.objectContaining({ appliedAmount: 1000 }),
+    })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BF-01: FIXED_WEEKS — approve schedules next week and completes on last week
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('BF-01 — approveAdjustmentApplication FIXED_WEEKS creates next-week app', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('creates a PENDING application for the next week after approving a mid-run week', async () => {
+    // GIVEN 8-week plan, 1 of 8 approved so far (this is week 1)
+    const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
+      recurrenceEndType: 'FIXED_WEEKS',
+      amount: 1000 as unknown as PayrollAdjustment['amount'],
+      totalBalance: 8000 as unknown as PayrollAdjustment['totalBalance'],
+      remainingBalance: 8000 as unknown as PayrollAdjustment['remainingBalance'],
+      totalRecurrenceWeeks: 8,
+    })
+    const app = makeApplication({
+      approvalStatus: 'PENDING',
+      payrollWeekStartDate: new Date('2025-03-06'),
+      payrollWeekEndDate: new Date('2025-03-12'),
+      payrollAdjustmentId: adj.id,
+      appliedAmount: 1000 as unknown as PayrollAdjustmentApplication['appliedAmount'],
+    })
+
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.update).mockResolvedValue({
+      ...app,
+      approvalStatus: 'APPROVED',
+    } as never)
+    // After approval, count returns 1 (this week is now approved)
+    vi.mocked(prisma.payrollAdjustmentApplication.count as ReturnType<typeof vi.fn>).mockResolvedValue(1)
+
+    let capturedNextApp: unknown = null
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockImplementation((args: unknown) => {
+      capturedNextApp = args
+      return Promise.resolve(makeApplication() as never)
+    })
+    vi.mocked(prisma.payrollAdjustment.update).mockResolvedValue(adj)
+
+    await approveAdjustmentApplication('app-uuid-1')
+
+    // THEN a PENDING application for March 13-19 is created
+    expect(capturedNextApp).toMatchObject({
+      data: expect.objectContaining({
+        approvalStatus: 'PENDING',
+        payrollWeekStartDate: new Date('2025-03-13'),
+        payrollWeekEndDate: new Date('2025-03-19'),
+        appliedAmount: 1000,
+      }),
+    })
+  })
+
+  it('marks adjustment COMPLETED and does NOT create next-week app after the last week', async () => {
+    // GIVEN 8-week plan, all 8 weeks now approved (this is week 8)
+    const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
+      recurrenceEndType: 'FIXED_WEEKS',
+      amount: 1000 as unknown as PayrollAdjustment['amount'],
+      totalBalance: 8000 as unknown as PayrollAdjustment['totalBalance'],
+      remainingBalance: 1000 as unknown as PayrollAdjustment['remainingBalance'],
+      totalRecurrenceWeeks: 8,
+    })
+    const app = makeApplication({
+      approvalStatus: 'PENDING',
+      payrollAdjustmentId: adj.id,
+      appliedAmount: 1000 as unknown as PayrollAdjustmentApplication['appliedAmount'],
+    })
+
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.update).mockResolvedValue({
+      ...app,
+      approvalStatus: 'APPROVED',
+    } as never)
+    // Count = 8 after this approval — all weeks done
+    vi.mocked(prisma.payrollAdjustmentApplication.count as ReturnType<typeof vi.fn>).mockResolvedValue(8)
+
+    let capturedAdjUpdate: unknown = null
+    vi.mocked(prisma.payrollAdjustment.update).mockImplementation((args: unknown) => {
+      capturedAdjUpdate = args
+      return Promise.resolve({ ...adj, status: 'COMPLETED', remainingBalance: 0 } as never)
+    })
+
+    await approveAdjustmentApplication('app-uuid-1')
+
+    // THEN adjustment is COMPLETED
+    expect(capturedAdjUpdate).toMatchObject({
+      data: expect.objectContaining({ status: 'COMPLETED' }),
+    })
+    // AND no next-week application is created
+    expect(prisma.payrollAdjustmentApplication.create).not.toHaveBeenCalled()
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BF-01: END_WEEK — approve schedules next week and completes on last week
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('BF-01 — approveAdjustmentApplication END_WEEK creates next-week app', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('creates next-week PENDING application when current week is before end week', async () => {
+    // GIVEN end week = March 27; current week = March 6 → not yet at end
+    const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
+      recurrenceEndType: 'END_WEEK',
+      endPayrollWeekStartDate: new Date('2025-03-27'),
+      endPayrollWeekEndDate: new Date('2025-04-02'),
+    })
+    const app = makeApplication({
+      approvalStatus: 'PENDING',
+      payrollWeekStartDate: new Date('2025-03-06'),
+      payrollWeekEndDate: new Date('2025-03-12'),
+      payrollAdjustmentId: adj.id,
+    })
+
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.update).mockResolvedValue({
+      ...app,
+      approvalStatus: 'APPROVED',
+    } as never)
+
+    let capturedNextApp: unknown = null
+    vi.mocked(prisma.payrollAdjustmentApplication.create).mockImplementation((args: unknown) => {
+      capturedNextApp = args
+      return Promise.resolve(makeApplication() as never)
+    })
+    vi.mocked(prisma.payrollAdjustment.update).mockResolvedValue(adj)
+
+    await approveAdjustmentApplication('app-uuid-1')
+
+    expect(capturedNextApp).toMatchObject({
+      data: expect.objectContaining({
+        approvalStatus: 'PENDING',
+        payrollWeekStartDate: new Date('2025-03-13'),
+        payrollWeekEndDate: new Date('2025-03-19'),
+      }),
+    })
+  })
+
+  it('marks adjustment COMPLETED when the end week is approved', async () => {
+    // GIVEN end week = March 6; current week = March 6 → this IS the end week
+    const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
+      recurrenceEndType: 'END_WEEK',
+      endPayrollWeekStartDate: new Date('2025-03-06'),
+      endPayrollWeekEndDate: new Date('2025-03-12'),
+    })
+    const app = makeApplication({
+      approvalStatus: 'PENDING',
+      payrollWeekStartDate: new Date('2025-03-06'),
+      payrollWeekEndDate: new Date('2025-03-12'),
+      payrollAdjustmentId: adj.id,
+    })
+
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.update).mockResolvedValue({
+      ...app,
+      approvalStatus: 'APPROVED',
+    } as never)
+
+    let capturedAdjUpdate: unknown = null
+    vi.mocked(prisma.payrollAdjustment.update).mockImplementation((args: unknown) => {
+      capturedAdjUpdate = args
+      return Promise.resolve({ ...adj, status: 'COMPLETED' } as never)
+    })
+
+    await approveAdjustmentApplication('app-uuid-1')
+
+    expect(capturedAdjUpdate).toMatchObject({
+      data: expect.objectContaining({ status: 'COMPLETED' }),
+    })
+    expect(prisma.payrollAdjustmentApplication.create).not.toHaveBeenCalled()
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Deduplication and Snowball Prevention Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Deduplication and Snowball Prevention', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('approveAdjustmentApplication does not create duplicate PENDING next-week application if one already exists', async () => {
+    // GIVEN a FIXED_WEEKS adjustment
+    const adj = makeAdjustment({
+      recurrenceType: 'RECURRING',
+      recurrenceEndType: 'FIXED_WEEKS',
+      amount: 1000 as unknown as PayrollAdjustment['amount'],
+      totalBalance: 8000 as unknown as PayrollAdjustment['totalBalance'],
+      remainingBalance: 8000 as unknown as PayrollAdjustment['remainingBalance'],
+      totalRecurrenceWeeks: 8,
+    })
+    const app = makeApplication({
+      approvalStatus: 'PENDING',
+      payrollWeekStartDate: new Date('2025-03-06'),
+      payrollWeekEndDate: new Date('2025-03-12'),
+      payrollAdjustmentId: adj.id,
+      appliedAmount: 1000 as unknown as PayrollAdjustmentApplication['appliedAmount'],
+    })
+
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.update).mockResolvedValue({
+      ...app,
+      approvalStatus: 'APPROVED',
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.count as ReturnType<typeof vi.fn>).mockResolvedValue(1)
+
+    // Mock an existing PENDING application for the next week
+    const existingNextApp = makeApplication({
+      id: 'existing-pending-uuid',
+      approvalStatus: 'PENDING',
+      payrollWeekStartDate: new Date('2025-03-13'),
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.findFirst).mockResolvedValue(existingNextApp as never)
+    vi.mocked(prisma.payrollAdjustment.update).mockResolvedValue(adj)
+
+    // WHEN we approve the current week
+    await approveAdjustmentApplication('app-uuid-1')
+
+    // THEN the system should NOT create another application because one already exists
+    expect(prisma.payrollAdjustmentApplication.create).not.toHaveBeenCalled()
+  })
+
+  it('skipAdjustmentApplication does not create duplicate PENDING next-week application if one already exists', async () => {
+    // GIVEN a RECURRING adjustment
+    const adj = makeAdjustment({ recurrenceType: 'RECURRING' })
+    const app = makeApplication({
+      approvalStatus: 'PENDING',
+      payrollWeekStartDate: new Date('2025-03-06'),
+      payrollWeekEndDate: new Date('2025-03-12'),
+      payrollAdjustmentId: adj.id,
+    })
+
+    vi.mocked(prisma.payrollAdjustmentApplication.findUnique).mockResolvedValue({
+      ...app,
+      payrollAdjustment: adj,
+    } as never)
+    vi.mocked(prisma.payrollAdjustmentApplication.update).mockResolvedValue({
+      ...app,
+      approvalStatus: 'SKIPPED',
+    } as never)
+
+    // Mock an existing PENDING application for the next week
+    const existingNextApp = makeApplication({
+      id: 'existing-pending-uuid',
+      approvalStatus: 'PENDING',
+      payrollWeekStartDate: new Date('2025-03-13'),
+    })
+    vi.mocked(prisma.payrollAdjustmentApplication.findFirst).mockResolvedValue(existingNextApp as never)
+    vi.mocked(prisma.payrollAdjustment.update).mockResolvedValue({ ...adj, skippedCarryForwardCount: 1 } as never)
+
+    // WHEN we skip the current week
+    await skipAdjustmentApplication('app-uuid-1')
+
+    // THEN the system should NOT create a carry-forward application because one already exists
+    expect(prisma.payrollAdjustmentApplication.create).not.toHaveBeenCalled()
+  })
+
+  it('getAdjustmentsForWeekReview deduplicates applications for the same adjustment in defense-in-depth', async () => {
+    // GIVEN two duplicate PENDING applications for the same adjustment and same week
+    const adj = makeAdjustment()
+    const app1 = makeApplication({
+      id: 'app-uuid-1',
+      payrollAdjustmentId: adj.id,
+      approvalStatus: 'PENDING',
+    })
+    const app2 = makeApplication({
+      id: 'app-uuid-2',
+      payrollAdjustmentId: adj.id,
+      approvalStatus: 'PENDING',
+    })
+
+    vi.mocked(prisma.payrollAdjustmentApplication.findMany).mockResolvedValue([
+      {
+        ...app1,
+        payrollAdjustment: adj,
+        employee: { employeeName: 'Lakshmi Venkatesh', employeeId: 'EMP-001' },
+      },
+      {
+        ...app2,
+        payrollAdjustment: adj,
+        employee: { employeeName: 'Lakshmi Venkatesh', employeeId: 'EMP-001' },
+      },
+    ] as never)
+
+    // WHEN we fetch adjustments for review
+    const results = await getAdjustmentsForWeekReview(new Date('2025-03-06'))
+
+    // THEN it should only return one review item, to keep the UI clean
+    expect(results).toHaveLength(1)
+    expect(results[0].applicationId).toBe('app-uuid-1')
+  })
+})
+

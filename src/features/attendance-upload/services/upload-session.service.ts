@@ -15,7 +15,7 @@ export interface SessionDecisions {
 }
 
 export interface CreateUploadSessionParams {
-  tempFilePath: string
+  storageKey: string // Supabase Storage key (replaces tempFilePath)
   fileName: string
   fileType: string
   weekStart: string // YYYY-MM-DD
@@ -40,7 +40,7 @@ export async function createUploadSession(
   return prisma.attendanceUploadSession.create({
     data: {
       id: randomUUID(),
-      tempFilePath: params.tempFilePath,
+      storageKey: params.storageKey,
       fileName: params.fileName,
       fileType: params.fileType,
       weekStart: params.weekStart,
@@ -56,7 +56,7 @@ export async function createUploadSession(
 
 export interface LoadedUploadSession {
   id: string
-  tempFilePath: string
+  storageKey: string
   fileName: string
   fileType: string
   weekStart: string
@@ -91,7 +91,7 @@ export async function loadUploadSession(
 
   return {
     id: row.id,
-    tempFilePath: row.tempFilePath,
+    storageKey: row.storageKey,
     fileName: row.fileName,
     fileType: row.fileType,
     weekStart: row.weekStart,

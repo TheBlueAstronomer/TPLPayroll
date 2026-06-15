@@ -1,7 +1,7 @@
 // ─── Week/Attendance status ───────────────────────────────────────────────────
 
 export type AttendanceWeekStatus = 'READY' | 'ERRORS' | 'NO_UPLOAD'
-export type PayrollRunStatus = 'NOT_GENERATED' | 'APPROVED'
+export type PayrollRunStatus = 'NOT_GENERATED' | 'APPROVED' | 'REVISED'
 
 export interface PayrollWeekItem {
   weekId: string // YYYY-MM-DD (ISO start date)

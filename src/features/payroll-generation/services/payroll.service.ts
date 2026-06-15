@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import prisma from '@/lib/prisma'
 import {
   PayrollServiceError,
@@ -54,8 +55,8 @@ export async function getAvailablePayrollWeeks(): Promise<PayrollWeekItem[]> {
 
   const [payrollRuns, recordGroups, hourSums] = await Promise.all([
     prisma.payrollRun.findMany({
-      where: { payrollWeekStartDate: { in: weekStarts }, status: 'APPROVED' },
-      select: { id: true, payrollWeekStartDate: true },
+      where: { payrollWeekStartDate: { in: weekStarts }, status: { in: ['APPROVED', 'REVISED'] } },
+      select: { id: true, payrollWeekStartDate: true, status: true },
     }),
     prisma.attendanceRecord.groupBy({
       by: ['attendanceUploadId', 'employeeId'],
@@ -68,7 +69,7 @@ export async function getAvailablePayrollWeeks(): Promise<PayrollWeekItem[]> {
     }),
   ])
 
-  const runByWeek = new Map(payrollRuns.map((r) => [r.payrollWeekStartDate.toISOString(), r.id]))
+  const runByWeek = new Map(payrollRuns.map((r) => [r.payrollWeekStartDate.toISOString(), { id: r.id, status: r.status }]))
 
   const employeesByUpload = new Map<string, Set<string>>()
   for (const r of recordGroups) {
@@ -90,7 +91,8 @@ export async function getAvailablePayrollWeeks(): Promise<PayrollWeekItem[]> {
 
   return uploads.map((u): PayrollWeekItem => {
     const weekId = u.payrollWeekStartDate.toISOString().slice(0, 10)
-    const payrollRunId = runByWeek.get(u.payrollWeekStartDate.toISOString()) ?? null
+    const runInfo = runByWeek.get(u.payrollWeekStartDate.toISOString()) ?? null
+    const payrollRunId = runInfo?.id ?? null
     const hours = hoursByUpload.get(u.id) ?? { regularHours: 0, overtimeHours: 0 }
     const matchedEmployeeCount = employeesByUpload.get(u.id)?.size ?? 0
 
@@ -102,7 +104,9 @@ export async function getAvailablePayrollWeeks(): Promise<PayrollWeekItem[]> {
       matchedEmployeeCount,
       totalRegularHours: hours.regularHours,
       totalOvertimeHours: hours.overtimeHours,
-      payrollStatus: payrollRunId ? 'APPROVED' : 'NOT_GENERATED',
+      payrollStatus: runInfo
+        ? (runInfo.status === 'REVISED' ? 'REVISED' as const : 'APPROVED' as const)
+        : 'NOT_GENERATED' as const,
       payrollRunId,
     }
   })
@@ -223,6 +227,7 @@ export async function calculatePayroll(
       payrollWeekStartDate: weekStart,
       approvalStatus: 'APPROVED',
       employeeId: { in: [...employeeMap.keys()] },
+      payrollAdjustment: { status: { not: 'CANCELLED' } },
     },
     include: {
       payrollAdjustment: { select: { adjustmentType: true } },
@@ -310,7 +315,7 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
     where: {
       payrollWeekStartDate: summary.weekStart,
       payrollWeekEndDate: summary.weekEnd,
-      status: 'APPROVED',
+      status: { in: ['APPROVED', 'REVISED'] },
     },
   })
 
@@ -321,9 +326,13 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
   const { totals, weekStart, weekEnd, employees } = summary
   const now = new Date()
 
-  const result = await prisma.$transaction(async (tx) => {
-    const run = await tx.payrollRun.create({
+  const runId = randomUUID()
+  const revisionId = randomUUID()
+
+  const promises = [
+    prisma.payrollRun.create({
       data: {
+        id: runId,
         payrollWeekStartDate: weekStart,
         payrollWeekEndDate: weekEnd,
         status: 'APPROVED',
@@ -335,11 +344,12 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
         totalNetPayable: totals.totalNetPayable,
         approvedAt: now,
       },
-    })
+    }),
 
-    const revision = await tx.payrollRevision.create({
+    prisma.payrollRevision.create({
       data: {
-        payrollRunId: run.id,
+        id: revisionId,
+        payrollRunId: runId,
         revisionNumber: 1,
         status: 'APPROVED',
         isCurrent: true,
@@ -350,12 +360,12 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
         totalNetPayable: totals.totalNetPayable,
         approvedAt: now,
       },
-    })
+    }),
 
-    await tx.payrollRunEmployee.createMany({
+    prisma.payrollRunEmployee.createMany({
       data: employees.map((emp) => ({
-        payrollRunId: run.id,
-        payrollRevisionId: revision.id,
+        payrollRunId: runId,
+        payrollRevisionId: revisionId,
         employeeId: emp.employeeId,
         weeklySalaryUsed: emp.weeklySalaryUsed,
         hourlyRateUsed: emp.hourlyRateUsed,
@@ -367,29 +377,29 @@ export async function approvePayroll(summary: PayrollSummary): Promise<ApprovePa
         deductions: emp.deductions,
         netPayable: emp.netPayable,
       })),
-    })
+    }),
 
-    await tx.payrollAdjustmentApplication.updateMany({
+    prisma.payrollAdjustmentApplication.updateMany({
       where: {
         payrollWeekStartDate: weekStart,
         approvalStatus: 'APPROVED',
         payrollRunId: null,
       },
       data: {
-        payrollRunId: run.id,
-        payrollRevisionId: revision.id,
+        payrollRunId: runId,
+        payrollRevisionId: revisionId,
       },
-    })
+    }),
+  ]
 
-    return { run, revision }
-  })
+  await prisma.$transaction(promises, { timeout: 30000 })
 
   return {
-    payrollRunId: result.run.id,
-    payrollRevisionId: result.revision.id,
-    revisionNumber: result.revision.revisionNumber,
-    approvedAt: result.run.approvedAt!,
-    totalNetPayable: Number(result.run.totalNetPayable),
+    payrollRunId: runId,
+    payrollRevisionId: revisionId,
+    revisionNumber: 1,
+    approvedAt: now,
+    totalNetPayable: Number(totals.totalNetPayable),
     employeeCount: employees.length,
   }
 }

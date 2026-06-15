@@ -3,7 +3,7 @@
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { ArrowLeft, FloppyDisk, Circle } from '@phosphor-icons/react'
 import {
   CreateEmployeeSchema,
@@ -24,6 +24,7 @@ type Mode = 'create' | 'edit'
 export interface AttendanceReturnContext {
   sessionId: string
   sheetEmployeeName: string
+  returnTo?: string
 }
 
 interface EmployeeFormProps {
@@ -143,7 +144,7 @@ export function EmployeeForm({
   returnContext,
 }: EmployeeFormProps) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
 
   const isEdit = mode === 'edit'
@@ -190,7 +191,8 @@ export function EmployeeForm({
 
   async function onSubmit(data: FormValues) {
     setServerError(null)
-    startTransition(async () => {
+    setIsSubmitting(true)
+    try {
       const salaryNum = parseFloat(data.salary)
       const hourlyNum = parseFloat(data.hourlyRate)
 
@@ -226,7 +228,6 @@ export function EmployeeForm({
           return
         }
         router.push(`/employees/${employee.id}`)
-        router.refresh()
       } else {
         const payload: CreateEmployeeInput = {
           employeeId: data.employeeId,
@@ -267,14 +268,15 @@ export function EmployeeForm({
             resumeSession: returnContext.sessionId,
             newEmployeeId: result.data.id,
           })
-          router.push(`/attendance?${params.toString()}`)
-          router.refresh()
+          const targetPath = returnContext.returnTo || '/attendance'
+          router.push(`${targetPath}?${params.toString()}`)
           return
         }
         router.push(`/employees/${result.data.id}`)
-        router.refresh()
       }
-    })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -283,7 +285,10 @@ export function EmployeeForm({
       {returnContext ? (
         <button
           type="button"
-          onClick={() => router.push(`/attendance?resumeSession=${returnContext.sessionId}`)}
+          onClick={() => {
+            const targetPath = returnContext.returnTo || '/attendance'
+            router.push(`${targetPath}?resumeSession=${returnContext.sessionId}`)
+          }}
           className="inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-800 transition-colors duration-200 mb-6"
         >
           <ArrowLeft size={16} />
@@ -526,10 +531,10 @@ export function EmployeeForm({
 
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isSubmitting}
             className="relative inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 rounded-xl transition-colors duration-200 active:scale-[0.98] overflow-hidden"
           >
-            {isPending ? (
+            {isSubmitting ? (
               <>
                 {/* Shimmer loading bar inside button */}
                 <span

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { Employee, EmployeeWageHistory } from '@prisma/client'
+import type { Employee, EmployeeWageHistory, AuditLog } from '@prisma/client'
 
 // ─── Mock Prisma ─────────────────────────────────────────────────────────────
 vi.mock('@/lib/prisma', () => ({
@@ -71,7 +71,8 @@ const makeWageHistory = (overrides: Partial<EmployeeWageHistory> = {}): Employee
 })
 
 /**
- * Helper to mock Prisma.$transaction — captures updates and audit logs
+ * Helper to mock Prisma.$transaction (array form) — captures updates and audit logs
+ * via top-level prisma method mocks.
  */
 function setupTransactionMock() {
   const capturedUpdates: { id: string; data: Record<string, unknown> }[] = []
@@ -79,31 +80,29 @@ function setupTransactionMock() {
   const capturedWageCreates: { data: Record<string, unknown> }[] = []
   const capturedWageUpdates: { where: Record<string, unknown>; data: Record<string, unknown> }[] = []
 
-  vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
-    return (fn as (tx: typeof prisma) => Promise<unknown>)({
-      employee: {
-        update: vi.fn().mockImplementation(async (args) => {
-          capturedUpdates.push({ id: args.where.id, data: args.data })
-          return makeEmployee({ ...args.data, id: args.where.id })
-        }),
-      },
-      employeeWageHistory: {
-        create: vi.fn().mockImplementation(async (args) => {
-          capturedWageCreates.push(args)
-          return { id: 'new-wh-' + capturedWageCreates.length, ...args.data }
-        }),
-        updateMany: vi.fn().mockImplementation(async (args) => {
-          capturedWageUpdates.push(args)
-          return { count: 1 }
-        }),
-      },
-      auditLog: {
-        create: vi.fn().mockImplementation(async (args) => {
-          capturedAuditLogs.push(args)
-        }),
-      },
-    } as unknown as typeof prisma)
+  vi.mocked(prisma.employee.update).mockImplementation(async (args) => {
+    capturedUpdates.push({ id: (args as { where: { id: string } }).where.id, data: (args as { data: Record<string, unknown> }).data })
+    return makeEmployee({ ...(args as { data: Record<string, unknown> }).data, id: (args as { where: { id: string } }).where.id })
   })
+
+  vi.mocked(prisma.employeeWageHistory.create).mockImplementation(async (args) => {
+    capturedWageCreates.push(args as { data: Record<string, unknown> })
+    return { id: 'new-wh-' + capturedWageCreates.length, ...(args as { data: Record<string, unknown> }).data } as EmployeeWageHistory
+  })
+
+  vi.mocked(prisma.employeeWageHistory.updateMany).mockImplementation(async (args) => {
+    capturedWageUpdates.push(args as { where: Record<string, unknown>; data: Record<string, unknown> })
+    return { count: 1 }
+  })
+
+  vi.mocked(prisma.auditLog.create).mockImplementation(async (args) => {
+    capturedAuditLogs.push(args as { data: Record<string, unknown> })
+    return {} as AuditLog
+  })
+
+  vi.mocked(prisma.$transaction).mockImplementation(async (promises) =>
+    Promise.all(promises as Promise<unknown>[])
+  )
 
   return { capturedUpdates, capturedAuditLogs, capturedWageCreates, capturedWageUpdates }
 }

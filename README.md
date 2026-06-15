@@ -150,11 +150,28 @@ npm run test
 ```
 
 **E2E Tests:**
-```bash
-npm run test:e2e
-```
 
-Ensure your PostgreSQL database is running before running E2E tests. The test suite will automatically set up a test database.
+There are two recommended workflows for running E2E tests, depending on your needs:
+
+1. **For Fast Local Iterations (The "Dev" Workflow):**
+   Use this when actively writing tests or tweaking UI components. Playwright will reuse your running dev server.
+   ```bash
+   # In terminal 1: Start your dev server
+   npm run dev
+
+   # In terminal 2: Run tests (Playwright will detect port 3000 and skip starting a new server)
+   npm run test:e2e
+   ```
+
+2. **For Guaranteed Reliability (The "Prod/CI" Workflow):**
+   Use this before committing code to ensure tests pass against the compiled production build without memory panics.
+   ```bash
+   # Ensure no dev server is running on port 3000
+   npm run build
+   npm run test:e2e
+   ```
+
+Ensure your PostgreSQL database is running (`npx prisma dev`) before running E2E tests. The test suite will automatically set up a test database and seed it.
 
 ### Hot Reload
 

@@ -1,55 +1,43 @@
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Client, Pool } from 'pg'
+import { Pool } from 'pg'
 
 const connectionString = process.env.DIRECT_DATABASE_URL;
 
-// Legacy Prisma client for existing seed functions
-const pool = new Pool({ connectionString })
+const pool = new Pool({
+  connectionString,
+  max: 2,
+  idleTimeoutMillis: 1000,
+  connectionTimeoutMillis: 5000,
+})
 pool.on('error', () => {}) // Suppress pool errors
 const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
+export default prisma;
 
-// Create a fresh pg Client for each operation to avoid stale pool connections
-async function getClient(): Promise<Client> {
-  const client = new Client({ connectionString })
-  await client.connect()
-  return client
-}
 
 export async function cleanupDatabase() {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    let client: Client | null = null
-    try {
-      client = await getClient()
-      
-      const tables = [
-        '"AuditLog"',
-        '"InvoiceSnapshot"',
-        '"PayrollRunEmployee"',
-        '"PayrollRevision"',
-        '"PayrollAdjustmentApplication"',
-        '"PayrollAdjustment"',
-        '"PayrollRun"',
-        '"AttendanceRecord"',
-        '"AttendanceUpload"',
-        '"EmployeeWageHistory"',
-        '"EmployeeDocument"',
-        '"Employee"',
-        '"EmployeeImportBatch"',
-      ];
-      
-      await client.query(`TRUNCATE TABLE ${tables.join(', ')} RESTART IDENTITY CASCADE;`);
-      return;
-    } catch (err) {
-      console.error(`Cleanup attempt ${attempt + 1} failed:`, (err as Error).message);
-      if (attempt < 2) {
-        await new Promise((r) => setTimeout(r, 1000));
-      }
-    } finally {
-      try { await client?.end(); } catch {}
-    }
+  const tables = [
+    '"AuditLog"',
+    '"InvoiceSnapshot"',
+    '"PayrollRunEmployee"',
+    '"PayrollRevision"',
+    '"PayrollAdjustmentApplication"',
+    '"PayrollAdjustment"',
+    '"PayrollRun"',
+    '"AttendanceRecord"',
+    '"AttendanceUpload"',
+    '"EmployeeWageHistory"',
+    '"EmployeeDocument"',
+    '"Employee"',
+    '"EmployeeImportBatch"',
+  ];
+  try {
+    await prisma.$executeRawUnsafe(`DELETE FROM ${tables.join('; DELETE FROM ')};`);
+  } catch (err) {
+    console.error(`Cleanup failed:`, (err as Error).message);
+    throw err;
   }
 }
 
@@ -258,7 +246,7 @@ export async function seedPayrollTestData() {
         payrollWeekSource: 'SHEET_CONTENT',
         status: 'READY',
         isActiveForPayrollWeek: true,
-        sourceFilePath: '/tmp/attendance-march-wk1.xlsx',
+
       },
     });
 
@@ -325,7 +313,7 @@ export async function seedPayrollTestData() {
         payrollWeekSource: 'SHEET_CONTENT',
         status: 'ERRORS',
         isActiveForPayrollWeek: true,
-        sourceFilePath: '/tmp/attendance-march-wk2.xlsx',
+
       },
     });
 
@@ -401,7 +389,7 @@ export async function seedApprovedPayrollData(): Promise<{ payrollRunId: string 
       payrollWeekSource: 'SHEET_CONTENT',
       status: 'READY',
       isActiveForPayrollWeek: true,
-      sourceFilePath: '/tmp/attendance-apr-wk1.xlsx',
+
     },
   });
 
@@ -574,178 +562,163 @@ export async function seedApprovedPayrollForCorrection(): Promise<{
   employeeIds: string[];
   adjustmentApplicationId: string;
 }> {
-  const client = await getClient()
-
-  try {
-    const weekStart = '2025-04-17T00:00:00.000Z'
-    const weekEnd   = '2025-04-23T00:00:00.000Z'
-    const approvedAt = '2025-04-24T08:00:00.000Z'
-    const wageEffective = '2025-01-01T00:00:00.000Z'
-
-    // Use crypto.randomUUID for IDs
-    const emp1Id = crypto.randomUUID()
-    const emp2Id = crypto.randomUUID()
-    const wage1Id = crypto.randomUUID()
-    const wage2Id = crypto.randomUUID()
-    const uploadId = crypto.randomUUID()
-    const runId = crypto.randomUUID()
-    const revisionId = crypto.randomUUID()
-    const adjId = crypto.randomUUID()
-    const adjAppId = crypto.randomUUID()
-
-    // Create employees
-    await client.query(
-      `INSERT INTO "Employee" (id, "employeeId", "employeeName", designation, "designationShort", site, "gPay", "bankAccount", "isActive", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, NOW(), NOW()),
-              ($9, $10, $11, $12, $13, $14, $15, $16, true, NOW(), NOW())`,
-      [
-        emp1Id, 'EMP-COR-001', 'Anita Sharma', 'Security Guard', 'Guard', 'North Gate', '9876543210', '112233445566',
-        emp2Id, 'EMP-COR-002', 'Rajesh Iyer', 'Supervisor', 'Supv.', 'South Gate', '9123456780', '665544332211',
-      ]
-    )
-
-    // Create wage history
-    await client.query(
-      `INSERT INTO "EmployeeWageHistory" (id, "employeeId", "weeklySalary", "hourlyRate", "effectiveFrom", "changeSource", "createdAt")
-       VALUES ($1, $2, 2500.00, 62.50, $3, 'SEED', NOW()),
-              ($4, $5, 3000.00, 75.00, $6, 'SEED', NOW())`,
-      [wage1Id, emp1Id, wageEffective, wage2Id, emp2Id, wageEffective]
-    )
-
-    // Create attendance upload
-    await client.query(
-      `INSERT INTO "AttendanceUpload" (id, "fileName", "fileType", "payrollWeekStartDate", "payrollWeekEndDate", "payrollWeekSource", status, "isActiveForPayrollWeek", "uploadedAt", "sourceFilePath")
-       VALUES ($1, 'attendance-apr-wk3.xlsx', 'xlsx', $2, $3, 'SHEET_CONTENT', 'READY', true, NOW(), '/tmp/attendance-apr-wk3.xlsx')`,
-      [uploadId, weekStart, weekEnd]
-    )
-
-    // Create attendance records
-    // emp1: reg=[8,8,6,0,8,8,8]=46h, ot=[2,0,0,0,3,1,0]=6h
-    // emp2: reg=[8,8,8,8,8,8,8]=56h, ot=[0,0,0,0,0,0,0]=0h
-    const emp1Days = [
-      { reg: 8, ot: 2 }, { reg: 8, ot: 0 }, { reg: 6, ot: 0 },
-      { reg: 0, ot: 0 }, { reg: 8, ot: 3 }, { reg: 8, ot: 1 }, { reg: 8, ot: 0 },
-    ]
-    const emp2Days = [
-      { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 },
-      { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 },
-    ]
-
-    const values: string[] = []
-    const params: unknown[] = []
-    let paramIdx = 1
-
-    for (const [empId, days] of [[emp1Id, emp1Days], [emp2Id, emp2Days]] as const) {
-      for (let day = 0; day < 7; day++) {
-        const date = new Date(weekStart)
-        date.setUTCDate(date.getUTCDate() + day)
-        values.push(`($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++})`)
-        params.push(crypto.randomUUID(), uploadId, empId, date.toISOString(), days[day].reg, days[day].ot)
-      }
+  const client = {
+    query: async (sql: string, params: any[] = []) => {
+      await prisma.$executeRawUnsafe(sql, ...params);
     }
+  };
 
-    await client.query(
-      `INSERT INTO "AttendanceRecord" (id, "attendanceUploadId", "employeeId", "attendanceDate", "regularHours", "overtimeHours")
-       VALUES ${values.join(', ')}`,
-      params
-    )
+  const weekStart = '2025-04-17T00:00:00.000Z'
+  const weekEnd   = '2025-04-23T00:00:00.000Z'
+  const approvedAt = '2025-04-24T08:00:00.000Z'
+  const wageEffective = '2025-01-01T00:00:00.000Z'
 
-    // Create payroll run
-    // emp1: reg=46×62.5=2875, ot=6×62.5=375, ded=500 → net=2750
-    // emp2: reg=56×75=4200, ot=0 → net=4200
-    await client.query(
-      `INSERT INTO "PayrollRun" (id, "payrollWeekStartDate", "payrollWeekEndDate", status, "currentRevisionNumber",
-       "totalRegularPay", "totalOvertimePay", "totalAdditions", "totalDeductions", "totalNetPayable", "approvedAt", "generatedAt")
-       VALUES ($1, $2, $3, 'APPROVED', 1, 7075.00, 375.00, 0.00, 500.00, 6950.00, $4, NOW())`,
-      [runId, weekStart, weekEnd, approvedAt]
-    )
+  // Use crypto.randomUUID for IDs
+  const emp1Id = crypto.randomUUID()
+  const emp2Id = crypto.randomUUID()
+  const wage1Id = crypto.randomUUID()
+  const wage2Id = crypto.randomUUID()
+  const uploadId = crypto.randomUUID()
+  const runId = crypto.randomUUID()
+  const revisionId = crypto.randomUUID()
+  const adjId = crypto.randomUUID()
+  const adjAppId = crypto.randomUUID()
 
-    // Create payroll revision
-    await client.query(
-      `INSERT INTO "PayrollRevision" (id, "payrollRunId", "revisionNumber", status, "isCurrent",
-       "totalRegularPay", "totalOvertimePay", "totalAdditions", "totalDeductions", "totalNetPayable",
-       "approvedAt", "generatedAt")
-       VALUES ($1, $2, 1, 'APPROVED', true, 7075.00, 375.00, 0.00, 500.00, 6950.00, $3, $4)`,
-      [revisionId, runId, approvedAt, approvedAt]
-    )
+  // Create employees
+  await client.query(
+    `INSERT INTO "Employee" (id, "employeeId", "employeeName", designation, "designationShort", site, "gPay", "bankAccount", "isActive", "createdAt", "updatedAt")
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, NOW(), NOW()),
+            ($9, $10, $11, $12, $13, $14, $15, $16, true, NOW(), NOW())`,
+    [
+      emp1Id, 'EMP-COR-001', 'Anita Sharma', 'Security Guard', 'Guard', 'North Gate', '9876543210', '112233445566',
+      emp2Id, 'EMP-COR-002', 'Rajesh Iyer', 'Supervisor', 'Supv.', 'South Gate', '9123456780', '665544332211',
+    ]
+  )
 
-    // Create payroll run employees
-    await client.query(
-      `INSERT INTO "PayrollRunEmployee" (id, "payrollRunId", "payrollRevisionId", "employeeId",
-       "weeklySalaryUsed", "hourlyRateUsed", "regularHours", "overtimeHours",
-       "regularPay", "overtimePay", additions, deductions, "netPayable")
-       VALUES ($1, $2, $3, $4, 2500.00, 62.50, 46, 6, 2875.00, 375.00, 0.00, 500.00, 2750.00),
-              ($5, $6, $7, $8, 3000.00, 75.00, 56, 0, 4200.00, 0.00, 0.00, 0.00, 4200.00)`,
-      [
-        crypto.randomUUID(), runId, revisionId, emp1Id,
-        crypto.randomUUID(), runId, revisionId, emp2Id,
-      ]
-    )
+  // Create wage history
+  await client.query(
+    `INSERT INTO "EmployeeWageHistory" (id, "employeeId", "weeklySalary", "hourlyRate", "effectiveFrom", "changeSource", "createdAt")
+     VALUES ($1, $2, 2500.00, 62.50, $3, 'SEED', NOW()),
+            ($4, $5, 3000.00, 75.00, $6, 'SEED', NOW())`,
+    [wage1Id, emp1Id, wageEffective, wage2Id, emp2Id, wageEffective]
+  )
 
-    // Adjustment: ₹500 deduction for emp1 (approved)
-    await client.query(
-      `INSERT INTO "PayrollAdjustment" (id, "employeeId", "adjustmentType", "recurrenceType",
-       amount, reason, "startPayrollWeekStartDate", "startPayrollWeekEndDate", status, "skippedCarryForwardCount", "createdAt")
-       VALUES ($1, $2, 'DEDUCTION', 'ONE_TIME', 500.00, 'Advance recovery seed', $3, $4, 'ACTIVE', 0, NOW())`,
-      [adjId, emp1Id, weekStart, weekEnd]
-    )
+  // Create attendance upload
+  await client.query(
+    `INSERT INTO "AttendanceUpload" (id, "fileName", "fileType", "payrollWeekStartDate", "payrollWeekEndDate", "payrollWeekSource", status, "isActiveForPayrollWeek", "uploadedAt")
+     VALUES ($1, 'attendance-apr-wk3.xlsx', 'xlsx', $2, $3, 'SHEET_CONTENT', 'READY', true, NOW())`,
+    [uploadId, weekStart, weekEnd]
+  )
 
-    await client.query(
-      `INSERT INTO "PayrollAdjustmentApplication" (id, "payrollAdjustmentId", "employeeId",
-       "payrollRunId", "payrollWeekStartDate", "payrollWeekEndDate",
-       "appliedAmount", "approvalStatus", "appliedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, 500.00, 'APPROVED', $7)`,
-      [adjAppId, adjId, emp1Id, runId, weekStart, weekEnd, approvedAt]
-    )
+  // Create attendance records
+  // emp1: reg=[8,8,6,0,8,8,8]=46h, ot=[2,0,0,0,3,1,0]=6h
+  // emp2: reg=[8,8,8,8,8,8,8]=56h, ot=[0,0,0,0,0,0,0]=0h
+  const emp1Days = [
+    { reg: 8, ot: 2 }, { reg: 8, ot: 0 }, { reg: 6, ot: 0 },
+    { reg: 0, ot: 0 }, { reg: 8, ot: 3 }, { reg: 8, ot: 1 }, { reg: 8, ot: 0 },
+  ]
+  const emp2Days = [
+    { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 },
+    { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 }, { reg: 8, ot: 0 },
+  ]
 
-    return {
-      payrollRunId: runId,
-      revisionId: revisionId,
-      employeeIds: [emp1Id, emp2Id],
-      adjustmentApplicationId: adjAppId,
+  const values: string[] = []
+  const params: unknown[] = []
+  let paramIdx = 1
+
+  for (const [empId, days] of [[emp1Id, emp1Days], [emp2Id, emp2Days]] as const) {
+    for (let day = 0; day < 7; day++) {
+      const date = new Date(weekStart)
+      date.setUTCDate(date.getUTCDate() + day)
+      values.push(`($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++})`)
+      params.push(crypto.randomUUID(), uploadId, empId, date.toISOString(), days[day].reg, days[day].ot)
     }
-  } finally {
-    await client.end()
+  }
+
+  await client.query(
+    `INSERT INTO "AttendanceRecord" (id, "attendanceUploadId", "employeeId", "attendanceDate", "regularHours", "overtimeHours")
+     VALUES ${values.join(', ')}`,
+    params
+  )
+
+  // Create payroll run
+  // emp1: reg=46×62.5=2875, ot=6×62.5=375, ded=500 → net=2750
+  // emp2: reg=56×75=4200, ot=0 → net=4200
+  await client.query(
+    `INSERT INTO "PayrollRun" (id, "payrollWeekStartDate", "payrollWeekEndDate", status, "currentRevisionNumber",
+     "totalRegularPay", "totalOvertimePay", "totalAdditions", "totalDeductions", "totalNetPayable", "approvedAt", "generatedAt")
+     VALUES ($1, $2, $3, 'APPROVED', 1, 7075.00, 375.00, 0.00, 500.00, 6950.00, $4, NOW())`,
+    [runId, weekStart, weekEnd, approvedAt]
+  )
+
+  // Create payroll revision
+  await client.query(
+    `INSERT INTO "PayrollRevision" (id, "payrollRunId", "revisionNumber", status, "isCurrent",
+     "totalRegularPay", "totalOvertimePay", "totalAdditions", "totalDeductions", "totalNetPayable",
+     "approvedAt", "generatedAt")
+     VALUES ($1, $2, 1, 'APPROVED', true, 7075.00, 375.00, 0.00, 500.00, 6950.00, $3, $4)`,
+    [revisionId, runId, approvedAt, approvedAt]
+  )
+
+  // Create payroll run employees
+  await client.query(
+    `INSERT INTO "PayrollRunEmployee" (id, "payrollRunId", "payrollRevisionId", "employeeId",
+     "weeklySalaryUsed", "hourlyRateUsed", "regularHours", "overtimeHours",
+     "regularPay", "overtimePay", additions, deductions, "netPayable")
+     VALUES ($1, $2, $3, $4, 2500.00, 62.50, 46, 6, 2875.00, 375.00, 0.00, 500.00, 2750.00),
+            ($5, $6, $7, $8, 3000.00, 75.00, 56, 0, 4200.00, 0.00, 0.00, 0.00, 4200.00)`,
+    [
+      crypto.randomUUID(), runId, revisionId, emp1Id,
+      crypto.randomUUID(), runId, revisionId, emp2Id,
+    ]
+  )
+
+  // Adjustment: ₹500 deduction for emp1 (approved)
+  await client.query(
+    `INSERT INTO "PayrollAdjustment" (id, "employeeId", "adjustmentType", "recurrenceType",
+     amount, reason, "startPayrollWeekStartDate", "startPayrollWeekEndDate", status, "skippedCarryForwardCount", "createdAt")
+     VALUES ($1, $2, 'DEDUCTION', 'ONE_TIME', 500.00, 'Advance recovery seed', $3, $4, 'ACTIVE', 0, NOW())`,
+    [adjId, emp1Id, weekStart, weekEnd]
+  )
+
+  await client.query(
+    `INSERT INTO "PayrollAdjustmentApplication" (id, "payrollAdjustmentId", "employeeId",
+     "payrollRunId", "payrollWeekStartDate", "payrollWeekEndDate",
+     "appliedAmount", "approvalStatus", "appliedAt")
+     VALUES ($1, $2, $3, $4, $5, $6, 500.00, 'APPROVED', $7)`,
+    [adjAppId, adjId, emp1Id, runId, weekStart, weekEnd, approvedAt]
+  )
+
+  return {
+    payrollRunId: runId,
+    revisionId: revisionId,
+    employeeIds: [emp1Id, emp2Id],
+    adjustmentApplicationId: adjAppId,
   }
 }
 
 // ─── F08 verification helpers ─────────────────────────────────────────────────
 
 export async function getRevisionCount(payrollRunId: string): Promise<number> {
-  const client = await getClient()
-  try {
-    const result = await client.query(
-      'SELECT COUNT(*) as cnt FROM "PayrollRevision" WHERE "payrollRunId" = $1',
-      [payrollRunId]
-    )
-    return parseInt(result.rows[0].cnt, 10)
-  } finally {
-    await client.end()
-  }
+  const result = await prisma.$queryRawUnsafe<any[]>(
+    'SELECT COUNT(*) as cnt FROM "PayrollRevision" WHERE "payrollRunId" = $1',
+    payrollRunId
+  )
+  return parseInt(result[0]?.cnt?.toString() ?? '0', 10)
 }
 
 export async function getCurrentRevision(payrollRunId: string) {
-  const client = await getClient()
-  try {
-    const result = await client.query(
-      'SELECT * FROM "PayrollRevision" WHERE "payrollRunId" = $1 AND "isCurrent" = true LIMIT 1',
-      [payrollRunId]
-    )
-    return result.rows[0] ?? null
-  } finally {
-    await client.end()
-  }
+  const result = await prisma.$queryRawUnsafe<any[]>(
+    'SELECT * FROM "PayrollRevision" WHERE "payrollRunId" = $1 AND "isCurrent" = true LIMIT 1',
+    payrollRunId
+  )
+  return result[0] ?? null
 }
 
 export async function getPayrollRunStatus(payrollRunId: string) {
-  const client = await getClient()
-  try {
-    const result = await client.query(
-      'SELECT status FROM "PayrollRun" WHERE id = $1',
-      [payrollRunId]
-    )
-    return result.rows[0]?.status ?? null
-  } finally {
-    await client.end()
-  }
+  const result = await prisma.$queryRawUnsafe<any[]>(
+    'SELECT status FROM "PayrollRun" WHERE id = $1',
+    payrollRunId
+  )
+  return result[0]?.status ?? null
 }

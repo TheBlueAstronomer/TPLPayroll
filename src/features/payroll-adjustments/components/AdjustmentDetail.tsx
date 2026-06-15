@@ -268,7 +268,14 @@ export function AdjustmentDetail({ adjustment: adj }: Props) {
             <MetaRow
               label="Amount"
               value={
-                <span className="font-mono tabular-nums">₹{formatAmount(adj.amount)}</span>
+                adj.recurrenceEndType === 'FIXED_WEEKS' && adj.totalBalance != null ? (
+                  <span className="text-right">
+                    <span className="font-mono tabular-nums block">₹{formatAmount(adj.amount)} / week</span>
+                    <span className="text-xs text-zinc-400">₹{formatAmount(adj.totalBalance)} total over {adj.totalRecurrenceWeeks} weeks</span>
+                  </span>
+                ) : (
+                  <span className="font-mono tabular-nums">₹{formatAmount(adj.amount)}</span>
+                )
               }
             />
             <MetaRow label="Reason" value={adj.reason} />
@@ -298,19 +305,20 @@ export function AdjustmentDetail({ adjustment: adj }: Props) {
             {adj.recurrenceType === 'RECURRING' && (
               <MetaRow label="End Condition" value={endConditionLabel} />
             )}
-            {adj.recurrenceEndType === 'TOTAL_BALANCE' && adj.remainingBalance != null && (
-              <MetaRow
-                label="Remaining Balance"
-                value={
-                  <span className="font-mono tabular-nums">
-                    ₹{formatAmount(adj.remainingBalance)}
-                    <span className="ml-1 text-xs text-zinc-400">
-                      / ₹{formatAmount(adj.totalBalance ?? 0)}
+            {(adj.recurrenceEndType === 'TOTAL_BALANCE' || adj.recurrenceEndType === 'FIXED_WEEKS') &&
+              adj.remainingBalance != null && (
+                <MetaRow
+                  label="Remaining Balance"
+                  value={
+                    <span className="font-mono tabular-nums">
+                      ₹{formatAmount(adj.remainingBalance)}
+                      <span className="ml-1 text-xs text-zinc-400">
+                        / ₹{formatAmount(adj.totalBalance ?? 0)}
+                      </span>
                     </span>
-                  </span>
-                }
-              />
-            )}
+                  }
+                />
+              )}
           </div>
         </div>
       </div>

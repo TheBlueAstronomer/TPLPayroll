@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma'
+import * as XLSX from 'xlsx'
 
 import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces'
 import JSZip from 'jszip'
@@ -61,7 +62,7 @@ export function formatCurrencyPdf(amount: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount)
-  return `Rs.${formatted}`
+  return `₹${formatted}`
 }
 
 export function formatHours(hours: number): string {
@@ -174,14 +175,13 @@ export function buildSlipData(params: {
   }
 }
 
-// ── PDF generation ───────────────────────────────────────────────────────────
-
 export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{ buffer: Buffer; fileName: string }> {
   const run = await prisma.payrollRun.findUnique({
     where: { id: payrollRunId },
     include: {
       revisions: { where: { isCurrent: true }, take: 1 },
       runEmployees: {
+        where: { payrollRevision: { isCurrent: true } },
         include: {
           employee: {
             select: {
@@ -203,7 +203,7 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{
   if (!run) {
     throw new ReportServiceError('PAYROLL_RUN_NOT_FOUND', `Payroll run ${payrollRunId} not found`)
   }
-  if (run.status !== 'APPROVED') {
+  if (run.status !== 'APPROVED' && run.status !== 'REVISED') {
     throw new ReportServiceError('PAYROLL_NOT_APPROVED', `Payroll run ${payrollRunId} is not approved`)
   }
 
@@ -228,7 +228,11 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{
     { text: 'Employee', style: 'tableHeader' },
     { text: 'GPay', style: 'tableHeader' },
     { text: 'Bank Acct', style: 'tableHeader' },
-    { text: 'Net Pay', style: 'tableHeader' },
+    { text: 'Reg Pay', style: 'tableHeader', alignment: 'right' },
+    { text: 'OT Pay', style: 'tableHeader', alignment: 'right' },
+    { text: 'Additions', style: 'tableHeader', alignment: 'right' },
+    { text: 'Deductions', style: 'tableHeader', alignment: 'right' },
+    { text: 'Net Pay', style: 'tableHeader', alignment: 'right' },
   ]
 
   const dataRows = run.runEmployees.map((re) => [
@@ -236,12 +240,20 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{
     { text: re.employee.employeeName, font: 'Helvetica' },
     { text: re.employee.gPay ?? '-', font: 'Courier' },
     { text: re.employee.bankAccount ?? '-', font: 'Courier' },
+    { text: formatCurrencyPdf(Number(re.regularPay)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.overtimePay)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.additions)), font: 'Courier', alignment: 'right' },
+    { text: formatCurrencyPdf(Number(re.deductions)), font: 'Courier', alignment: 'right' },
     { text: formatCurrencyPdf(Number(re.netPayable)), font: 'Courier', alignment: 'right' },
   ])
 
   const totalsRow = [
     { text: 'TOTALS', colSpan: 4, style: 'totalsLabel', font: 'Helvetica' },
     {}, {}, {},
+    { text: formatCurrencyPdf(Number(run.totalRegularPay)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalOvertimePay)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalAdditions)), font: 'Courier', alignment: 'right', bold: true },
+    { text: formatCurrencyPdf(Number(run.totalDeductions)), font: 'Courier', alignment: 'right', bold: true },
     { text: formatCurrencyPdf(Number(run.totalNetPayable)), font: 'Courier', alignment: 'right', bold: true },
   ]
 
@@ -261,7 +273,7 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{
       {
         table: {
           headerRows: 1,
-          widths: ['auto', '*', 'auto', 'auto', 'auto'],
+          widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
           body: [headerRow, ...dataRows, totalsRow],
         },
         layout: 'lightHorizontalLines',
@@ -271,6 +283,174 @@ export async function generatePayrollSummaryPdf(payrollRunId: string): Promise<{
 
   const buffer = await toPdfBuffer(docDef)
   const fileName = `payroll_summary_${formatSlipDate(run.payrollWeekStartDate)}-${formatSlipDate(run.payrollWeekEndDate)}.pdf`
+
+  return { buffer, fileName }
+}
+
+export async function generatePayrollSummaryXlsx(payrollRunId: string): Promise<{ buffer: Buffer; fileName: string }> {
+  const run = await prisma.payrollRun.findUnique({
+    where: { id: payrollRunId },
+    include: {
+      revisions: { where: { isCurrent: true }, take: 1 },
+      runEmployees: {
+        where: { payrollRevision: { isCurrent: true } },
+        include: {
+          employee: {
+            select: {
+              id: true,
+              employeeId: true,
+              employeeName: true,
+              designation: true,
+              site: true,
+              gPay: true,
+              bankAccount: true,
+            },
+          },
+        },
+        orderBy: { employee: { employeeId: 'asc' } },
+      },
+    },
+  })
+
+  if (!run) {
+    throw new ReportServiceError('PAYROLL_RUN_NOT_FOUND', `Payroll run ${payrollRunId} not found`)
+  }
+  if (run.status !== 'APPROVED' && run.status !== 'REVISED') {
+    throw new ReportServiceError('PAYROLL_NOT_APPROVED', `Payroll run ${payrollRunId} is not approved`)
+  }
+
+  const weekStartStr = run.payrollWeekStartDate.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+  const weekEndStr = run.payrollWeekEndDate.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+  const generatedAtStr = new Date().toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+
+  const headers = [
+    'ID',
+    'Employee',
+    'GPay',
+    'Bank Acct',
+    'Regular Pay',
+    'OT Pay',
+    'Additions',
+    'Deductions',
+    'Net Pay',
+  ]
+
+  const aoa: any[][] = [
+    ['PAYROLL SUMMARY'],
+    [`Week: ${weekStartStr} – ${weekEndStr}`],
+    [`Generated: ${generatedAtStr}`],
+    [], // Blank row
+    headers,
+  ]
+
+  run.runEmployees.forEach((re) => {
+    aoa.push([
+      re.employee.employeeId,
+      re.employee.employeeName,
+      re.employee.gPay ?? '-',
+      re.employee.bankAccount ?? '-',
+      Number(re.regularPay),
+      Number(re.overtimePay),
+      Number(re.additions),
+      Number(re.deductions),
+      Number(re.netPayable),
+    ])
+  })
+
+  // Add totals row placeholder
+  aoa.push([
+    'TOTALS',
+    '',
+    '',
+    '',
+    0, // Regular Pay
+    0, // OT Pay
+    0, // Additions
+    0, // Deductions
+    0, // Net Pay
+  ])
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa)
+
+  const startRow = 6 // Excel row 6 (1-based index)
+  const endRow = 5 + run.runEmployees.length // Last employee row (Excel row index)
+  const totalRowIdx = 5 + run.runEmployees.length + 1 // Totals Excel row
+
+  // Format numeric column helper
+  const formatCol = (colLetter: string, isCurrency: boolean) => {
+    // Format data cells
+    for (let r = startRow; r <= endRow; r++) {
+      const cellRef = `${colLetter}${r}`
+      if (ws[cellRef]) {
+        ws[cellRef].t = 'n'
+        ws[cellRef].z = isCurrency ? '"₹"#,##0.00' : '0.00'
+      }
+    }
+    // Format totals cell
+    const totalCellRef = `${colLetter}${totalRowIdx}`
+    ws[totalCellRef] = {
+      t: 'n',
+      f: `SUM(${colLetter}${startRow}:${colLetter}${endRow})`,
+      z: isCurrency ? '"₹"#,##0.00' : '0.00',
+    }
+  }
+
+  // Format the columns:
+  formatCol('E', true) // Regular Pay
+  formatCol('F', true) // OT Pay
+  formatCol('G', true) // Additions
+  formatCol('H', true) // Deductions
+  formatCol('I', true) // Net Pay
+
+  // Setup merges
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, // Merge Title
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, // Merge Week range
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }, // Merge Generated date
+  ]
+
+  // Auto-fit column widths
+  const maxCols = 9
+  const wcols = Array(maxCols).fill(0).map(() => ({ wch: 10 }))
+  for (let r = 0; r < aoa.length; r++) {
+    for (let c = 0; c < maxCols; c++) {
+      const val = aoa[r][c]
+      if (val !== undefined && val !== null) {
+        let strLen = String(val).length
+        if (typeof val === 'number') {
+          if (c >= 4 && c <= 8) {
+            strLen += 5 // for "₹" and decimals/commas formatting
+          }
+        }
+        if (strLen > wcols[c].wch) {
+          wcols[c].wch = strLen
+        }
+      }
+    }
+  }
+  wcols[0].wch = Math.max(wcols[0].wch, 8)  // ID
+  wcols[1].wch = Math.max(wcols[1].wch, 22) // Employee Name
+  wcols[2].wch = Math.max(wcols[2].wch, 12) // GPay
+  wcols[3].wch = Math.max(wcols[3].wch, 16) // Bank Acct
+  ws['!cols'] = wcols
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Summary')
+
+  const buffer = Buffer.from(XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as ArrayBuffer)
+  const fileName = `payroll_summary_${formatSlipDate(run.payrollWeekStartDate)}-${formatSlipDate(run.payrollWeekEndDate)}.xlsx`
 
   return { buffer, fileName }
 }
@@ -323,14 +503,14 @@ export async function generatePayrollSlipPdf(slip: PayrollSlipData): Promise<Buf
     ],
     [
       {
-        text: `Regular Pay (${formatHours(slip.regularHours)} hrs x Rs.${formatHours(slip.hourlyRateUsed)})`,
+        text: `Regular Pay (${formatHours(slip.regularHours)} hrs x ₹${formatHours(slip.hourlyRateUsed)})`,
         font: 'Helvetica',
       },
       { text: formatCurrencyPdf(slip.regularPay), font: 'Courier', alignment: 'right' },
     ],
     [
       {
-        text: `OT Pay (${formatHours(slip.overtimeHours)} hrs x Rs.${formatHours(slip.hourlyRateUsed)})`,
+        text: `OT Pay (${formatHours(slip.overtimeHours)} hrs x ₹${formatHours(slip.hourlyRateUsed)})`,
         font: 'Helvetica',
       },
       { text: formatCurrencyPdf(slip.overtimePay), font: 'Courier', alignment: 'right' },
@@ -433,6 +613,7 @@ export async function generatePayrollSlipsZip(
     include: {
       revisions: { where: { isCurrent: true }, take: 1 },
       runEmployees: {
+        where: { payrollRevision: { isCurrent: true } },
         include: {
           employee: {
             select: {
@@ -454,7 +635,7 @@ export async function generatePayrollSlipsZip(
   if (!run) {
     throw new ReportServiceError('PAYROLL_RUN_NOT_FOUND', `Payroll run ${payrollRunId} not found`)
   }
-  if (run.status !== 'APPROVED') {
+  if (run.status !== 'APPROVED' && run.status !== 'REVISED') {
     throw new ReportServiceError('PAYROLL_NOT_APPROVED', `Payroll run ${payrollRunId} is not approved`)
   }
   if (run.runEmployees.length === 0) {
@@ -555,7 +736,7 @@ export async function saveInvoiceSnapshots(slips: PayrollSlipData[]): Promise<vo
         generatedAt: new Date(slip.generatedAt),
       })),
     }),
-  ])
+  ], { timeout: 30000 })
 }
 
 export async function markInvoiceSnapshotsCleaned(payrollRunId: string): Promise<void> {

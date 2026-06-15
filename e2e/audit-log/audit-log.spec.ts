@@ -42,7 +42,7 @@ test.describe('E2E-06: View audit logs', () => {
     await expect(page.locator('h1:has-text("Audit Log")')).toBeVisible({ timeout: 10000 })
 
     // THEN either a table with rows OR an empty state message is visible
-    const tableOrEmpty = page.locator('table, [data-testid="empty-state"], text=No audit log entries found')
+    const tableOrEmpty = page.locator('table').or(page.locator('[data-testid="empty-state"]')).or(page.getByText('No audit log entries found'))
     await expect(tableOrEmpty.first()).toBeVisible({ timeout: 10000 })
   })
 })
@@ -75,7 +75,7 @@ test.describe('E2E-07: Filter interaction', () => {
       await expect(page.locator('h1:has-text("Audit Log")')).toBeVisible()
 
       // AND table or empty state is still rendered
-      const tableOrEmpty = page.locator('table, [data-testid="empty-state"], text=No audit log entries found')
+      const tableOrEmpty = page.locator('table').or(page.locator('[data-testid="empty-state"]')).or(page.getByText('No audit log entries found'))
       await expect(tableOrEmpty.first()).toBeVisible({ timeout: 10000 })
     } else {
       // If entity select is not yet identifiable by id/name/aria-label,

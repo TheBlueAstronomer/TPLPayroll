@@ -30,7 +30,7 @@ async function loadService() {
 
 type AttendanceUploadSessionRow = {
   id: string
-  tempFilePath: string
+  storageKey: string
   fileName: string
   fileType: string
   weekStart: string
@@ -43,7 +43,7 @@ type AttendanceUploadSessionRow = {
 }
 
 interface CreateSessionInput {
-  tempFilePath: string
+  storageKey: string
   fileName: string
   fileType: string
   weekStart: string
@@ -61,7 +61,7 @@ function makeCreateInput(
   overrides: Partial<CreateSessionInput> = {}
 ): CreateSessionInput {
   return {
-    tempFilePath: '/tmp/upload-abc.xlsx',
+    storageKey: 'attendance/upload-abc-uuid.xlsx',
     fileName: 'attendance.xlsx',
     fileType: 'xlsx',
     weekStart: '2025-03-06',
@@ -135,7 +135,7 @@ describe('AttendanceUploadSession service', () => {
     // The stored row must have been written
     expect(store.size).toBe(1)
     const stored = Array.from(store.values())[0]
-    expect(stored.tempFilePath).toBe(input.tempFilePath)
+    expect(stored.storageKey).toBe(input.storageKey)
     expect(stored.pendingBlockKey).toBe(input.pendingBlockKey)
     // Decisions must be serialised to JSON string
     expect(() => JSON.parse(stored.decisionsJson)).not.toThrow()
@@ -158,7 +158,7 @@ describe('AttendanceUploadSession service', () => {
 
     expect(loaded).not.toBeNull()
     expect(loaded!.id).toBe(id)
-    expect(loaded!.tempFilePath).toBe('/tmp/upload-abc.xlsx')
+    expect(loaded!.storageKey).toBe('attendance/upload-abc-uuid.xlsx')
     expect(loaded!.pendingBlockKey).toBe('Sheet1||0')
     // Decisions must be parsed back into an object
     expect(loaded!.decisions).toEqual({

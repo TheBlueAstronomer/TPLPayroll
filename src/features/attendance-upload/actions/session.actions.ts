@@ -8,5 +8,5 @@ export {
 
 export type {
   CreateUploadSessionInput,
-  ResumedDialogState,
+  ResumedSessionMetadata,
 } from './attendance.actions'

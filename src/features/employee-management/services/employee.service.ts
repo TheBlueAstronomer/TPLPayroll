@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import prisma from '@/lib/prisma'
 import type { Prisma } from '@prisma/client'
 import {
@@ -92,11 +93,13 @@ export async function createEmployee(input: CreateEmployeeInput): Promise<Employ
   }
 
   const today = new Date()
+  const employeeDbId = randomUUID()
 
-  const employee = await prisma.$transaction(async (tx) => {
+  await prisma.$transaction([
     // 1. Create the employee record
-    const created = await tx.employee.create({
+    prisma.employee.create({
       data: {
+        id: employeeDbId,
         employeeId: parsed.data.employeeId,
         employeeName: parsed.data.employeeName,
         designation: parsed.data.designation,
@@ -114,54 +117,74 @@ export async function createEmployee(input: CreateEmployeeInput): Promise<Employ
         dateOfResignation: parsed.data.dateOfResignation ?? null,
         isActive: parsed.data.isActive,
       },
-    })
+    }),
 
     // 2. Create initial wage history
-    await tx.employeeWageHistory.create({
+    prisma.employeeWageHistory.create({
       data: {
-        employeeId: created.id,
+        employeeId: employeeDbId,
         weeklySalary: parsed.data.salary,
         hourlyRate: parsed.data.hourlyRate,
         effectiveFrom: today,
         effectiveTo: null,
         changeSource: 'MANUAL',
       },
-    })
+    }),
 
     // 3. Create audit log
-    await tx.auditLog.create({
+    prisma.auditLog.create({
       data: {
         actionType: 'CREATE',
         entityType: 'EMPLOYEE',
-        entityId: created.id,
+        entityId: employeeDbId,
         detailsJson: {
-          employeeId: created.employeeId,
-          employeeName: created.employeeName,
-          designation: created.designation,
-          designationShort: created.designationShort ?? null,
-          nationalId: created.nationalId ?? null,
-          aadhaarId: created.aadhaarId ?? null,
-          policeVerificationId: created.policeVerificationId ?? null,
-          phone: created.phone ?? null,
-          dateOfBirth: created.dateOfBirth ?? null,
-          dateOfJoining: created.dateOfJoining ?? null,
-          site: created.site ?? null,
-          healthCardId: created.healthCardId ?? null,
-          gPay: created.gPay ?? null,
-          bankAccount: created.bankAccount ?? null,
-          dateOfResignation: created.dateOfResignation ?? null,
-          isActive: created.isActive,
+          employeeId: parsed.data.employeeId,
+          employeeName: parsed.data.employeeName,
+          designation: parsed.data.designation,
+          designationShort: parsed.data.designationShort ?? null,
+          nationalId: parsed.data.nationalId ?? null,
+          aadhaarId: parsed.data.aadhaarId ?? null,
+          policeVerificationId: parsed.data.policeVerificationId ?? null,
+          phone: parsed.data.phone ?? null,
+          dateOfBirth: parsed.data.dateOfBirth ?? null,
+          dateOfJoining: parsed.data.dateOfJoining ?? null,
+          site: parsed.data.site ?? null,
+          healthCardId: parsed.data.healthCardId ?? null,
+          gPay: parsed.data.gPay ?? null,
+          bankAccount: parsed.data.bankAccount ?? null,
+          dateOfResignation: parsed.data.dateOfResignation ?? null,
+          isActive: parsed.data.isActive,
           salary: parsed.data.salary,
           hourlyRate: parsed.data.hourlyRate,
           changeSource: 'MANUAL',
         },
       },
-    })
+    }),
+  ], { timeout: 30000 })
 
-    return created
-  })
-
-  return employee as EmployeeRecord
+  return {
+    id: employeeDbId,
+    employeeImportBatchId: null,
+    employeeId: parsed.data.employeeId,
+    serialNumber: null,
+    employeeName: parsed.data.employeeName,
+    designation: parsed.data.designation,
+    designationShort: parsed.data.designationShort ?? null,
+    nationalId: parsed.data.nationalId ?? null,
+    aadhaarId: parsed.data.aadhaarId ?? null,
+    policeVerificationId: parsed.data.policeVerificationId ?? null,
+    phone: parsed.data.phone ?? null,
+    dateOfBirth: parsed.data.dateOfBirth ?? null,
+    dateOfJoining: parsed.data.dateOfJoining ?? null,
+    site: parsed.data.site ?? null,
+    healthCardId: parsed.data.healthCardId ?? null,
+    gPay: parsed.data.gPay ?? null,
+    bankAccount: parsed.data.bankAccount ?? null,
+    dateOfResignation: parsed.data.dateOfResignation ?? null,
+    isActive: parsed.data.isActive,
+    createdAt: today,
+    updatedAt: today,
+  } as EmployeeRecord
 }
 
 // ─── getEmployeeList ──────────────────────────────────────────────────────────
@@ -307,40 +330,49 @@ export async function updateEmployee(
     changedFields.hourlyRate = { old: Number(currentWage.hourlyRate), new: newHourlyRate }
   }
 
-  const updated = await prisma.$transaction(async (tx) => {
-    // 1. Update the employee record
-    const updatedEmployee = await tx.employee.update({
-      where: { id },
-      data: {
-        ...(parsed.data.employeeName !== undefined && { employeeName: parsed.data.employeeName }),
-        ...(parsed.data.designation !== undefined && { designation: parsed.data.designation }),
-        ...(parsed.data.designationShort !== undefined && { designationShort: parsed.data.designationShort }),
-        ...(parsed.data.nationalId !== undefined && { nationalId: parsed.data.nationalId }),
-        ...(parsed.data.aadhaarId !== undefined && { aadhaarId: parsed.data.aadhaarId }),
-        ...(parsed.data.policeVerificationId !== undefined && { policeVerificationId: parsed.data.policeVerificationId }),
-        ...(parsed.data.phone !== undefined && { phone: parsed.data.phone }),
-        ...(parsed.data.dateOfBirth !== undefined && { dateOfBirth: parsed.data.dateOfBirth }),
-        ...(parsed.data.dateOfJoining !== undefined && { dateOfJoining: parsed.data.dateOfJoining }),
-        ...(parsed.data.site !== undefined && { site: parsed.data.site }),
-        ...(parsed.data.healthCardId !== undefined && { healthCardId: parsed.data.healthCardId }),
-        ...(parsed.data.gPay !== undefined && { gPay: parsed.data.gPay }),
-        ...(parsed.data.bankAccount !== undefined && { bankAccount: parsed.data.bankAccount }),
-        ...(parsed.data.dateOfResignation !== undefined && { dateOfResignation: parsed.data.dateOfResignation }),
-        ...(parsed.data.isActive !== undefined && { isActive: parsed.data.isActive }),
-      },
-    })
+  // Pre-generate a UUID for the new wage history entry (used only if wageChanged)
+  const newWageHistoryId = randomUUID()
 
-    // 2. Handle wage history if salary or hourly rate changed
-    if (wageChanged) {
-      // Close previous open wage history entry
-      await tx.employeeWageHistory.updateMany({
+  const updateData = {
+    ...(parsed.data.employeeName !== undefined && { employeeName: parsed.data.employeeName }),
+    ...(parsed.data.designation !== undefined && { designation: parsed.data.designation }),
+    ...(parsed.data.designationShort !== undefined && { designationShort: parsed.data.designationShort }),
+    ...(parsed.data.nationalId !== undefined && { nationalId: parsed.data.nationalId }),
+    ...(parsed.data.aadhaarId !== undefined && { aadhaarId: parsed.data.aadhaarId }),
+    ...(parsed.data.policeVerificationId !== undefined && { policeVerificationId: parsed.data.policeVerificationId }),
+    ...(parsed.data.phone !== undefined && { phone: parsed.data.phone }),
+    ...(parsed.data.dateOfBirth !== undefined && { dateOfBirth: parsed.data.dateOfBirth }),
+    ...(parsed.data.dateOfJoining !== undefined && { dateOfJoining: parsed.data.dateOfJoining }),
+    ...(parsed.data.site !== undefined && { site: parsed.data.site }),
+    ...(parsed.data.healthCardId !== undefined && { healthCardId: parsed.data.healthCardId }),
+    ...(parsed.data.gPay !== undefined && { gPay: parsed.data.gPay }),
+    ...(parsed.data.bankAccount !== undefined && { bankAccount: parsed.data.bankAccount }),
+    ...(parsed.data.dateOfResignation !== undefined && { dateOfResignation: parsed.data.dateOfResignation }),
+    ...(parsed.data.isActive !== undefined && { isActive: parsed.data.isActive }),
+  }
+
+  const promises: ReturnType<typeof prisma.employee.update | typeof prisma.auditLog.create | typeof prisma.employeeWageHistory.updateMany | typeof prisma.employeeWageHistory.create>[] = [
+    // 1. Update the employee record
+    prisma.employee.update({
+      where: { id },
+      data: updateData,
+    }),
+  ]
+
+  if (wageChanged) {
+    // 2a. Close previous open wage history entry
+    promises.push(
+      prisma.employeeWageHistory.updateMany({
         where: { employeeId: id, effectiveTo: null },
         data: { effectiveTo: today },
       })
+    )
 
-      // Create new wage history entry
-      const newWageHistory = await tx.employeeWageHistory.create({
+    // 2b. Create new wage history entry
+    promises.push(
+      prisma.employeeWageHistory.create({
         data: {
+          id: newWageHistoryId,
           employeeId: id,
           weeklySalary: newSalary ?? Number(currentWage.weeklySalary),
           hourlyRate: newHourlyRate ?? Number(currentWage.hourlyRate),
@@ -349,12 +381,15 @@ export async function updateEmployee(
           changeSource: 'MANUAL',
         },
       })
+    )
 
-      await tx.auditLog.create({
+    // 2c. Audit log for wage change
+    promises.push(
+      prisma.auditLog.create({
         data: {
           actionType: 'UPDATE',
           entityType: 'WAGE_HISTORY',
-          entityId: newWageHistory?.id ?? '',
+          entityId: newWageHistoryId,
           detailsJson: {
             employeeId: id,
             oldSalary: Number(currentWage.weeklySalary),
@@ -366,10 +401,12 @@ export async function updateEmployee(
           },
         },
       })
-    }
+    )
+  }
 
-    // 3. Create audit log
-    await tx.auditLog.create({
+  // 3. Audit log for employee update
+  promises.push(
+    prisma.auditLog.create({
       data: {
         actionType: 'UPDATE',
         entityType: 'EMPLOYEE',
@@ -380,11 +417,16 @@ export async function updateEmployee(
         } as Prisma.InputJsonValue,
       },
     })
+  )
 
-    return updatedEmployee
-  })
+  await prisma.$transaction(promises, { timeout: 30000 })
 
-  return updated as EmployeeRecord
+  // Return the merged employee state
+  return {
+    ...existing,
+    ...updateData,
+    updatedAt: today,
+  } as EmployeeRecord
 }
 
 // ─── bulkUpdateStatus ─────────────────────────────────────────────────────────
@@ -418,12 +460,12 @@ export async function bulkUpdateStatus(input: BulkStatusUpdateInput): Promise<Bu
           continue
         }
 
-        await prisma.$transaction(async (tx) => {
-          await tx.employee.update({
+        await prisma.$transaction([
+          prisma.employee.update({
             where: { id },
             data: { isActive: false },
-          })
-          await tx.auditLog.create({
+          }),
+          prisma.auditLog.create({
             data: {
               actionType: 'UPDATE',
               entityType: 'EMPLOYEE',
@@ -435,16 +477,16 @@ export async function bulkUpdateStatus(input: BulkStatusUpdateInput): Promise<Bu
                 changeSource: 'BULK',
               },
             },
-          })
-        })
+          }),
+        ], { timeout: 30000 })
       } else {
         // RESIGNED
-        await prisma.$transaction(async (tx) => {
-          await tx.employee.update({
+        await prisma.$transaction([
+          prisma.employee.update({
             where: { id },
             data: { dateOfResignation: parsed.data.dateOfResignation! },
-          })
-          await tx.auditLog.create({
+          }),
+          prisma.auditLog.create({
             data: {
               actionType: 'UPDATE',
               entityType: 'EMPLOYEE',
@@ -457,8 +499,8 @@ export async function bulkUpdateStatus(input: BulkStatusUpdateInput): Promise<Bu
                 changeSource: 'BULK',
               },
             },
-          })
-        })
+          }),
+        ], { timeout: 30000 })
       }
 
       result.succeeded++
@@ -513,16 +555,19 @@ export async function bulkUpdateHourlyRate(input: BulkHourlyRateUpdateInput): Pr
         continue
       }
 
-      await prisma.$transaction(async (tx) => {
+      const newWageEntryId = randomUUID()
+
+      await prisma.$transaction([
         // Close previous open wage history entry
-        await tx.employeeWageHistory.updateMany({
+        prisma.employeeWageHistory.updateMany({
           where: { employeeId: id, effectiveTo: null },
           data: { effectiveTo: effectiveDate },
-        })
+        }),
 
         // Create new wage history entry
-        const newWageEntry = await tx.employeeWageHistory.create({
+        prisma.employeeWageHistory.create({
           data: {
+            id: newWageEntryId,
             employeeId: id,
             weeklySalary: currentWage ? Number(currentWage.weeklySalary) : 0,
             hourlyRate: parsed.data.newHourlyRate,
@@ -530,14 +575,14 @@ export async function bulkUpdateHourlyRate(input: BulkHourlyRateUpdateInput): Pr
             effectiveTo: null,
             changeSource: 'BULK',
           },
-        })
+        }),
 
         // Create audit log
-        await tx.auditLog.create({
+        prisma.auditLog.create({
           data: {
             actionType: 'UPDATE',
             entityType: 'WAGE_HISTORY',
-            entityId: newWageEntry?.id ?? '',
+            entityId: newWageEntryId,
             detailsJson: {
               bulkAction: 'CHANGE_HOURLY_RATE',
               employeeId: employee.employeeId,
@@ -548,8 +593,8 @@ export async function bulkUpdateHourlyRate(input: BulkHourlyRateUpdateInput): Pr
               changeSource: 'BULK',
             },
           },
-        })
-      })
+        }),
+      ], { timeout: 30000 })
 
       result.succeeded++
     } catch (error) {

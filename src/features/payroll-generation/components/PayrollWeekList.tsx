@@ -43,13 +43,21 @@ function PayrollBadge({ status }: { status: PayrollWeekItem['payrollStatus'] }) 
       </span>
     )
   }
+  if (status === 'REVISED') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
+        <CheckCircle size={13} weight="fill" className="text-sky-500" />
+        Revised
+      </span>
+    )
+  }
   return <span className="text-xs text-zinc-400">Not generated</span>
 }
 
 // ─── Action cell ─────────────────────────────────────────────────────────────
 
 function ActionCell({ week }: { week: PayrollWeekItem }) {
-  if (week.payrollStatus === 'APPROVED' && week.payrollRunId) {
+  if ((week.payrollStatus === 'APPROVED' || week.payrollStatus === 'REVISED') && week.payrollRunId) {
     return (
       <Link
         href={`/payroll/run/${week.payrollRunId}`}

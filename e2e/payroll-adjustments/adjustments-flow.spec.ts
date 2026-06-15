@@ -48,10 +48,10 @@ test.describe('E2E-01: Create one-time deduction', () => {
     await expect(page).toHaveURL('/adjustments', { timeout: 5000 })
 
     // The new adjustment should appear in the list
-    await expect(page.locator('text=Adjustment Test Employee')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Adjustment Test Employee').first()).toBeVisible({ timeout: 5000 })
     await expect(page.locator('text=Advance recovery')).not.toBeVisible() // reason not shown in list
     await expect(
-      page.locator('td:has-text("One-time")'),
+      page.locator('td:has-text("One-time")').first(),
     ).toBeVisible()
   })
 })
@@ -96,7 +96,7 @@ test.describe('E2E-02: Create recurring addition with fixed weeks', () => {
     await expect(page).toHaveURL('/adjustments', { timeout: 5000 })
 
     // The recurring addition should appear
-    await expect(page.locator('td:has-text("Recurring")')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('td:has-text("Recurring")').first()).toBeVisible({ timeout: 5000 })
   })
 })
 
@@ -148,8 +148,11 @@ test.describe('E2E-07: View all adjustments', () => {
     await page.goto('/adjustments')
     await expect(page.locator('h1:has-text("Payroll Adjustments")')).toBeVisible()
 
-    // Wait for table to load
-    await expect(page.locator('tbody tr')).toHaveCount(3, { timeout: 10000 })
+    // Wait for table to load — seed creates 3 adjustments, E2E-01 and E2E-02 each create 1 more,
+    // and E2E-03 creates another. By this point there should be 6 total.
+    await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 10000 })
+    const rowCount = await page.locator('tbody tr').count()
+    expect(rowCount).toBeGreaterThanOrEqual(3)
 
     // Click first row
     await page.click('tbody tr:first-child')

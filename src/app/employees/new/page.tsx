@@ -11,19 +11,20 @@ export const metadata = {
 }
 
 interface Props {
-  searchParams: Promise<{ attendanceSession?: string }>
+  searchParams: Promise<{ attendanceSession?: string; returnTo?: string }>
 }
 
 export default async function NewEmployeePage({ searchParams }: Props) {
-  const { attendanceSession } = await searchParams
+  const { attendanceSession, returnTo } = await searchParams
 
-  let returnContext: { sessionId: string; sheetEmployeeName: string } | undefined
+  let returnContext: { sessionId: string; sheetEmployeeName: string; returnTo?: string } | undefined
   if (attendanceSession) {
     const result = await getAttendanceUploadSessionAction(attendanceSession)
     if (result.ok && result.data) {
       returnContext = {
         sessionId: attendanceSession,
         sheetEmployeeName: result.data.pendingSheetEmployeeName,
+        returnTo: returnTo,
       }
     }
   }

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { FileText, Package, DownloadSimple, CircleNotch } from '@phosphor-icons/react'
+import { FileText, Package, DownloadSimple, CircleNotch, CaretDown } from '@phosphor-icons/react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface ReportSectionProps {
   payrollRunId: string
@@ -19,8 +20,9 @@ export function ReportSection({ payrollRunId, employeeCount }: ReportSectionProp
   const [slipsProgress, setSlipsProgress] = useState(0)
   const [slipsStage, setSlipsStage] = useState('')
   const [toast, setToast] = useState<ToastState | null>(null)
+  const [showDropdown, setShowDropdown] = useState(false)
 
-  const summaryAnchorRef = useRef<HTMLAnchorElement>(null)
+  const dropdownContainerRef = useRef<HTMLDivElement>(null)
   const slipsAnchorRef = useRef<HTMLAnchorElement>(null)
 
   useEffect(() => {
@@ -28,6 +30,16 @@ export function ReportSection({ payrollRunId, employeeCount }: ReportSectionProp
     const t = setTimeout(() => setToast(null), 3000)
     return () => clearTimeout(t)
   }, [toast])
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownContainerRef.current && !dropdownContainerRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   async function callCleanup() {
     try {
@@ -37,13 +49,24 @@ export function ReportSection({ payrollRunId, employeeCount }: ReportSectionProp
     }
   }
 
-  function handleSummaryDownload() {
+  async function triggerSummaryDownload(format: 'pdf' | 'xlsx') {
     if (summaryLoading) return
     setSummaryLoading(true)
-    summaryAnchorRef.current?.click()
+
+    const a = document.createElement('a')
+    a.href = `/api/payroll/reports/${payrollRunId}/summary?format=${format}`
+    a.download = ''
+    a.style.display = 'none'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+
     setTimeout(async () => {
       setSummaryLoading(false)
-      setToast({ message: 'PDF downloaded', type: 'success' })
+      setToast({
+        message: format === 'pdf' ? 'PDF summary downloaded' : 'Excel summary downloaded',
+        type: 'success'
+      })
       await callCleanup()
     }, 1500)
   }
@@ -84,13 +107,7 @@ export function ReportSection({ payrollRunId, employeeCount }: ReportSectionProp
 
   return (
     <section className="border-t border-zinc-200/60 pt-8">
-      {/* Hidden download anchors */}
-      <a
-        ref={summaryAnchorRef}
-        href={`/api/payroll/reports/${payrollRunId}/summary`}
-        download
-        className="hidden"
-      />
+      {/* Hidden download anchor for slips */}
       <a
         ref={slipsAnchorRef}
         href={`/api/payroll/reports/${payrollRunId}/slips`}
@@ -109,19 +126,69 @@ export function ReportSection({ payrollRunId, employeeCount }: ReportSectionProp
             A tabular summary of all employees&apos; payroll for this week.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleSummaryDownload}
-          disabled={summaryLoading}
-          className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
-        >
-          {summaryLoading ? (
-            <CircleNotch size={14} className="animate-spin" />
-          ) : (
-            <DownloadSimple size={14} />
-          )}
-          Download PDF Summary
-        </button>
+        
+        {/* Split Button with Dropdown */}
+        <div ref={dropdownContainerRef} className="relative inline-flex items-center shrink-0">
+          <div className="inline-flex items-center rounded-xl border border-zinc-200 transition-transform active:scale-[0.98]">
+            <button
+              type="button"
+              onClick={() => triggerSummaryDownload('xlsx')}
+              disabled={summaryLoading}
+              className="inline-flex items-center gap-2 rounded-l-xl px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900 border-r border-zinc-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:bg-zinc-50"
+            >
+              {summaryLoading ? (
+                <CircleNotch size={14} className="animate-spin" />
+              ) : (
+                <DownloadSimple size={14} />
+              )}
+              Download Summary
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDropdown((v) => !v)}
+              disabled={summaryLoading}
+              className="inline-flex items-center rounded-r-xl px-2 py-1.5 text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-700 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:bg-zinc-50"
+              aria-label="Select summary report format"
+            >
+              <CaretDown size={14} className={`transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showDropdown && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                transition={{ type: 'spring', stiffness: 150, damping: 20 }}
+                className="absolute right-0 top-full mt-1.5 w-56 rounded-xl bg-white border border-zinc-200/60 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] py-1.5 z-20 origin-top-right"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDropdown(false)
+                    triggerSummaryDownload('xlsx')
+                  }}
+                  className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors cursor-pointer"
+                >
+                  <FileText size={16} className="text-zinc-400 shrink-0" />
+                  <span>Download as Excel (.xlsx)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDropdown(false)
+                    triggerSummaryDownload('pdf')
+                  }}
+                  className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors cursor-pointer"
+                >
+                  <FileText size={16} className="text-zinc-400 shrink-0" />
+                  <span>Download as PDF (.pdf)</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* ── Employee Payroll Slips row ─────────────────────────────────── */}
@@ -138,7 +205,7 @@ export function ReportSection({ payrollRunId, employeeCount }: ReportSectionProp
             type="button"
             onClick={handleSlipsDownload}
             disabled={slipsLoading}
-            className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           >
             {slipsLoading ? (
               <CircleNotch size={14} className="animate-spin" />

@@ -81,7 +81,7 @@ describe('F09 — Payroll History Service', () => {
         expect.objectContaining({
           where: {
             employee: { employeeName: { contains: 'Ravi', mode: 'insensitive' } },
-            payrollRun: { status: 'APPROVED' },
+            payrollRun: { status: { in: ['APPROVED', 'REVISED'] } },
             payrollRevision: { isCurrent: true },
           },
           include: { employee: true, payrollRun: true, payrollRevision: true },
@@ -103,7 +103,7 @@ describe('F09 — Payroll History Service', () => {
         expect.objectContaining({
           where: {
             employee: { employeeId: { contains: 'EMP-001', mode: 'insensitive' } },
-            payrollRun: { status: 'APPROVED' },
+            payrollRun: { status: { in: ['APPROVED', 'REVISED'] } },
             payrollRevision: { isCurrent: true },
           }
         })
@@ -136,7 +136,7 @@ describe('F09 — Payroll History Service', () => {
             payrollRun: { 
               payrollWeekStartDate: new Date('2025-03-06'), 
               payrollWeekEndDate: new Date('2025-03-12'),
-              status: 'APPROVED'
+              status: { in: ['APPROVED', 'REVISED'] }
             },
             payrollRevision: { isCurrent: true }
           }
@@ -157,7 +157,7 @@ describe('F09 — Payroll History Service', () => {
 
       expect(prisma.payrollRun.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { status: 'APPROVED' },
+          where: { status: { in: ['APPROVED', 'REVISED'] } },
           select: { payrollWeekStartDate: true, payrollWeekEndDate: true },
           distinct: ['payrollWeekStartDate', 'payrollWeekEndDate'],
           orderBy: { payrollWeekStartDate: 'desc' }

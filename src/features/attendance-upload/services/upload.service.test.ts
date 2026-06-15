@@ -1,25 +1,48 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+
+// Mock Supabase Storage — replaceAttendanceUpload now calls deleteFile
+vi.mock('@/lib/supabase-storage', () => ({
+  deleteFile: vi.fn().mockResolvedValue(undefined),
+  ATTENDANCE_BUCKET: 'attendance-files',
+}))
+
+vi.mock('@/lib/prisma', () => ({
+  default: {
+    attendanceUpload: {
+      update: vi.fn(),
+      create: vi.fn(),
+    },
+    attendanceRecord: {
+      createMany: vi.fn(),
+    },
+    $transaction: vi.fn(),
+  },
+}))
+
 import { replaceAttendanceUpload } from './upload.service'
 import prisma from '@/lib/prisma'
-import * as fs from 'fs'
-
-// No top-level vi.mock needed if we use spyOn
+import * as supabaseStorage from '@/lib/supabase-storage'
+import type { MatchedAttendanceRecord } from '@/features/attendance-upload/types/attendance.types'
 
 describe('upload.service - replaceAttendanceUpload', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
+      }
+      return promises
+    })
   })
 
-  it('should deactivate the old upload and create a new one in a transaction', async () => {
-    // 1. Arrange
+  it('should deactivate the old upload, delete old Storage file, and create a new one', async () => {
     const oldUploadId = 'old-id'
-    const newUploadId = 'new-id'
     const payrollWeekStart = new Date('2025-05-01T00:00:00Z')
     const payrollWeekEnd = new Date('2025-05-07T00:00:00Z')
 
     const previousUpload = {
       id: oldUploadId,
-      sourceFilePath: '/tmp/old.xlsx',
+      sourceStorageKey: 'attendance/old-uuid_attendance.xlsx',
       isActiveForPayrollWeek: true,
       payrollWeekStartDate: payrollWeekStart,
       payrollWeekEndDate: payrollWeekEnd,
@@ -27,7 +50,7 @@ describe('upload.service - replaceAttendanceUpload', () => {
 
     const params = {
       previousUpload,
-      newFilePath: '/tmp/new.xlsx',
+      storageKey: 'attendance/new-uuid_attendance.xlsx',
       newFileName: 'new.xlsx',
       fileType: 'xlsx',
       payrollWeekStartDate: payrollWeekStart,
@@ -46,93 +69,62 @@ describe('upload.service - replaceAttendanceUpload', () => {
       payrollWeekStartISO: '2025-05-01',
     }
 
-    // Mock fs calls
-    const existsSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(true)
-    const unlinkSpy = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {})
+    vi.mocked(prisma.attendanceUpload.update).mockResolvedValue({ id: oldUploadId, isActiveForPayrollWeek: false } as any)
+    vi.mocked(prisma.attendanceUpload.create).mockResolvedValue({ id: 'new-id-1', isActiveForPayrollWeek: true } as any)
+    vi.mocked(prisma.attendanceRecord.createMany).mockResolvedValue({ count: 1 } as any)
 
-    // Mock Prisma Transaction
-    // We need to mock the $transaction method and the functions inside it
-    const mockTx = {
-      attendanceUpload: {
-        update: vi.fn().mockResolvedValue({ id: oldUploadId, isActiveForPayrollWeek: false }),
-        create: vi.fn().mockResolvedValue({ id: newUploadId, ...params, isActiveForPayrollWeek: true }),
-      },
-      attendanceRecord: {
-        createMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    }
-
-    vi.spyOn(prisma, '$transaction').mockImplementation(async (callback) => {
-      return callback(mockTx as any)
-    })
-
-    // 2. Act
     const result = await replaceAttendanceUpload(params)
 
-    // 3. Assert
-    // A. File system calls
-    expect(existsSpy).toHaveBeenCalledWith(previousUpload.sourceFilePath)
-    expect(unlinkSpy).toHaveBeenCalledWith(previousUpload.sourceFilePath)
+    // Storage file deleted for the previous upload
+    expect(supabaseStorage.deleteFile).toHaveBeenCalledWith(
+      'attendance-files',
+      previousUpload.sourceStorageKey
+    )
 
-    // B. Transaction calls
-    expect(mockTx.attendanceUpload.update).toHaveBeenCalledWith({
+    expect(prisma.attendanceUpload.update).toHaveBeenCalledWith({
       where: { id: oldUploadId },
       data: { isActiveForPayrollWeek: false },
     })
 
-    expect(mockTx.attendanceUpload.create).toHaveBeenCalledWith({
+    expect(prisma.attendanceUpload.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         fileName: 'new.xlsx',
         isActiveForPayrollWeek: true,
+        sourceStorageKey: params.storageKey,
       }),
     })
 
-    expect(mockTx.attendanceRecord.createMany).toHaveBeenCalled()
-
-    // C. Result
-    expect(result.uploadId).toBe(newUploadId)
+    expect(prisma.attendanceRecord.createMany).toHaveBeenCalled()
+    expect(result.uploadId).toBeDefined()
     expect(result.isActiveForPayrollWeek).toBe(true)
   })
 
-  it('should still proceed if the old file does not exist', async () => {
-    // Arrange
+  it('should still proceed if the previous upload has no Storage key (legacy row)', async () => {
     const previousUpload = {
       id: 'old-id',
-      sourceFilePath: '/tmp/missing.xlsx',
+      sourceStorageKey: null, // legacy row — no storage key
     } as any
 
     const params = {
       previousUpload,
-      newFilePath: '/tmp/new.xlsx',
+      storageKey: 'attendance/new-uuid_attendance.xlsx',
       newFileName: 'new.xlsx',
       fileType: 'xlsx',
       payrollWeekStartDate: new Date(),
       payrollWeekEndDate: new Date(),
       payrollWeekSource: 'AUTO' as const,
       status: 'READY',
-      records: [],
+      records: [] as MatchedAttendanceRecord[],
       payrollWeekStartISO: '2025-05-01',
     }
 
-    const existsSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(false)
-    const unlinkSpy = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {})
-    
-    const mockTx = {
-      attendanceUpload: {
-        update: vi.fn().mockResolvedValue({}),
-        create: vi.fn().mockResolvedValue({ id: 'new-id' }),
-      },
-      attendanceRecord: {
-        createMany: vi.fn(),
-      },
-    }
-    vi.spyOn(prisma, '$transaction').mockImplementation(async (callback) => callback(mockTx as any))
+    vi.mocked(prisma.attendanceUpload.update).mockResolvedValue({} as any)
+    vi.mocked(prisma.attendanceUpload.create).mockResolvedValue({ id: 'new-id' } as any)
 
-    // Act
     await replaceAttendanceUpload(params)
 
-    // Assert
-    expect(unlinkSpy).not.toHaveBeenCalled()
-    expect(mockTx.attendanceUpload.update).toHaveBeenCalled()
+    // No delete attempted for legacy rows with no storage key
+    expect(supabaseStorage.deleteFile).not.toHaveBeenCalled()
+    expect(prisma.attendanceUpload.update).toHaveBeenCalled()
   })
 })

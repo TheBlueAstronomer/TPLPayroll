@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import prisma from '@/lib/prisma'
 import {
   CreateAdjustmentSchema,
@@ -58,14 +59,37 @@ export async function createAdjustment(input: CreateAdjustmentInput) {
   const d = parsed.data
 
   const isTotalBalance = d.recurrenceType === 'RECURRING' && d.recurrenceEndType === 'TOTAL_BALANCE'
+  const isFixedWeeks = d.recurrenceType === 'RECURRING' && d.recurrenceEndType === 'FIXED_WEEKS'
 
-  const result = await prisma.$transaction(async (tx) => {
-    const adjustment = await tx.payrollAdjustment.create({
+  // For FIXED_WEEKS: the user enters the *total* amount to recover over N weeks.
+  // We store the per-week instalment in `amount` and the grand total in `totalBalance`.
+  const weeklyAmount: number =
+    isFixedWeeks && d.totalRecurrenceWeeks && d.totalRecurrenceWeeks > 0
+      ? Math.round((d.amount / d.totalRecurrenceWeeks) * 100) / 100
+      : d.amount
+
+  const storedTotalBalance: number | null = isFixedWeeks
+    ? d.amount                            // original entered total
+    : isTotalBalance
+    ? (d.totalBalance ?? null)
+    : null
+
+  const storedRemainingBalance: number | null = isFixedWeeks
+    ? d.amount                            // starts equal to total; depletes as weeks are approved
+    : isTotalBalance
+    ? (d.totalBalance ?? null)
+    : null
+
+  const adjustmentId = randomUUID()
+
+  const [result] = await prisma.$transaction([
+    prisma.payrollAdjustment.create({
       data: {
+        id: adjustmentId,
         employeeId: d.employeeId,
         adjustmentType: d.adjustmentType,
         recurrenceType: d.recurrenceType,
-        amount: d.amount,
+        amount: weeklyAmount,             // per-week instalment stored here
         reason: d.reason,
         startPayrollWeekStartDate: d.startPayrollWeekStartDate,
         startPayrollWeekEndDate: d.startPayrollWeekEndDate,
@@ -73,26 +97,24 @@ export async function createAdjustment(input: CreateAdjustmentInput) {
         endPayrollWeekStartDate: d.endPayrollWeekStartDate ?? null,
         endPayrollWeekEndDate: d.endPayrollWeekEndDate ?? null,
         totalRecurrenceWeeks: d.totalRecurrenceWeeks ?? null,
-        totalBalance: d.totalBalance ?? null,
-        remainingBalance: isTotalBalance ? (d.totalBalance ?? null) : null,
+        totalBalance: storedTotalBalance,
+        remainingBalance: storedRemainingBalance,
         status: 'ACTIVE',
         skippedCarryForwardCount: 0,
       },
-    })
+    }),
 
-    await tx.payrollAdjustmentApplication.create({
+    prisma.payrollAdjustmentApplication.create({
       data: {
-        payrollAdjustmentId: adjustment.id,
+        payrollAdjustmentId: adjustmentId,
         employeeId: d.employeeId,
         payrollWeekStartDate: d.startPayrollWeekStartDate,
         payrollWeekEndDate: d.startPayrollWeekEndDate,
-        appliedAmount: d.amount,
+        appliedAmount: weeklyAmount,      // first week uses the computed per-week slice
         approvalStatus: 'PENDING',
       },
-    })
-
-    return adjustment
-  })
+    }),
+  ], { timeout: 30000 })
 
   return {
     ...result,
@@ -207,7 +229,7 @@ export async function approveAdjustmentApplication(applicationId: string) {
   if (!app) {
     throw new AdjustmentServiceError('APPLICATION_NOT_FOUND', `Application "${applicationId}" not found`)
   }
-  if (app.approvalStatus !== 'PENDING') {
+  if (app.approvalStatus !== 'PENDING' && app.approvalStatus !== 'SKIPPED') {
     throw new AdjustmentServiceError(
       'INVALID_APPROVAL_STATUS',
       `Application is already ${app.approvalStatus.toLowerCase()}`,
@@ -216,29 +238,52 @@ export async function approveAdjustmentApplication(applicationId: string) {
 
   const adj = app.payrollAdjustment
   const isTotalBalance = adj.recurrenceEndType === 'TOTAL_BALANCE'
+  const isFixedWeeks = adj.recurrenceEndType === 'FIXED_WEEKS'
+  const isEndWeek = adj.recurrenceEndType === 'END_WEEK'
 
   let appliedAmount = Number(adj.amount)
   let newRemainingBalance: number | null = null
   let adjustmentCompleted = false
 
   if (isTotalBalance && adj.remainingBalance != null) {
+    // Cap the applied amount at whatever balance remains
     const remaining = Number(adj.remainingBalance)
     appliedAmount = Math.min(appliedAmount, remaining)
     newRemainingBalance = remaining - appliedAmount
     adjustmentCompleted = newRemainingBalance <= 0
   }
 
+  if (isFixedWeeks && adj.remainingBalance != null) {
+    // Deplete the running balance so we can track total paid out
+    const remaining = Number(adj.remainingBalance)
+    newRemainingBalance = Math.max(0, remaining - appliedAmount)
+  }
+
   const now = new Date()
 
+  // If we are approving a skipped application, delete its carry-forward application if it exists
+  if (app.approvalStatus === 'SKIPPED' && app.carriedForwardToPayrollWeekStartDate) {
+    await prisma.payrollAdjustmentApplication.deleteMany({
+      where: {
+        payrollAdjustmentId: adj.id,
+        payrollWeekStartDate: app.carriedForwardToPayrollWeekStartDate,
+        approvalStatus: 'PENDING',
+      },
+    })
+  }
+
+  // Mark current application as approved
   const updated = await prisma.payrollAdjustmentApplication.update({
     where: { id: applicationId },
     data: {
       approvalStatus: 'APPROVED',
       appliedAt: now,
       appliedAmount,
+      carriedForwardToPayrollWeekStartDate: null,
     },
   })
 
+  // ── TOTAL_BALANCE: update remaining balance and possibly complete ─────────
   if (isTotalBalance) {
     await prisma.payrollAdjustment.update({
       where: { id: adj.id },
@@ -246,6 +291,110 @@ export async function approveAdjustmentApplication(applicationId: string) {
         remainingBalance: newRemainingBalance ?? 0,
         ...(adjustmentCompleted ? { status: 'COMPLETED' } : {}),
       },
+    })
+  }
+
+  // ── FIXED_WEEKS: count approved applications; schedule next or complete ───
+  if (isFixedWeeks && adj.totalRecurrenceWeeks != null) {
+    // Count how many applications have been approved for this adjustment
+    // (including the one we just approved)
+    const approvedCount = await prisma.payrollAdjustmentApplication.count({
+      where: {
+        payrollAdjustmentId: adj.id,
+        approvalStatus: 'APPROVED',
+      },
+    })
+
+    if (approvedCount >= adj.totalRecurrenceWeeks) {
+      // All weeks have been applied — mark the adjustment done
+      await prisma.payrollAdjustment.update({
+        where: { id: adj.id },
+        data: {
+          status: 'COMPLETED',
+          remainingBalance: newRemainingBalance ?? 0,
+        },
+      })
+    } else {
+      // Schedule the next instalment for the following payroll week
+      const nextWeekStart = addDays(app.payrollWeekStartDate, 7)
+      const nextWeekEnd = addDays(app.payrollWeekEndDate, 7)
+
+      // Guard: only create if no PENDING application already exists for this week
+      const existingNextPending = await prisma.payrollAdjustmentApplication.findFirst({
+        where: {
+          payrollAdjustmentId: adj.id,
+          payrollWeekStartDate: nextWeekStart,
+          approvalStatus: 'PENDING',
+        },
+      })
+
+      if (!existingNextPending) {
+        await prisma.payrollAdjustmentApplication.create({
+          data: {
+            payrollAdjustmentId: adj.id,
+            employeeId: app.employeeId,
+            payrollWeekStartDate: nextWeekStart,
+            payrollWeekEndDate: nextWeekEnd,
+            appliedAmount: Number(adj.amount), // per-week instalment
+            approvalStatus: 'PENDING',
+          },
+        })
+      }
+
+      if (newRemainingBalance !== null) {
+        await prisma.payrollAdjustment.update({
+          where: { id: adj.id },
+          data: { remainingBalance: newRemainingBalance },
+        })
+      }
+    }
+  }
+
+  // ── END_WEEK: schedule next week or complete when end week is reached ─────
+  if (isEndWeek && adj.endPayrollWeekStartDate != null) {
+    const currentWeekStart = app.payrollWeekStartDate
+    const endWeekStart = adj.endPayrollWeekStartDate
+
+    if (currentWeekStart >= endWeekStart) {
+      // This was the last week — complete the adjustment
+      await prisma.payrollAdjustment.update({
+        where: { id: adj.id },
+        data: { status: 'COMPLETED' },
+      })
+    } else {
+      // Schedule the next instalment
+      const nextWeekStart = addDays(app.payrollWeekStartDate, 7)
+      const nextWeekEnd = addDays(app.payrollWeekEndDate, 7)
+
+      // Guard: only create if no PENDING application already exists for this week
+      const existingNextPending = await prisma.payrollAdjustmentApplication.findFirst({
+        where: {
+          payrollAdjustmentId: adj.id,
+          payrollWeekStartDate: nextWeekStart,
+          approvalStatus: 'PENDING',
+        },
+      })
+
+      if (!existingNextPending) {
+        await prisma.payrollAdjustmentApplication.create({
+          data: {
+            payrollAdjustmentId: adj.id,
+            employeeId: app.employeeId,
+            payrollWeekStartDate: nextWeekStart,
+            payrollWeekEndDate: nextWeekEnd,
+            appliedAmount: Number(adj.amount),
+            approvalStatus: 'PENDING',
+          },
+        })
+      }
+    }
+  }
+
+  // ── ONE_TIME: complete the adjustment immediately ───────────────────────
+  if (adj.recurrenceType === 'ONE_TIME') {
+    await prisma.payrollAdjustment.update({
+      where: { id: adj.id },
+      data: { status: 'COMPLETED' },
     })
   }
 
@@ -268,7 +417,7 @@ export async function skipAdjustmentApplication(applicationId: string) {
   if (!app) {
     throw new AdjustmentServiceError('APPLICATION_NOT_FOUND', `Application "${applicationId}" not found`)
   }
-  if (app.approvalStatus !== 'PENDING') {
+  if (app.approvalStatus !== 'PENDING' && app.approvalStatus !== 'APPROVED') {
     throw new AdjustmentServiceError(
       'INVALID_APPROVAL_STATUS',
       `Application is already ${app.approvalStatus.toLowerCase()}`,
@@ -277,6 +426,32 @@ export async function skipAdjustmentApplication(applicationId: string) {
 
   const adj = app.payrollAdjustment
   const now = new Date()
+
+  // ── Undo effects if skipping an already approved application ────────────
+  let restoredRemainingBalance: number | null = null
+  let revertStatusToActive = false
+
+  if (app.approvalStatus === 'APPROVED') {
+    const isTotalBalance = adj.recurrenceEndType === 'TOTAL_BALANCE'
+    const isFixedWeeks = adj.recurrenceEndType === 'FIXED_WEEKS'
+    const appliedAmount = Number(app.appliedAmount)
+
+    if ((isTotalBalance || isFixedWeeks) && adj.remainingBalance !== null) {
+      const currentRemaining = Number(adj.remainingBalance)
+      restoredRemainingBalance = currentRemaining + appliedAmount
+
+      // Cap the restored balance at the original total if known
+      if (adj.totalBalance !== null) {
+         restoredRemainingBalance = Math.min(restoredRemainingBalance, Number(adj.totalBalance))
+      }
+    }
+
+    // If the adjustment was completed, revert it to ACTIVE since we are skipping an application
+    // and thus creating a carry-forward (meaning it's not done yet).
+    if (adj.status === 'COMPLETED') {
+      revertStatusToActive = true
+    }
+  }
 
   const nextWeekStart = addDays(app.payrollWeekStartDate, 7)
   const nextWeekEnd = addDays(app.payrollWeekEndDate, 7)
@@ -290,21 +465,34 @@ export async function skipAdjustmentApplication(applicationId: string) {
     },
   })
 
-  await prisma.payrollAdjustmentApplication.create({
-    data: {
+  // Guard: only create carry-forward if no PENDING application already exists for next week
+  const existingNextPending = await prisma.payrollAdjustmentApplication.findFirst({
+    where: {
       payrollAdjustmentId: adj.id,
-      employeeId: app.employeeId,
       payrollWeekStartDate: nextWeekStart,
-      payrollWeekEndDate: nextWeekEnd,
-      appliedAmount: Number(adj.amount),
       approvalStatus: 'PENDING',
     },
   })
+
+  if (!existingNextPending) {
+    await prisma.payrollAdjustmentApplication.create({
+      data: {
+        payrollAdjustmentId: adj.id,
+        employeeId: app.employeeId,
+        payrollWeekStartDate: nextWeekStart,
+        payrollWeekEndDate: nextWeekEnd,
+        appliedAmount: Number(adj.amount),
+        approvalStatus: 'PENDING',
+      },
+    })
+  }
 
   await prisma.payrollAdjustment.update({
     where: { id: adj.id },
     data: {
       skippedCarryForwardCount: adj.skippedCarryForwardCount + 1,
+      ...(restoredRemainingBalance !== null ? { remainingBalance: restoredRemainingBalance } : {}),
+      ...(revertStatusToActive ? { status: 'ACTIVE' } : {}),
     },
   })
 
@@ -332,7 +520,15 @@ export async function getAdjustmentsForWeekReview(
     },
   })
 
-  return rows.map((row) => {
+  // Defense-in-depth: deduplicate so only one PENDING per adjustment is shown
+  const seen = new Set<string>()
+  const deduped = rows.filter((row) => {
+    if (seen.has(row.payrollAdjustmentId)) return false
+    seen.add(row.payrollAdjustmentId)
+    return true
+  })
+
+  return deduped.map((row) => {
     const adjAmount = Number(row.payrollAdjustment.amount)
     const remaining =
       row.payrollAdjustment.recurrenceEndType === 'TOTAL_BALANCE' &&
@@ -387,12 +583,43 @@ export async function updateAdjustment(id: string, input: UpdateAdjustmentInput)
 
   const d = parsed.data
   const isTotalBalance = d.recurrenceType === 'RECURRING' && d.recurrenceEndType === 'TOTAL_BALANCE'
+  const isFixedWeeks = d.recurrenceType === 'RECURRING' && d.recurrenceEndType === 'FIXED_WEEKS'
+
+  // For FIXED_WEEKS: user enters total; compute per-week instalment
+  const weeklyAmount: number =
+    isFixedWeeks && d.totalRecurrenceWeeks && d.totalRecurrenceWeeks > 0
+      ? Math.round((d.amount / d.totalRecurrenceWeeks) * 100) / 100
+      : d.amount
+
+  const storedTotalBalance: number | null = isFixedWeeks
+    ? d.amount
+    : isTotalBalance
+    ? (d.totalBalance ?? null)
+    : null
+
+  // Sum up already approved amounts for this adjustment to prevent balance resets on edits
+  const approvedTotal = await prisma.payrollAdjustmentApplication.aggregate({
+    where: {
+      payrollAdjustmentId: id,
+      approvalStatus: 'APPROVED',
+    },
+    _sum: {
+      appliedAmount: true,
+    },
+  })
+  const approvedSum = Number(approvedTotal._sum.appliedAmount ?? 0)
+
+  const storedRemainingBalance: number | null = isFixedWeeks
+    ? Math.max(0, d.amount - approvedSum)
+    : isTotalBalance
+    ? Math.max(0, (d.totalBalance ?? 0) - approvedSum)
+    : null
 
   const updated = await prisma.payrollAdjustment.update({
     where: { id },
     data: {
       adjustmentType: d.adjustmentType,
-      amount: d.amount,
+      amount: weeklyAmount,
       reason: d.reason,
       recurrenceType: d.recurrenceType,
       startPayrollWeekStartDate: d.startPayrollWeekStartDate,
@@ -401,16 +628,16 @@ export async function updateAdjustment(id: string, input: UpdateAdjustmentInput)
       endPayrollWeekStartDate: d.endPayrollWeekStartDate ?? null,
       endPayrollWeekEndDate: d.endPayrollWeekEndDate ?? null,
       totalRecurrenceWeeks: d.totalRecurrenceWeeks ?? null,
-      totalBalance: d.totalBalance ?? null,
-      remainingBalance: isTotalBalance ? (d.totalBalance ?? null) : null,
+      totalBalance: storedTotalBalance,
+      remainingBalance: storedRemainingBalance,
     },
   })
 
-  // Keep PENDING applications in sync with new amount and start week
+  // Keep PENDING applications in sync with new per-week amount and start week
   await prisma.payrollAdjustmentApplication.updateMany({
     where: { payrollAdjustmentId: id, approvalStatus: 'PENDING' },
     data: {
-      appliedAmount: d.amount,
+      appliedAmount: weeklyAmount,
       payrollWeekStartDate: d.startPayrollWeekStartDate,
       payrollWeekEndDate: d.startPayrollWeekEndDate,
     },

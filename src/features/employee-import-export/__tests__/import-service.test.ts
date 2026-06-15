@@ -14,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({
     employeeWageHistory: {
       findMany: vi.fn(),
       create: vi.fn(),
+      createMany: vi.fn(),
       updateMany: vi.fn(),
     },
     employeeImportBatch: {
@@ -22,6 +23,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     auditLog: {
       create: vi.fn(),
+      createMany: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -45,7 +47,6 @@ import {
   executeImport,
 } from '@/features/employee-import-export/services/import.service'
 import { normalizeEmployeeId } from '../utils/normalize'
-import { ImportExportServiceError } from '@/features/employee-import-export/types/import-export.types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -111,6 +112,12 @@ const makeWageHistory = (overrides: Partial<EmployeeWageHistory> = {}): Employee
 // ─── Reset mocks before each test ────────────────────────────────────────────
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+    if (Array.isArray(promises)) {
+      return Promise.all(promises)
+    }
+    return promises
+  })
 })
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -284,21 +291,7 @@ describe('executeImport', () => {
     vi.mocked(prisma.employeeImportBatch.create).mockResolvedValue({
       id: 'batch-1',
     } as never)
-
-    const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        employee: {
-          create: vi.fn().mockResolvedValue(makeEmployee()),
-          update: vi.fn().mockResolvedValue(makeEmployee()),
-          findMany: vi.fn().mockResolvedValue([]),
-        },
-        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
-        employeeImportBatch: { update: vi.fn() },
-        auditLog: { create: vi.fn() },
-      }
-      return fn(tx)
-    })
-    vi.mocked(prisma.$transaction).mockImplementation(txFn)
+    vi.mocked(prisma.employee.create).mockResolvedValue(makeEmployee())
 
     const buf = makeXlsxBuffer('Employee Master List', rows)
     const result = await executeImport(buf, 'employees.xlsx', '/tmp/employees.xlsx')
@@ -315,21 +308,8 @@ describe('executeImport', () => {
     vi.mocked(prisma.employeeImportBatch.create).mockResolvedValue({
       id: 'batch-1',
     } as never)
-
-    const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        employee: {
-          create: vi.fn().mockResolvedValue(makeEmployee()),
-          update: vi.fn().mockResolvedValue(makeEmployee({ phone: '222' })),
-          findMany: vi.fn().mockResolvedValue([{ id: 'uuid-1' }]),
-        },
-        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn(), findMany: vi.fn().mockResolvedValue([makeWageHistory()]) },
-        employeeImportBatch: { update: vi.fn() },
-        auditLog: { create: vi.fn() },
-      }
-      return fn(tx)
-    })
-    vi.mocked(prisma.$transaction).mockImplementation(txFn)
+    vi.mocked(prisma.employee.update).mockResolvedValue(makeEmployee({ phone: '222' }))
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue([makeWageHistory()])
 
     const rows = [makeValidRow({ 'Employee ID': 'EMP-001', 'Phone': '222' })]
     const buf = makeXlsxBuffer('Employee Master List', rows)
@@ -346,36 +326,23 @@ describe('executeImport', () => {
     vi.mocked(prisma.employeeImportBatch.create).mockResolvedValue({
       id: 'batch-1',
     } as never)
-
-    const wageHistoryCreate = vi.fn()
-    const wageHistoryUpdateMany = vi.fn()
-    const wageHistoryFindMany = vi.fn().mockResolvedValue([
+    vi.mocked(prisma.employee.update).mockResolvedValue(makeEmployee())
+    vi.mocked(prisma.employeeWageHistory.findMany).mockResolvedValue([
       makeWageHistory({ hourlyRate: 60 as unknown as EmployeeWageHistory['hourlyRate'] }),
     ])
-
-    const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        employee: {
-          create: vi.fn(),
-          update: vi.fn().mockResolvedValue(makeEmployee()),
-          findMany: vi.fn().mockResolvedValue([{ id: 'uuid-1' }]),
-        },
-        employeeWageHistory: { create: wageHistoryCreate, updateMany: wageHistoryUpdateMany, findMany: wageHistoryFindMany },
-        employeeImportBatch: { update: vi.fn() },
-        auditLog: { create: vi.fn() },
-      }
-      return fn(tx)
-    })
-    vi.mocked(prisma.$transaction).mockImplementation(txFn)
 
     const rows = [makeValidRow({ 'Employee ID': 'EMP-001', 'Hourly Rate': 70 })]
     const buf = makeXlsxBuffer('Employee Master List', rows)
     await executeImport(buf, 'employees.xlsx', '/tmp/employees.xlsx')
 
-    expect(wageHistoryCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ hourlyRate: 70 }) })
+    expect(prisma.employeeWageHistory.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.arrayContaining([
+          expect.objectContaining({ hourlyRate: 70 }),
+        ]),
+      })
     )
-    expect(wageHistoryUpdateMany).toHaveBeenCalled()
+    expect(prisma.employeeWageHistory.updateMany).toHaveBeenCalled()
   })
 
   it('skips invalid rows and counts them in rejectedRowCount', async () => {
@@ -383,21 +350,7 @@ describe('executeImport', () => {
     vi.mocked(prisma.employeeImportBatch.create).mockResolvedValue({
       id: 'batch-1',
     } as never)
-
-    const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        employee: {
-          create: vi.fn().mockResolvedValue(makeEmployee()),
-          update: vi.fn(),
-          findMany: vi.fn().mockResolvedValue([]),
-        },
-        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
-        employeeImportBatch: { update: vi.fn() },
-        auditLog: { create: vi.fn() },
-      }
-      return fn(tx)
-    })
-    vi.mocked(prisma.$transaction).mockImplementation(txFn)
+    vi.mocked(prisma.employee.create).mockResolvedValue(makeEmployee())
 
     const rows = [
       ...Array.from({ length: 10 }, (_, i) =>
@@ -419,25 +372,7 @@ describe('executeImport', () => {
     vi.mocked(prisma.employeeImportBatch.create).mockResolvedValue({
       id: 'batch-1',
     } as never)
-
-    const employeeCreate = vi.fn().mockResolvedValue(makeEmployee({ employeeId: 'EMP-010' }))
-    const employeeUpdate = vi.fn().mockResolvedValue(makeEmployee({ employeeId: 'EMP-010', phone: '222' }))
-
-    const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        employee: {
-          create: employeeCreate,
-          update: employeeUpdate,
-          findUnique: vi.fn().mockResolvedValue(null),
-          findMany: vi.fn().mockResolvedValue([]),
-        },
-        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn(), findMany: vi.fn().mockResolvedValue([]) },
-        employeeImportBatch: { update: vi.fn() },
-        auditLog: { create: vi.fn() },
-      }
-      return fn(tx)
-    })
-    vi.mocked(prisma.$transaction).mockImplementation(txFn)
+    vi.mocked(prisma.employee.create).mockResolvedValue(makeEmployee({ employeeId: 'EMP-010' }))
 
     const rows = [
       makeValidRow({ 'Employee ID': 'EMP-010', 'Phone': '111' }),
@@ -451,24 +386,10 @@ describe('executeImport', () => {
 
   it('creates an EmployeeImportBatch record with correct counts', async () => {
     vi.mocked(prisma.employee.findMany).mockResolvedValue([])
+    vi.mocked(prisma.employee.create).mockResolvedValue(makeEmployee())
     const batchCreate = vi.mocked(prisma.employeeImportBatch.create).mockResolvedValue({
       id: 'batch-1',
     } as never)
-
-    const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        employee: {
-          create: vi.fn().mockResolvedValue(makeEmployee()),
-          update: vi.fn(),
-          findMany: vi.fn().mockResolvedValue([]),
-        },
-        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
-        employeeImportBatch: { update: vi.fn() },
-        auditLog: { create: vi.fn() },
-      }
-      return fn(tx)
-    })
-    vi.mocked(prisma.$transaction).mockImplementation(txFn)
 
     const rows = Array.from({ length: 10 }, (_, i) =>
       makeValidRow({ 'Employee ID': `EMP-${String(i + 1).padStart(3, '0')}` })
@@ -485,31 +406,15 @@ describe('executeImport', () => {
 
   it('sets sourceFileDeletedAt on the batch after successful import', async () => {
     vi.mocked(prisma.employee.findMany).mockResolvedValue([])
+    vi.mocked(prisma.employee.create).mockResolvedValue(makeEmployee())
     vi.mocked(prisma.employeeImportBatch.create).mockResolvedValue({
       id: 'batch-1',
     } as never)
 
-    const batchUpdate = vi.fn()
-    const txFn = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        employee: {
-          create: vi.fn().mockResolvedValue(makeEmployee()),
-          update: vi.fn(),
-          findMany: vi.fn().mockResolvedValue([]),
-        },
-        employeeWageHistory: { create: vi.fn(), updateMany: vi.fn() },
-        employeeImportBatch: { update: batchUpdate },
-        auditLog: { create: vi.fn() },
-      }
-      return fn(tx)
-    })
-    vi.mocked(prisma.$transaction).mockImplementation(txFn)
-
-    const rows = [makeValidRow()]
-    const buf = makeXlsxBuffer('Employee Master List', rows)
+    const buf = makeXlsxBuffer('Employee Master List', [makeValidRow()])
     await executeImport(buf, 'employees.xlsx', '/tmp/employees.xlsx')
 
-    expect(batchUpdate).toHaveBeenCalledWith(
+    expect(prisma.employeeImportBatch.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ sourceFileDeletedAt: expect.any(Date) }),
       })

@@ -153,6 +153,7 @@ export function AdjustmentForm() {
 
   const recurrenceType = watch('recurrenceType')
   const recurrenceEndType = watch('recurrenceEndType')
+  const isFixedWeeks = recurrenceEndType === 'FIXED_WEEKS'
 
   // Fetch employees for combobox
   useEffect(() => {
@@ -331,7 +332,9 @@ export function AdjustmentForm() {
         {/* Amount + Reason */}
         <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
           <div>
-            <Label htmlFor="amount">Amount (₹) *</Label>
+            <Label htmlFor="amount">
+              {isFixedWeeks ? 'Total Amount (₹) *' : 'Amount (₹) *'}
+            </Label>
             <input
               id="amount"
               type="number"
@@ -341,6 +344,11 @@ export function AdjustmentForm() {
               {...register('amount')}
               className="w-full rounded-xl border border-zinc-200/60 bg-white px-4 py-2 font-mono tabular-nums text-sm text-zinc-900 placeholder:text-zinc-300 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
             />
+            {isFixedWeeks && (
+              <p className="mt-1 text-xs text-zinc-400">
+                Will be split equally across the number of weeks
+              </p>
+            )}
             <FieldError message={errors.amount?.message} />
           </div>
 

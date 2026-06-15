@@ -224,142 +224,6 @@ export async function parseImportFile(buffer: Buffer): Promise<ParseImportResult
 
 // ─── executeImport ────────────────────────────────────────────────────────────
 
-type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
-
-async function applyRowToDb(
-  tx: PrismaTx,
-  data: ImportRowData,
-  action: 'CREATE' | 'UPDATE',
-  batchId: string,
-  today: Date,
-  processedInFile: Map<string, string>
-): Promise<{ created: boolean; updated: boolean }> {
-  const alreadyProcessedId = processedInFile.get(data.employeeId)
-
-  if (action === 'CREATE' && !alreadyProcessedId) {
-    const created = await tx.employee.create({
-      data: {
-        employeeImportBatchId: batchId,
-        employeeId: data.employeeId,
-        serialNumber: data.serialNumber,
-        employeeName: data.employeeName,
-        nationalId: data.nationalId,
-        designation: data.designation,
-        designationShort: data.designationShort,
-        dateOfJoining: data.dateOfJoining,
-        aadhaarId: data.aadhaarId,
-        policeVerificationId: data.policeVerificationId,
-        phone: data.phone,
-        dateOfBirth: data.dateOfBirth,
-        healthCardId: data.healthCardId,
-        gPay: data.gPay,
-        bankAccount: data.bankAccount,
-        dateOfResignation: data.dateOfResignation,
-        site: data.site,
-        isActive: data.isActive,
-      },
-    })
-
-    await tx.employeeWageHistory.create({
-      data: {
-        employeeId: created.id,
-        weeklySalary: data.salary,
-        hourlyRate: data.hourlyRate,
-        effectiveFrom: today,
-        effectiveTo: null,
-        changeSource: 'IMPORT',
-        employeeImportBatchId: batchId,
-      },
-    })
-
-    await tx.auditLog.create({
-      data: {
-        actionType: 'CREATE',
-        entityType: 'EMPLOYEE',
-        entityId: created.id,
-        detailsJson: { employeeId: created.employeeId, source: 'IMPORT', batchId },
-      },
-    })
-
-    processedInFile.set(data.employeeId, created.id)
-    return { created: true, updated: false }
-  }
-
-  // UPDATE path — or duplicate (alreadyProcessedId exists)
-  const existingDbId =
-    alreadyProcessedId ??
-    (await tx.employee
-      .findMany({ where: { employeeId: data.employeeId }, select: { id: true } })
-      .then((r) => r[0]?.id ?? null))
-
-  if (!existingDbId) return { created: false, updated: false }
-
-  await tx.employee.update({
-    where: { id: existingDbId },
-    data: {
-      serialNumber: data.serialNumber,
-      employeeName: data.employeeName,
-      nationalId: data.nationalId,
-      designation: data.designation,
-      designationShort: data.designationShort,
-      dateOfJoining: data.dateOfJoining,
-      aadhaarId: data.aadhaarId,
-      policeVerificationId: data.policeVerificationId,
-      phone: data.phone,
-      dateOfBirth: data.dateOfBirth,
-      healthCardId: data.healthCardId,
-      gPay: data.gPay,
-      bankAccount: data.bankAccount,
-      dateOfResignation: data.dateOfResignation,
-      site: data.site,
-      isActive: data.isActive,
-      employeeImportBatchId: batchId,
-    },
-  })
-
-  const currentWage = await tx.employeeWageHistory.findMany({
-    where: { employeeId: existingDbId, effectiveTo: null },
-    orderBy: { effectiveFrom: 'desc' },
-    take: 1,
-  })
-  const cw = currentWage[0]
-  const wageChanged = cw
-    ? Number(cw.weeklySalary) !== data.salary || Number(cw.hourlyRate) !== data.hourlyRate
-    : true
-
-  if (wageChanged) {
-    await tx.employeeWageHistory.updateMany({
-      where: { employeeId: existingDbId, effectiveTo: null },
-      data: { effectiveTo: today },
-    })
-    await tx.employeeWageHistory.create({
-      data: {
-        employeeId: existingDbId,
-        weeklySalary: data.salary,
-        hourlyRate: data.hourlyRate,
-        effectiveFrom: today,
-        effectiveTo: null,
-        changeSource: 'IMPORT',
-        employeeImportBatchId: batchId,
-      },
-    })
-  }
-
-  await tx.auditLog.create({
-    data: {
-      actionType: 'UPDATE',
-      entityType: 'EMPLOYEE',
-      entityId: existingDbId,
-      detailsJson: { source: 'IMPORT', batchId },
-    },
-  })
-
-  // Only count as "updated" if this is the first time processing this ID (not a within-file duplicate)
-  const isFirstProcess = !alreadyProcessedId
-  if (isFirstProcess) processedInFile.set(data.employeeId, existingDbId)
-  return { created: false, updated: isFirstProcess }
-}
-
 export async function executeImport(
   buffer: Buffer,
   fileName: string,
@@ -367,10 +231,24 @@ export async function executeImport(
   fixedRows: ValidImportRow[] = []
 ): Promise<ExecuteImportResult> {
   const { validRows: parsedValidRows, invalidRows, duplicateIdRows } = await parseImportFile(buffer)
-  const allValidRows = [...parsedValidRows, ...fixedRows]
 
   const rejectedRowCount = Math.max(0, invalidRows.length - fixedRows.length)
 
+  // ── Deduplicate rows in memory (last-write-wins for duplicates) ───────────────
+  // This collapses all per-row decisions BEFORE touching the DB so we can use bulk writes.
+  const rowMap = new Map<string, { data: ImportRowData; action: 'CREATE' | 'UPDATE' }>()
+  for (const row of [...parsedValidRows, ...fixedRows]) {
+    rowMap.set(row.data.employeeId, { data: row.data, action: row.action })
+  }
+  for (const dup of duplicateIdRows) {
+    // Duplicates override first occurrences (last write wins)
+    rowMap.set(dup.data.employeeId, { data: dup.data, action: dup.action })
+  }
+
+  const toCreate = Array.from(rowMap.values()).filter((r) => r.action === 'CREATE')
+  const toUpdate = Array.from(rowMap.values()).filter((r) => r.action === 'UPDATE')
+
+  // ── 1. Create the batch record ────────────────────────────────────────────────
   const batch = await prisma.employeeImportBatch.create({
     data: {
       fileName,
@@ -379,30 +257,184 @@ export async function executeImport(
       importedRowCount: 0,
       createdEmployeeCount: 0,
       updatedEmployeeCount: 0,
-      rejectedRowCount: rejectedRowCount,
+      rejectedRowCount,
       duplicateEmployeeIdRowCount: duplicateIdRows.length,
     },
   })
 
   const today = new Date()
-  let createdCount = 0
-  let updatedCount = 0
-  const processedInFile = new Map<string, string>()
 
-  await prisma.$transaction(async (tx) => {
-    // Process first occurrences
-    for (const row of allValidRows) {
-      const r = await applyRowToDb(tx, row.data, row.action, batch.id, today, processedInFile)
-      if (r.created) createdCount++
-      if (r.updated) updatedCount++
+  try {
+    // ── 2. Bulk-create new employees ─────────────────────────────────────────────
+    // Use the array form of $transaction (no callback) — all pure inserts, no reads
+    // mid-flight, so it resolves in milliseconds even for large files.
+    let createdCount = 0
+    const createdEmployees: { id: string; employeeId: string; salary: number; hourlyRate: number }[] = []
+
+    if (toCreate.length > 0) {
+      const results = await prisma.$transaction(
+        toCreate.map((r) =>
+          prisma.employee.create({
+            data: {
+              employeeImportBatchId: batch.id,
+              employeeId: r.data.employeeId,
+              serialNumber: r.data.serialNumber,
+              employeeName: r.data.employeeName,
+              nationalId: r.data.nationalId,
+              designation: r.data.designation,
+              designationShort: r.data.designationShort,
+              dateOfJoining: r.data.dateOfJoining,
+              aadhaarId: r.data.aadhaarId,
+              policeVerificationId: r.data.policeVerificationId,
+              phone: r.data.phone,
+              dateOfBirth: r.data.dateOfBirth,
+              healthCardId: r.data.healthCardId,
+              gPay: r.data.gPay,
+              bankAccount: r.data.bankAccount,
+              dateOfResignation: r.data.dateOfResignation,
+              site: r.data.site,
+              isActive: r.data.isActive,
+            },
+            select: { id: true, employeeId: true },
+          })
+        ),
+        { timeout: 30000 } // 30 seconds to handle large bulk imports
+      )
+
+      results.forEach((created, i) => {
+        createdEmployees.push({
+          id: created.id,
+          employeeId: created.employeeId,
+          salary: toCreate[i].data.salary,
+          hourlyRate: toCreate[i].data.hourlyRate,
+        })
+      })
+      createdCount = results.length
     }
 
-    // Process duplicates sequentially — last write wins
-    for (const dup of duplicateIdRows) {
-      await applyRowToDb(tx, dup.data, dup.action, batch.id, today, processedInFile)
+    // ── 3. Bulk-create wage history + audit logs for new employees ─────────────
+    if (createdEmployees.length > 0) {
+      await prisma.employeeWageHistory.createMany({
+        data: createdEmployees.map((e) => ({
+          employeeId: e.id,
+          weeklySalary: e.salary,
+          hourlyRate: e.hourlyRate,
+          effectiveFrom: today,
+          effectiveTo: null,
+          changeSource: 'IMPORT',
+          employeeImportBatchId: batch.id,
+        })),
+      })
+
+      await prisma.auditLog.createMany({
+        data: createdEmployees.map((e) => ({
+          actionType: 'CREATE' as const,
+          entityType: 'EMPLOYEE',
+          entityId: e.id,
+          detailsJson: { employeeId: e.employeeId, source: 'IMPORT', batchId: batch.id },
+        })),
+      })
     }
 
-    await tx.employeeImportBatch.update({
+    // ── 4. Process updates ────────────────────────────────────────────────────────
+    let updatedCount = 0
+
+    if (toUpdate.length > 0) {
+      // One query to fetch all DB ids for employees being updated
+      const existingEmployees = await prisma.employee.findMany({
+        where: { employeeId: { in: toUpdate.map((r) => r.data.employeeId) } },
+        select: { id: true, employeeId: true },
+      })
+      const existingIdMap = new Map(existingEmployees.map((e) => [e.employeeId, e.id]))
+
+      // Bulk-update employee fields — array form of $transaction, all indexed PK writes
+      await prisma.$transaction(
+        toUpdate
+          .filter((r) => existingIdMap.has(r.data.employeeId))
+          .map((r) => {
+            const dbId = existingIdMap.get(r.data.employeeId)!
+            return prisma.employee.update({
+              where: { id: dbId },
+              data: {
+                serialNumber: r.data.serialNumber,
+                employeeName: r.data.employeeName,
+                nationalId: r.data.nationalId,
+                designation: r.data.designation,
+                designationShort: r.data.designationShort,
+                dateOfJoining: r.data.dateOfJoining,
+                aadhaarId: r.data.aadhaarId,
+                policeVerificationId: r.data.policeVerificationId,
+                phone: r.data.phone,
+                dateOfBirth: r.data.dateOfBirth,
+                healthCardId: r.data.healthCardId,
+                gPay: r.data.gPay,
+                bankAccount: r.data.bankAccount,
+                dateOfResignation: r.data.dateOfResignation,
+                site: r.data.site,
+                isActive: r.data.isActive,
+                employeeImportBatchId: batch.id,
+              },
+            })
+          }),
+        { timeout: 30000 } // 30 seconds to handle large bulk imports
+      )
+      updatedCount = existingEmployees.length
+
+      // One query to fetch all current open wage records
+      const currentWages = await prisma.employeeWageHistory.findMany({
+        where: { employeeId: { in: existingEmployees.map((e) => e.id) }, effectiveTo: null },
+      })
+      const currentWageMap = new Map(currentWages.map((w) => [w.employeeId, w]))
+
+      const wageChangedIds: string[] = []
+      const newWageRows: { employeeId: string; weeklySalary: number; hourlyRate: number }[] = []
+
+      for (const r of toUpdate) {
+        const dbId = existingIdMap.get(r.data.employeeId)
+        if (!dbId) continue
+        const cw = currentWageMap.get(dbId)
+        const wageChanged = cw
+          ? Number(cw.weeklySalary) !== r.data.salary || Number(cw.hourlyRate) !== r.data.hourlyRate
+          : true
+        if (wageChanged) {
+          wageChangedIds.push(dbId)
+          newWageRows.push({ employeeId: dbId, weeklySalary: r.data.salary, hourlyRate: r.data.hourlyRate })
+        }
+      }
+
+      if (wageChangedIds.length > 0) {
+        // Close all open wage records for changed employees in one updateMany
+        await prisma.employeeWageHistory.updateMany({
+          where: { employeeId: { in: wageChangedIds }, effectiveTo: null },
+          data: { effectiveTo: today },
+        })
+        // Bulk-insert new wage history rows
+        await prisma.employeeWageHistory.createMany({
+          data: newWageRows.map((w) => ({
+            employeeId: w.employeeId,
+            weeklySalary: w.weeklySalary,
+            hourlyRate: w.hourlyRate,
+            effectiveFrom: today,
+            effectiveTo: null,
+            changeSource: 'IMPORT',
+            employeeImportBatchId: batch.id,
+          })),
+        })
+      }
+
+      // Bulk audit logs for updates
+      await prisma.auditLog.createMany({
+        data: existingEmployees.map((e) => ({
+          actionType: 'UPDATE' as const,
+          entityType: 'EMPLOYEE',
+          entityId: e.id,
+          detailsJson: { source: 'IMPORT', batchId: batch.id },
+        })),
+      })
+    }
+
+    // ── 5. Mark batch COMPLETED ───────────────────────────────────────────────────
+    await prisma.employeeImportBatch.update({
       where: { id: batch.id },
       data: {
         status: 'COMPLETED',
@@ -412,16 +444,21 @@ export async function executeImport(
         sourceFileDeletedAt: today,
       },
     })
-  }, { timeout: 30000 })
-
-
-
-  return {
-    batchId: batch.id,
-    importedRowCount: createdCount + updatedCount,
-    createdEmployeeCount: createdCount,
-    updatedEmployeeCount: updatedCount,
-    rejectedRowCount,
-    duplicateEmployeeIdRowCount: duplicateIdRows.length,
+    return {
+      batchId: batch.id,
+      importedRowCount: createdCount + updatedCount,
+      createdEmployeeCount: createdCount,
+      updatedEmployeeCount: updatedCount,
+      rejectedRowCount,
+      duplicateEmployeeIdRowCount: duplicateIdRows.length,
+    }
+  } catch (err) {
+    // Best-effort: mark batch as FAILED so the UI can surface it
+    try {
+      await prisma.employeeImportBatch.update({ where: { id: batch.id }, data: { status: 'FAILED' } })
+    } catch {
+      // Ignore
+    }
+    throw err
   }
 }

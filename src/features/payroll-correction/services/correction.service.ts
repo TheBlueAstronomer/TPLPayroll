@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import prisma from '@/lib/prisma'
 import {
   CorrectionServiceError,
@@ -17,8 +18,27 @@ import {
 // ─── prepareAdjustmentsForCorrection ───────────────────────────────────────────
 
 export async function prepareAdjustmentsForCorrection(payrollRunId: string): Promise<void> {
+  // Look up the run's week so we can also target unlinked applications
+  const run = await prisma.payrollRun.findUnique({
+    where: { id: payrollRunId },
+    select: { payrollWeekStartDate: true },
+  })
+
   await prisma.payrollAdjustmentApplication.updateMany({
-    where: { payrollRunId },
+    where: {
+      OR: [
+        // Applications already linked to this payroll run
+        { payrollRunId },
+        // New applications created after approval (payrollRunId is null)
+        ...(run
+          ? [{
+              payrollWeekStartDate: run.payrollWeekStartDate,
+              payrollRunId: null,
+              approvalStatus: 'PENDING' as const,
+            }]
+          : []),
+      ],
+    },
     data: {
       approvalStatus: 'PENDING',
       isReversed: false,
@@ -71,11 +91,15 @@ export async function initiateCorrection(
     },
   })
 
-  // Load adjustment applications for this week
+  // Load adjustment applications for this week — includes both previously-linked
+  // applications AND new ones created after the payroll was approved (payrollRunId=null)
   const adjustmentApps = await prisma.payrollAdjustmentApplication.findMany({
     where: {
       payrollWeekStartDate: run.payrollWeekStartDate,
-      payrollRunId: run.id,
+      OR: [
+        { payrollRunId: run.id },
+        { payrollRunId: null, approvalStatus: 'PENDING' },
+      ],
     },
     include: {
       payrollAdjustment: { select: { adjustmentType: true, amount: true, reason: true } },
@@ -373,17 +397,20 @@ export async function recalculateAndCreateRevision(
   const newRevisionNumber = currentRevision.revisionNumber + 1
   const now = new Date()
 
-  // Create new revision in a transaction
-  const result = await prisma.$transaction(async (tx) => {
+  const newRevisionId = randomUUID()
+
+  // Create new revision in an array transaction
+  const promises = [
     // Supersede current revision
-    await tx.payrollRevision.update({
+    prisma.payrollRevision.update({
       where: { id: currentRevision.id },
       data: { isCurrent: false, status: 'SUPERSEDED' },
-    })
+    }),
 
     // Create new revision
-    const newRevision = await tx.payrollRevision.create({
+    prisma.payrollRevision.create({
       data: {
+        id: newRevisionId,
         payrollRunId: run.id,
         revisionNumber: newRevisionNumber,
         status: 'APPROVED',
@@ -397,13 +424,13 @@ export async function recalculateAndCreateRevision(
         generatedAt: now,
         approvedAt: now,
       },
-    })
+    }),
 
     // Create new employee records
-    await tx.payrollRunEmployee.createMany({
+    prisma.payrollRunEmployee.createMany({
       data: employeeRows.map((emp) => ({
         payrollRunId: run.id,
-        payrollRevisionId: newRevision.id,
+        payrollRevisionId: newRevisionId,
         employeeId: emp.employeeId,
         weeklySalaryUsed: emp.weeklySalaryUsed,
         hourlyRateUsed: emp.hourlyRateUsed,
@@ -415,10 +442,10 @@ export async function recalculateAndCreateRevision(
         deductions: emp.deductions,
         netPayable: emp.netPayable,
       })),
-    })
+    }),
 
     // Update PayrollRun
-    await tx.payrollRun.update({
+    prisma.payrollRun.update({
       where: { id: run.id },
       data: {
         currentRevisionNumber: newRevisionNumber,
@@ -429,15 +456,32 @@ export async function recalculateAndCreateRevision(
         totalDeductions: totals.totalDeductions,
         totalNetPayable: totals.totalNetPayable,
       },
-    })
+    }),
 
-    return newRevision
-  })
+    // Update adjustment applications to point to the new revision ID.
+    // Also link any newly approved applications that weren't previously attached.
+    prisma.payrollAdjustmentApplication.updateMany({
+      where: {
+        OR: [
+          { payrollRunId: run.id },
+          {
+            payrollWeekStartDate: weekStart,
+            approvalStatus: 'APPROVED',
+            isReversed: false,
+            payrollRunId: null,
+          },
+        ],
+      },
+      data: { payrollRunId: run.id, payrollRevisionId: newRevisionId },
+    }),
+  ]
+
+  await prisma.$transaction(promises, { timeout: 30000 })
 
   return {
     payrollRunId: run.id,
-    revisionId: result.id,
-    revisionNumber: result.revisionNumber,
+    revisionId: newRevisionId,
+    revisionNumber: newRevisionNumber,
     totals,
     employeeCount: employeeRows.length,
   }

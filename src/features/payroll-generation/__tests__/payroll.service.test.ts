@@ -12,12 +12,15 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(),
       groupBy: vi.fn(),
     },
+    payrollRevision: {
+      create: vi.fn(),
+      update: vi.fn(),
+    },
     payrollRun: {
       findFirst: vi.fn(),
       findMany: vi.fn(),
-    },
-    payrollRevision: {
       create: vi.fn(),
+      update: vi.fn(),
     },
     payrollRunEmployee: {
       createMany: vi.fn(),
@@ -370,20 +373,23 @@ describe('approvePayroll', () => {
     const createdRun = makePayrollRun()
     const createdRevision = makeRevision()
 
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn: unknown) => {
-      const tx = {
-        payrollRun: { create: vi.fn().mockResolvedValue(createdRun) },
-        payrollRevision: { create: vi.fn().mockResolvedValue(createdRevision) },
-        payrollRunEmployee: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
-        payrollAdjustmentApplication: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    vi.mocked(prisma.payrollRun.create).mockResolvedValue(createdRun)
+    vi.mocked(prisma.payrollRevision.create).mockResolvedValue(createdRevision)
+    vi.mocked(prisma.payrollRunEmployee.createMany).mockResolvedValue({ count: 1 } as any)
+    vi.mocked(prisma.payrollAdjustmentApplication.updateMany).mockResolvedValue({ count: 0 } as any)
+
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
       }
-      return (fn as (tx: typeof tx) => unknown)(tx)
+      return promises as any
     })
 
     const summary = makeSummary()
     const result = await approvePayroll(summary)
 
-    expect(result.payrollRunId).toBe('run-uuid-1')
+    expect(result.payrollRunId).toBeTypeOf('string')
+    expect(result.payrollRunId.length).toBe(36)
     expect(result.revisionNumber).toBe(1)
     expect(result.employeeCount).toBe(1)
   })
@@ -403,19 +409,19 @@ describe('approvePayroll', () => {
       totalNetPayable: 44000 as unknown as PayrollRevision['totalNetPayable'],
     })
 
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn: unknown) => {
-      const tx = {
-        payrollRun: {
-          create: vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
-            capturedRunData = data
-            return createdRun
-          }),
-        },
-        payrollRevision: { create: vi.fn().mockResolvedValue(createdRevision) },
-        payrollRunEmployee: { createMany: vi.fn().mockResolvedValue({ count: 15 }) },
-        payrollAdjustmentApplication: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    vi.mocked(prisma.payrollRun.create).mockImplementation(async ({ data }: any) => {
+      capturedRunData = data
+      return createdRun
+    })
+    vi.mocked(prisma.payrollRevision.create).mockResolvedValue(createdRevision)
+    vi.mocked(prisma.payrollRunEmployee.createMany).mockResolvedValue({ count: 15 } as any)
+    vi.mocked(prisma.payrollAdjustmentApplication.updateMany).mockResolvedValue({ count: 0 } as any)
+
+    vi.mocked(prisma.$transaction).mockImplementation(async (promises) => {
+      if (Array.isArray(promises)) {
+        return Promise.all(promises)
       }
-      return (fn as (tx: typeof tx) => unknown)(tx)
+      return promises as any
     })
 
     const summary = makeSummary({
