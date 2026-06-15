@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx'
 import prisma from '@/lib/prisma'
+import { normalizeEmployeeId } from '../utils/normalize'
 import {
   IMPORT_SHEET_NAME,
   IMPORT_COLUMNS,
@@ -81,7 +82,8 @@ function validateAndParseRow(raw: RawRow):
   const errors: ImportRowErrorCode[] = []
   const d = raw.data
 
-  const employeeId = str(d[IMPORT_COLUMNS.employeeId])
+  const rawEmployeeId = str(d[IMPORT_COLUMNS.employeeId])
+  const employeeId = rawEmployeeId ? normalizeEmployeeId(rawEmployeeId) : null
   const employeeName = str(d[IMPORT_COLUMNS.employeeName])
   const designation = str(d[IMPORT_COLUMNS.designation])
   const salaryRaw = d[IMPORT_COLUMNS.salary]
@@ -442,7 +444,6 @@ export async function executeImport(
         sourceFileDeletedAt: today,
       },
     })
-
     return {
       batchId: batch.id,
       importedRowCount: createdCount + updatedCount,
