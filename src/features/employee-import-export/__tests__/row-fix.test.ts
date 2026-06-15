@@ -324,4 +324,24 @@ describe('applyRowFix', () => {
       expect(typeof row.data.salary).toBe('number')
     })
   })
+
+  describe('when employeeId in formValues is in 15-character format', () => {
+    it('normalizes it to 12-character format in the promoted row', () => {
+      const invalidRow = makeInvalidRow(5, ['MISSING_EMPLOYEE_ID'], {
+        employeeName: 'Suresh Narayanan',
+        designation: 'Guard',
+        salary: 12000,
+        hourlyRate: 62.5,
+        isActive: true,
+      })
+      const formValues: FixRowFormValues = { employeeId: 'TPLGOAHLP002007' }
+      const existingIds = new Set<string>()
+
+      const result = applyRowFix(invalidRow, formValues, existingIds)
+
+      expect(Array.isArray(result)).toBe(false)
+      const row = result as ValidImportRow
+      expect(row.data.employeeId).toBe('TPLGOAHLP007')
+    })
+  })
 })

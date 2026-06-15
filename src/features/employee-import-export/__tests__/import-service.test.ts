@@ -43,6 +43,7 @@ import {
   validateImportFile,
   parseImportFile,
   executeImport,
+  normalizeEmployeeId,
 } from '@/features/employee-import-export/services/import.service'
 import { ImportExportServiceError } from '@/features/employee-import-export/types/import-export.types'
 
@@ -513,5 +514,19 @@ describe('executeImport', () => {
         data: expect.objectContaining({ sourceFileDeletedAt: expect.any(Date) }),
       })
     )
+  })
+})
+
+describe('normalizeEmployeeId', () => {
+  it('normalizes 15-character employee IDs to 12-character format', () => {
+    expect(normalizeEmployeeId('TPLGOAHLP002007')).toBe('TPLGOAHLP007')
+    expect(normalizeEmployeeId('TPLGOASPV002070')).toBe('TPLGOASPV070')
+    expect(normalizeEmployeeId('TPLGOAFBW001001')).toBe('TPLGOAFBW001')
+  })
+
+  it('keeps already normalized or other formats intact', () => {
+    expect(normalizeEmployeeId('TPLGOAHLP007')).toBe('TPLGOAHLP007')
+    expect(normalizeEmployeeId('EMP-001')).toBe('EMP-001')
+    expect(normalizeEmployeeId('123456')).toBe('123456')
   })
 })

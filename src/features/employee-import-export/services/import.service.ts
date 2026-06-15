@@ -70,6 +70,17 @@ function str(value: unknown): string | null {
   return String(value).trim()
 }
 
+export function normalizeEmployeeId(employeeId: string): string {
+  const trimmed = employeeId.trim()
+  const match = trimmed.match(/^([A-Z]+)(\d{6})$/)
+  if (match) {
+    const prefix = match[1]
+    const lastThreeDigits = match[2].slice(-3)
+    return `${prefix}${lastThreeDigits}`
+  }
+  return trimmed
+}
+
 interface RawRow {
   rowNumber: number
   data: Record<string, unknown>
@@ -81,7 +92,8 @@ function validateAndParseRow(raw: RawRow):
   const errors: ImportRowErrorCode[] = []
   const d = raw.data
 
-  const employeeId = str(d[IMPORT_COLUMNS.employeeId])
+  const rawEmployeeId = str(d[IMPORT_COLUMNS.employeeId])
+  const employeeId = rawEmployeeId ? normalizeEmployeeId(rawEmployeeId) : null
   const employeeName = str(d[IMPORT_COLUMNS.employeeName])
   const designation = str(d[IMPORT_COLUMNS.designation])
   const salaryRaw = d[IMPORT_COLUMNS.salary]

@@ -1,3 +1,4 @@
+import { normalizeEmployeeId } from '../services/import.service'
 import type {
   InvalidImportRow,
   ValidImportRow,
@@ -13,8 +14,9 @@ export function applyRowFix(
   const errors: ImportRowErrorCode[] = []
 
   // Resolve each required field: form value (for errored fields) takes priority over partialData
-  const employeeId =
+  const rawEmployeeId =
     (formValues.employeeId?.trim() || invalidRow.partialData.employeeId) ?? null
+  const employeeId = rawEmployeeId ? normalizeEmployeeId(rawEmployeeId) : null
   const employeeName =
     (formValues.employeeName?.trim() || invalidRow.partialData.employeeName) ?? null
   const designation =
