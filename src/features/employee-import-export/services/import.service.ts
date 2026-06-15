@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx'
 import prisma from '@/lib/prisma'
+import { normalizeEmployeeId } from '../utils/normalize'
 import {
   IMPORT_SHEET_NAME,
   IMPORT_COLUMNS,
@@ -68,17 +69,6 @@ function parseNumber(value: unknown): number | null {
 function str(value: unknown): string | null {
   if (value == null || value === '') return null
   return String(value).trim()
-}
-
-export function normalizeEmployeeId(employeeId: string): string {
-  const trimmed = employeeId.trim()
-  const match = trimmed.match(/^([A-Z]+)(\d{6})$/)
-  if (match) {
-    const prefix = match[1]
-    const lastThreeDigits = match[2].slice(-3)
-    return `${prefix}${lastThreeDigits}`
-  }
-  return trimmed
 }
 
 interface RawRow {

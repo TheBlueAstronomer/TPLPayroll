@@ -43,8 +43,8 @@ import {
   validateImportFile,
   parseImportFile,
   executeImport,
-  normalizeEmployeeId,
 } from '@/features/employee-import-export/services/import.service'
+import { normalizeEmployeeId } from '../utils/normalize'
 import { ImportExportServiceError } from '@/features/employee-import-export/types/import-export.types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

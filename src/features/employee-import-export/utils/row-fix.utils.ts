@@ -1,4 +1,4 @@
-import { normalizeEmployeeId } from '../services/import.service'
+import { normalizeEmployeeId } from './normalize'
 import type {
   InvalidImportRow,
   ValidImportRow,
