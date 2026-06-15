@@ -1,16 +1,16 @@
 # Graph Report - TPLPayroll  (2026-06-15)
 
 ## Corpus Check
-- 292 files · ~242,951 words
+- 281 files · ~231,631 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2511 nodes · 3515 edges · 222 communities (206 shown, 16 thin omitted)
+- 2499 nodes · 3488 edges · 220 communities (204 shown, 16 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 14 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `6c4b13b4`
+- Built from commit: `605d00eb`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -220,9 +220,8 @@
 - [[_COMMUNITY_Community 214|Community 214]]
 - [[_COMMUNITY_Community 215|Community 215]]
 - [[_COMMUNITY_Community 216|Community 216]]
+- [[_COMMUNITY_Community 217|Community 217]]
 - [[_COMMUNITY_FixRowFormValues Node|FixRowFormValues Node]]
-- [[_COMMUNITY_ApprovePayrollResult Node|ApprovePayrollResult Node]]
-- [[_COMMUNITY_PayrollSummary Node|PayrollSummary Node]]
 - [[_COMMUNITY_cleanupDatabase Node|cleanupDatabase Node]]
 
 ## God Nodes (most connected - your core abstractions)
@@ -252,23 +251,23 @@
 ## Import Cycles
 - None detected.
 
-## Communities (222 total, 16 thin omitted)
+## Communities (220 total, 16 thin omitted)
 
 ### Community 0 - "Attendance Upload Session Models"
-Cohesion: 0.15
-Nodes (16): finalizeAttendanceUploadAction(), adapter, pool, authHeader(), createPresignedUploadUrl(), deleteFile(), downloadFileAsBuffer(), fileExists() (+8 more)
+Cohesion: 0.13
+Nodes (12): finalizeAttendanceUploadAction(), adapter, pool, buildAttendanceRecords(), createAttendanceUpload(), CreateUploadParams, replaceAttendanceUpload(), ReplaceUploadParams (+4 more)
 
 ### Community 1 - "Attendance Parsing & Verification"
 Cohesion: 0.20
 Nodes (11): excelTimeToHours(), formatExcelTime(), parseAttendanceWorkbook(), parseSection(), parseSheet(), SECTION_BASES, WorkbookParseResult, SECTION_BASES (+3 more)
 
 ### Community 2 - "Attendance Upload State"
-Cohesion: 0.18
-Nodes (15): createAttendanceUploadSession(), CreateAttendanceUploadSessionInput, loadAttendanceUploadSession(), resumeAttendanceUploadSession(), ResumedSessionState, createUploadSession(), CreateUploadSessionParams, expireUploadSession() (+7 more)
+Cohesion: 0.28
+Nodes (12): createAttendanceUploadSession(), CreateAttendanceUploadSessionInput, loadAttendanceUploadSession(), resumeAttendanceUploadSession(), ResumedSessionState, createUploadSession(), CreateUploadSessionParams, expireUploadSession() (+4 more)
 
 ### Community 3 - "Payroll Correction & Revisions"
-Cohesion: 0.06
-Nodes (60): ActionResult, approveRevisionAction(), approveSkippedAdjustmentAction(), beginPayrollCorrectionAction(), err(), getRevisionEmployeesAction(), getRevisionHistoryAction(), handleError() (+52 more)
+Cohesion: 0.07
+Nodes (54): ActionResult, approveRevisionAction(), approveSkippedAdjustmentAction(), beginPayrollCorrectionAction(), err(), getRevisionEmployeesAction(), getRevisionHistoryAction(), handleError() (+46 more)
 
 ### Community 4 - "Employee Payroll Records"
 Cohesion: 0.05
@@ -307,36 +306,36 @@ Cohesion: 0.08
 Nodes (25): dependencies, agentic-flow, @base-ui/react, class-variance-authority, clsx, framer-motion, @hookform/resolvers, jszip (+17 more)
 
 ### Community 13 - "AttendancePreviewData Node"
-Cohesion: 0.18
-Nodes (10): AttendancePreviewData, getAttendanceUploadPreviewAction(), AttendancePreviewClient(), AttendancePreviewClientProps, fmtWeek(), MatchStatus, PreviewRecord, VerificationDecision (+2 more)
+Cohesion: 0.15
+Nodes (12): AttendancePreviewData, downloadAndParseWorkbook(), getAttendanceUploadPreviewAction(), parseFromStorageAction(), AttendancePreviewClient(), AttendancePreviewClientProps, fmtWeek(), MatchStatus (+4 more)
 
 ### Community 14 - "AttendanceUploadRow Node"
-Cohesion: 0.19
-Nodes (21): createAttendanceUploadSessionAction(), CreateUploadSessionInput, FinalizeUploadInput, getAttendanceUploadsAction(), ParseAttendanceResult, ParseFromStorageResult, PresignedUploadResult, resumeAttendanceUploadSessionAction() (+13 more)
+Cohesion: 0.33
+Nodes (14): createAttendanceUploadSessionAction(), CreateUploadSessionInput, FinalizeUploadInput, ParseAttendanceResult, ParseFromStorageResult, PresignedUploadResult, ResumedDialogState, ResumedSessionMetadata (+6 more)
 
 ### Community 15 - "createAttendanceUploadSessionAction Node"
 Cohesion: 0.09
 Nodes (22): Component Breakdown, Component Breakdown, Component Breakdown, Component Breakdown, Component Breakdown — Checkbox Column, Component Breakdown — Floating Toolbar, E01 — Bulk Employee Actions: Wireframes, Interactive State Summary (+14 more)
 
 ### Community 16 - "EmployeeOption Node"
-Cohesion: 0.14
-Nodes (13): AttendanceUploadRow, EmployeeOption, AttendanceUploadClientProps, DialogState, EmployeeComboboxProps, EmployeeVerificationDialog(), EmployeeVerificationDialogProps, UnmatchedDecision (+5 more)
+Cohesion: 0.13
+Nodes (18): AttendanceUploadRow, getEmployeesForMatchingAction(), getRecordsFromStorageAction(), parseFromStorageWithDatesAction(), AttendanceDropzone(), AttendanceDropzoneProps, DragState, UploadPhase (+10 more)
 
 ### Community 17 - "finalizeAttendanceUploadAction Node"
 Cohesion: 0.09
 Nodes (22): Behavioural Acceptance Criteria, Behavioural Acceptance Criteria, Behavioural Acceptance Criteria, Component Changes, Current Behaviour, Current Behaviour, Current Behaviour (Bug), Description (+14 more)
 
 ### Community 18 - "getAttendanceUploadPreviewAction Node"
-Cohesion: 0.18
-Nodes (9): parseAttendanceWithDatesAction(), matchEmployees(), trailingNumber(), computeImportSummary(), ActionResult, AttendanceServiceError, BlockParseErrorSchema, MatchStatus (+1 more)
+Cohesion: 0.14
+Nodes (13): getPresignedUploadUrlAction(), parseAttendanceFileAction(), parseAttendanceWithDatesAction(), matchEmployees(), trailingNumber(), validateAttendanceFile(), computeImportSummary(), ActionResult (+5 more)
 
 ### Community 19 - "getAttendanceUploadsAction Node"
 Cohesion: 0.09
 Nodes (22): Acceptance Criteria, Acceptance Criteria, Acceptance Criteria, Acceptance Criteria, Acceptance Criteria, Acceptance Criteria, Acceptance Criteria, F04 — Attendance Upload: User Stories (+14 more)
 
 ### Community 20 - "getAttendanceUploadSessionAction Node"
-Cohesion: 0.16
-Nodes (11): getAttendanceUploadSessionAction(), EmployeeForm(), AppShellProps, MobileNav(), NAV_ITEMS, NAV_ITEMS, NavItem, Sidebar() (+3 more)
+Cohesion: 0.11
+Nodes (11): metadata, AppShell(), AppShellProps, MobileNav(), NAV_ITEMS, NAV_ITEMS, NavItem, Sidebar() (+3 more)
 
 ### Community 21 - "getEmployeesForMatchingAction Node"
 Cohesion: 0.09
@@ -423,8 +422,8 @@ Cohesion: 0.13
 Nodes (14): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Hero Section, 6. Layout Principles, 7. Responsive Rules, 8. Motion & Interaction (Code-Phase Intent) (+6 more)
 
 ### Community 42 - "ActionResult Node"
-Cohesion: 0.18
-Nodes (13): ActionResult, executeImportAction(), parseImportFileAction(), executeImport(), mapActiveValue(), normalizeEmployeeId(), parseExcelDate(), parseImportFile() (+5 more)
+Cohesion: 0.23
+Nodes (8): mapActiveValue(), normalizeEmployeeId(), parseExcelDate(), parseNumber(), PrismaTx, RawRow, validateAndParseRow(), normalizeEmployeeId()
 
 ### Community 43 - "executeImportAction Node"
 Cohesion: 0.14
@@ -435,8 +434,8 @@ Cohesion: 0.14
 Nodes (13): E2E-01: Add a new employee successfully, E2E-02: Prevent duplicate Employee ID, E2E-03: Update employee with wage change creates wage history, E2E-04: Search employees, E2E-05: Filter employees by active status, E2E-06: Deactivate an employee, E2E-07: Employee with required fields missing is rejected, E2E-08: View employee wage history (+5 more)
 
 ### Community 45 - "approvePayrollAction Node"
-Cohesion: 0.33
-Nodes (12): ActionResult, approvePayrollAction(), calculatePayrollAction(), checkAttendanceReadinessAction(), err(), getAvailablePayrollWeeksAction(), getPendingAdjustmentsForWeekAction(), handleError() (+4 more)
+Cohesion: 0.17
+Nodes (10): bulkUpdateStatusAction(), BulkInactiveDialog(), BulkInactiveDialogProps, BulkRateDialog(), BulkRateDialogProps, EmployeeRateInfo, BulkStatusDialog(), BulkStatusDialogProps (+2 more)
 
 ### Community 46 - "calculatePayrollAction Node"
 Cohesion: 0.14
@@ -467,8 +466,8 @@ Cohesion: 0.14
 Nodes (13): 1. State the question and pick N, 2. Generate radically different variants, 3. Wire them together, 4. Build the floating switcher, 5. Hand it over, 6. Capture the answer and clean up, Anti-patterns, Process (+5 more)
 
 ### Community 53 - "AdjustmentsPage Node"
-Cohesion: 0.15
-Nodes (7): metadata, AdjustmentListTable(), StatusFilter, TypeFilter, AdjustmentListItem, AdjustmentStatus, AdjustmentType
+Cohesion: 0.20
+Nodes (5): AdjustmentListTable(), StatusFilter, TypeFilter, AdjustmentStatus, AdjustmentType
 
 ### Community 54 - "RootLayout Node"
 Cohesion: 0.40
@@ -491,24 +490,24 @@ Cohesion: 0.15
 Nodes (12): Component Breakdown, Component Breakdown, Component Breakdown, F02 — Employee Management: Wireframes, Interactive States, Layout, Layout, Layout (+4 more)
 
 ### Community 59 - "AdjustmentReviewStepWrapper Node"
-Cohesion: 0.14
-Nodes (12): AdjustmentReviewStepWrapper(), AttendanceVerificationStep(), Props, formatWeekLabel(), PayrollGenerateFlow(), Props, STEPS, Props (+4 more)
+Cohesion: 0.33
+Nodes (7): PayrollHistoryTable(), PayrollHistoryTableProps, PayrollRecordDetailViewProps, PayrollHistoryAdjustment, PayrollHistoryDailyAttendance, PayrollHistoryRow, PayrollRecordDetail
 
 ### Community 60 - "BulkActionToolbar Node"
 Cohesion: 0.13
-Nodes (18): bulkUpdateStatusAction(), BulkActionToolbar(), BulkActionToolbarProps, BulkInactiveDialog(), BulkInactiveDialogProps, BulkRateDialog(), BulkRateDialogProps, EmployeeRateInfo (+10 more)
+Nodes (14): BulkActionToolbar(), BulkActionToolbarProps, BulkDialog, EmployeeListTable(), STATUS_OPTIONS, StatusFilter, config, label (+6 more)
 
 ### Community 61 - "AttendanceReturnContext Node"
-Cohesion: 0.12
-Nodes (17): AttendanceReturnContext, FormValues, Mode, buildWhereClause(), bulkUpdateStatus(), getEmployeeList(), BulkHourlyRateUpdateInput, BulkHourlyRateUpdateSchema (+9 more)
+Cohesion: 0.15
+Nodes (16): AttendanceReturnContext, FormValues, Mode, buildWhereClause(), getEmployeeList(), BulkHourlyRateUpdateInput, BulkHourlyRateUpdateSchema, BulkOperationResult (+8 more)
 
 ### Community 62 - "FixInvalidRowDialog Node"
-Cohesion: 0.17
-Nodes (18): ERROR_LABELS, FixInvalidRowDialog(), needsActive(), needsDesignation(), needsEmployeeId(), needsEmployeeName(), needsHourlyRate(), needsSalary() (+10 more)
+Cohesion: 0.13
+Nodes (19): EmployeeOption, EmployeeComboboxProps, EmployeeVerificationDialog(), EmployeeVerificationDialogProps, UnmatchedDecision, cn(), EMPLOYEE_OPTIONS, makeUnmatched() (+11 more)
 
 ### Community 63 - "PayrollHistoryFilter Node"
-Cohesion: 0.10
-Nodes (23): PayrollHistoryFilter(), PayrollHistoryFilterProps, PayrollHistorySearch(), PayrollHistoryTable(), PayrollHistoryTableProps, PayrollRecordDetailView(), PayrollRecordDetailViewProps, metadata (+15 more)
+Cohesion: 0.20
+Nodes (10): PayrollHistoryFilter(), PayrollHistoryFilterProps, PayrollHistorySearch(), metadata, PageProps, PayrollHistoryPage(), getApprovedPayrollWeeks(), getPayrollHistoryByWeek() (+2 more)
 
 ### Community 64 - "PayrollHistorySearch Node"
 Cohesion: 0.15
@@ -539,16 +538,16 @@ Cohesion: 0.27
 Nodes (8): AdjustmentEditPage(), Props, AdjustmentDetailPage(), Props, getAdjustmentDetail(), generateMetadata(), generateMetadata(), AdjustmentServiceError
 
 ### Community 72 - "EditEmployeePage Node"
-Cohesion: 0.20
-Nodes (11): EditEmployeePage(), EditEmployeePageProps, EmployeeProfilePage(), EmployeeProfilePageProps, AppShell(), getEmployeeById(), getEmployeeWageHistory(), generateMetadata() (+3 more)
+Cohesion: 0.19
+Nodes (11): EmployeeForm(), EditEmployeePage(), EditEmployeePageProps, EmployeeProfilePage(), EmployeeProfilePageProps, getEmployeeById(), getEmployeeWageHistory(), generateMetadata() (+3 more)
 
 ### Community 73 - "EmployeesPage Node"
 Cohesion: 0.17
 Nodes (11): Component Breakdown, Component Breakdown, Component Breakdown, E01 — Manual Row Fix: Wireframes, Field Mapping — Error Code → Form Field Shown, Layout, Layout, Layout (+3 more)
 
 ### Community 74 - "GET Node"
-Cohesion: 0.39
-Nodes (3): GET(), generateExportWorkbook(), IMPORT_COLUMNS
+Cohesion: 0.26
+Nodes (6): GET(), generateExportWorkbook(), IMPORT_COLUMNS, ImportFileErrorCode, ImportRowAction, ImportRowSchema
 
 ### Community 75 - "PayrollHistoryPage Node"
 Cohesion: 0.17
@@ -592,7 +591,7 @@ Nodes (10): E2E-01: Create a payroll revision for adjustment correction, E2E-02:
 
 ### Community 85 - "ImportPreviewPage Node"
 Cohesion: 0.13
-Nodes (10): ImportPreviewClient(), StoredPreviewData, TabKey, metadata, makeInvalidRow(), makeRowData(), mockRouter, setupSessionStorage() (+2 more)
+Nodes (9): ImportPreviewClient(), StoredPreviewData, TabKey, makeInvalidRow(), makeRowData(), mockRouter, setupSessionStorage(), DuplicateImportRow (+1 more)
 
 ### Community 86 - "RevisedPreviewPage Node"
 Cohesion: 0.18
@@ -607,8 +606,8 @@ Cohesion: 0.18
 Nodes (11): 9.10 Retrieve Payroll History, 9.1 Add Employee Manually, 9.2 Update Employee, 9.3 Import Employee Master from Excel, 9.4 Export Employee Master to Excel, 9.5 Upload Weekly Attendance, 9.6 Replace Attendance Upload for Same Week, 9.7 Generate Payroll Summary (+3 more)
 
 ### Community 89 - "approveAdjustmentApplication Node"
-Cohesion: 0.15
-Nodes (16): addDays(), approveAdjustmentApplication(), buildWhereClause(), getAdjustmentList(), skipAdjustmentApplication(), prisma, validOneTimeInput, validUpdateInput (+8 more)
+Cohesion: 0.24
+Nodes (12): buildWhereClause(), getAdjustmentList(), AdjustmentApplicationRecord, AdjustmentListItem, AdjustmentListOptions, CreateAdjustmentInput, CreateAdjustmentSchema, PaginatedAdjustmentList (+4 more)
 
 ### Community 90 - "cancelAdjustment Node"
 Cohesion: 0.20
@@ -679,8 +678,8 @@ Cohesion: 0.22
 Nodes (8): Description Requirements, Process, Review Checklist, SKILL.md Template, Skill Structure, When to Add Scripts, When to Split Files, Writing Skills
 
 ### Community 107 - "recalculateAndCreateRevision Node"
-Cohesion: 0.22
-Nodes (6): AdjustmentForm(), FormSchema, FormValues, generatePayrollWeeks(), PayrollWeek, metadata
+Cohesion: 0.29
+Nodes (5): AdjustmentForm(), FormSchema, FormValues, generatePayrollWeeks(), PayrollWeek
 
 ### Community 108 - "reverseAdjustmentApplication Node"
 Cohesion: 0.25
@@ -699,7 +698,7 @@ Cohesion: 0.25
 Nodes (7): 1. Explore, 2. Present findings and ask, 3. Confirm and edit, 4. Write, 5. Done, Process, Setup Matt Pocock's Skills
 
 ### Community 112 - "getLatestPayrollTotal Node"
-Cohesion: 0.28
+Cohesion: 0.47
 Nodes (5): makeInvalidRow(), makeRowData(), mockRouter, setupSessionStorage(), ImportRowData
 
 ### Community 113 - "matchEmployees Node"
@@ -715,8 +714,8 @@ Cohesion: 0.29
 Nodes (6): ADR Format, Numbering, Optional sections, Template, What qualifies, When to offer an ADR
 
 ### Community 116 - "createEmployee Node"
-Cohesion: 0.13
-Nodes (15): downloadAndParseWorkbook(), getEmployeesForMatchingAction(), getPresignedUploadUrlAction(), getRecordsFromStorageAction(), parseAttendanceFileAction(), parseFromStorageAction(), parseFromStorageWithDatesAction(), AttendanceDropzone() (+7 more)
+Cohesion: 0.22
+Nodes (6): addDays(), approveAdjustmentApplication(), skipAdjustmentApplication(), prisma, validOneTimeInput, validUpdateInput
 
 ### Community 117 - "getDistinctDesignations Node"
 Cohesion: 0.29
@@ -791,8 +790,8 @@ Cohesion: 0.40
 Nodes (4): Error details, Instructions, Test info, Test source
 
 ### Community 135 - "calculateNetPayable Node"
-Cohesion: 0.20
-Nodes (7): calculateNetPayable(), calculateOvertimePay(), calculatePayroll(), calculateRegularPay(), WEEK_END, WEEK_START, PayrollServiceError
+Cohesion: 0.38
+Nodes (6): getAttendanceUploadsAction(), resumeAttendanceUploadSessionAction(), AttendancePage(), metadata, Props, AttendanceUploadClient()
 
 ### Community 136 - "calculateOvertimePay Node"
 Cohesion: 0.40
@@ -811,8 +810,8 @@ Cohesion: 0.40
 Nodes (4): CONTEXT.md Format, Rules, Single vs multi-context repos, Structure
 
 ### Community 140 - "getAvailablePayrollWeeks Node"
-Cohesion: 0.15
-Nodes (6): PayrollWeekList(), metadata, getAvailablePayrollWeeks(), AttendanceWeekStatus, PayrollRunStatus, PayrollWeekItem
+Cohesion: 0.05
+Nodes (49): ActionResult, approvePayrollAction(), calculatePayrollAction(), checkAttendanceReadinessAction(), err(), getAvailablePayrollWeeksAction(), getPendingAdjustmentsForWeekAction(), handleError() (+41 more)
 
 ### Community 141 - "getPendingAdjustmentsForWeek Node"
 Cohesion: 0.40
@@ -939,12 +938,12 @@ Cohesion: 0.50
 Nodes (4): 20. EXAMPLE INTERPRETATIONS, Example 1, Example 2, Example 3
 
 ### Community 172 - "AdjustmentApplicationRecord Node"
-Cohesion: 0.28
-Nodes (5): AdjustmentDetail(), formatAmount(), formatWeek(), AdjustmentApplicationRecord, ApprovalStatus
+Cohesion: 0.24
+Nodes (7): AdjustmentDetail(), formatAmount(), formatWeek(), Props, Props, AdjustmentDetailRecord, ApprovalStatus
 
 ### Community 173 - "AdjustmentDetailRecord Node"
-Cohesion: 0.21
-Nodes (9): Props, AdjustmentEditForm(), dateToWeekValue(), FormSchema, FormValues, generatePayrollWeeks(), PayrollWeek, Props (+1 more)
+Cohesion: 0.28
+Nodes (6): AdjustmentEditForm(), dateToWeekValue(), FormSchema, FormValues, generatePayrollWeeks(), PayrollWeek
 
 ### Community 174 - "AdjustmentListItem Node"
 Cohesion: 0.50
@@ -978,9 +977,13 @@ Nodes (4): 3.1 Payroll Owner, 3.2 Payroll Admin / HR Admin, 3.3 Accountant, 3. U
 Cohesion: 0.50
 Nodes (4): 4.1 Phase 1 In Scope: Payroll Core, 4.2 Phase 2 In Scope: Employee Documents, 4.3 Out of Scope for Initial Version, 4. Scope
 
+### Community 183 - "RecurrenceType Node"
+Cohesion: 0.47
+Nodes (5): PayrollRecordDetailView(), generateMetadata(), PageProps, PayrollHistoryDetailPage(), getPayrollRecordDetail()
+
 ### Community 185 - "WeeklyReviewItem Node"
-Cohesion: 0.36
-Nodes (6): Props, AdjustmentReviewTable(), formatWeek(), Props, RowAction, WeeklyReviewItem
+Cohesion: 0.31
+Nodes (7): AdjustmentReviewStepWrapper(), Props, AdjustmentReviewTable(), formatWeek(), Props, RowAction, WeeklyReviewItem
 
 ### Community 187 - "AttendanceFileErrorCode Node"
 Cohesion: 0.67
@@ -999,52 +1002,44 @@ Cohesion: 0.15
 Nodes (12): DeactivateDialog(), DeactivateDialogProps, EmployeeFormProps, computeStatus(), EmployeeProfile(), EmployeeProfileProps, formatCurrency(), formatDate() (+4 more)
 
 ### Community 213 - "Community 213"
-Cohesion: 0.40
-Nodes (5): config, label, StatusBadge(), StatusBadgeProps, EmployeeStatus
+Cohesion: 0.50
+Nodes (4): getAttendanceUploadSessionAction(), NewEmployeePage(), Props, metadata
 
 ### Community 214 - "Community 214"
 Cohesion: 0.33
 Nodes (5): 1. Payroll Run Detail Page - Reports Section, Active Dropdown State, Default State, Styling Details, Wireframes: Dual-Format Summary UI
 
 ### Community 215 - "Community 215"
-Cohesion: 0.40
-Nodes (4): DragState, ImportDialog(), ImportDialogProps, UploadState
+Cohesion: 0.18
+Nodes (12): ActionResult, executeImportAction(), parseImportFileAction(), DragState, ImportDialog(), ImportDialogProps, UploadState, executeImport() (+4 more)
 
 ### Community 218 - "FixRowFormValues Node"
-Cohesion: 0.18
-Nodes (12): FixInvalidRowDialogProps, AnyFn, RenderDialogArgs, DuplicateImportRow, FixRowFormValues, ImportFileErrorCode, ImportRowAction, ImportRowErrorCode (+4 more)
-
-### Community 231 - "ApprovePayrollResult Node"
-Cohesion: 0.31
-Nodes (7): ApprovalConfirmationStep(), fmt(), Props, ReportSection(), ReportSectionProps, ToastState, ApprovePayrollResult
-
-### Community 236 - "PayrollSummary Node"
-Cohesion: 0.27
-Nodes (7): EmployeeRow(), fmt(), HEADERS, PayrollSummaryStep(), Props, EmployeePayrollRow, PayrollSummary
+Cohesion: 0.16
+Nodes (16): ERROR_LABELS, FixInvalidRowDialog(), FixInvalidRowDialogProps, needsActive(), needsDesignation(), needsEmployeeId(), needsEmployeeName(), needsHourlyRate() (+8 more)
 
 ### Community 246 - "cleanupDatabase Node"
-Cohesion: 0.15
-Nodes (15): main(), adapter, cleanupDatabase(), getCleanedSnapshotCount(), getCurrentRevision(), getInvoiceSnapshotCount(), getPayrollRunStatus(), getRevisionCount() (+7 more)
+Cohesion: 0.16
+Nodes (16): main(), adapter, cleanupDatabase(), getCleanedSnapshotCount(), getClient(), getCurrentRevision(), getInvoiceSnapshotCount(), getPayrollRunStatus() (+8 more)
 
 ## Knowledge Gaps
-- **1323 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+1318 more)
+- **1320 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+1315 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **16 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `AppShell()` connect `EditEmployeePage Node` to `Payroll Correction & Revisions`, `AdjustmentEditPage Node`, `recalculateAndCreateRevision Node`, `getAvailablePayrollWeeks Node`, `AttendancePreviewData Node`, `AttendanceUploadRow Node`, `getSettingsAction Node`, `getAttendanceUploadSessionAction Node`, `AdjustmentsPage Node`, `ImportPreviewPage Node`, `AuditLogPage Node`, `GET Node`, `AdjustmentReviewStepWrapper Node`, `BulkActionToolbar Node`, `PayrollHistoryFilter Node`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+- **Why does `AppShell()` connect `getAttendanceUploadSessionAction Node` to `Payroll Correction & Revisions`, `calculateNetPayable Node`, `AdjustmentEditPage Node`, `EditEmployeePage Node`, `getAvailablePayrollWeeks Node`, `AttendancePreviewData Node`, `getSettingsAction Node`, `Community 213`, `RecurrenceType Node`, `AuditLogPage Node`, `GET Node`, `BulkActionToolbar Node`, `PayrollHistoryFilter Node`?**
+  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+- **Why does `WeeklyReviewItem` connect `WeeklyReviewItem Node` to `approveAdjustmentApplication Node`, `getAvailablePayrollWeeks Node`, `approveAdjustmentApplicationAction Node`?**
+  _High betweenness centrality (0.002) - this node is a cross-community bridge._
 - **What connects `$schema`, `style`, `rsc` to the rest of the system?**
-  _1323 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1320 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Attendance Upload Session Models` be split into smaller, more focused modules?**
-  _Cohesion score 0.14666666666666667 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.12554112554112554 - nodes in this community are weakly interconnected._
 - **Should `Payroll Correction & Revisions` be split into smaller, more focused modules?**
-  _Cohesion score 0.05744888023369036 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0650103519668737 - nodes in this community are weakly interconnected._
 - **Should `Employee Payroll Records` be split into smaller, more focused modules?**
   _Cohesion score 0.045454545454545456 - nodes in this community are weakly interconnected._
 - **Should `cancelAdjustmentAction Node` be split into smaller, more focused modules?**
-  _Cohesion score 0.05714285714285714 - nodes in this community are weakly interconnected._
-- **Should `createAdjustmentAction Node` be split into smaller, more focused modules?**
   _Cohesion score 0.05714285714285714 - nodes in this community are weakly interconnected._

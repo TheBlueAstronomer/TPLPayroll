@@ -1,14 +1,4 @@
 {
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\diagnose\\scripts\\hitl-loop.template.sh": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "27d758d3557409fbb17bc3cced9367cf",
-    "semantic_hash": "27d758d3557409fbb17bc3cced9367cf"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\diagnose\\scripts\\hitl-loop.template.sh": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "27d758d3557409fbb17bc3cced9367cf",
-    "semantic_hash": "27d758d3557409fbb17bc3cced9367cf"
-  },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\.agents\\skills\\diagnose\\scripts\\hitl-loop.template.sh": {
     "mtime": 1778515244.760875,
     "ast_hash": "27d758d3557409fbb17bc3cced9367cf",
@@ -20,24 +10,24 @@
     "semantic_hash": "519f93133ded707d8847caceca85dbac"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\attendance-upload\\onboard-unmatched-flow.spec.ts": {
-    "mtime": 1778528162.7246053,
-    "ast_hash": "6d8b22aaa79573b22bca10dd2c9dcf7b",
-    "semantic_hash": "6d8b22aaa79573b22bca10dd2c9dcf7b"
+    "mtime": 1781506662.3147025,
+    "ast_hash": "21edbe8d280b007e21190b8996242bd7",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\attendance-upload\\upload-flow.spec.ts": {
-    "mtime": 1778515244.7982228,
-    "ast_hash": "fbb97a7d88317121c18d647de3414c05",
-    "semantic_hash": "fbb97a7d88317121c18d647de3414c05"
+    "mtime": 1781506662.3147025,
+    "ast_hash": "4414b129d7f58c22cdeb724c57c0530a",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\audit-log\\audit-log.spec.ts": {
-    "mtime": 1779082776.519351,
-    "ast_hash": "bf391e70e08567ef0f3c8d31a46f8e3f",
-    "semantic_hash": "bf391e70e08567ef0f3c8d31a46f8e3f"
+    "mtime": 1781506662.3147025,
+    "ast_hash": "0cbf21d99d42568e34607abc54edeb56",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\employee-management\\employee-management.spec.ts": {
-    "mtime": 1779376395.424946,
-    "ast_hash": "4d686c6b0139451d3fead744fc2226bc",
-    "semantic_hash": "4d686c6b0139451d3fead744fc2226bc"
+    "mtime": 1781506662.3147025,
+    "ast_hash": "efcea5299f09be2f073706914d5344d8",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\fixtures\\generate-fixture.js": {
     "mtime": 1778515244.7982228,
@@ -45,24 +35,24 @@
     "semantic_hash": "88a0b533c16da319fa591ca7c1eb76aa"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\payroll-adjustments\\adjustments-flow.spec.ts": {
-    "mtime": 1778515244.7982228,
-    "ast_hash": "de24f70388414dae50381f5cc3a11479",
-    "semantic_hash": "de24f70388414dae50381f5cc3a11479"
+    "mtime": 1781506662.3238325,
+    "ast_hash": "07db896a67f734202d741d82c3df7cf0",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\payroll-correction\\correction-flow.spec.ts": {
-    "mtime": 1778602079.9261484,
-    "ast_hash": "92ebc5a65e082851e24f8ff1f8566ad1",
-    "semantic_hash": "92ebc5a65e082851e24f8ff1f8566ad1"
+    "mtime": 1781506662.3238325,
+    "ast_hash": "f5aba0715ae6da41aba525638071c015",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\payroll-correction\\verify-bugfix.spec.ts": {
-    "mtime": 1780324528.7404263,
-    "ast_hash": "84b51f4286ba055e3f096fc1bc521110",
-    "semantic_hash": "84b51f4286ba055e3f096fc1bc521110"
+    "mtime": 1781506662.3238325,
+    "ast_hash": "88e425762ea8ffb01ed11638bec6bcb3",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\payroll-generation\\payroll-flow.spec.ts": {
-    "mtime": 1778515244.7982228,
-    "ast_hash": "5d07fefc92eafd4a871b6de4f22ad1a5",
-    "semantic_hash": "5d07fefc92eafd4a871b6de4f22ad1a5"
+    "mtime": 1781506662.3238325,
+    "ast_hash": "fabc42e11daae009b297cd79761f1739",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\payroll-history\\payroll-history.spec.ts": {
     "mtime": 1779082776.519873,
@@ -70,8 +60,8 @@
     "semantic_hash": "76497f9e51edde5cbdf9465596b57d5a"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\payroll-reports\\reports-flow.spec.ts": {
-    "mtime": 1780728889.8470125,
-    "ast_hash": "1df3591638de7afb7827f60d59db45a9",
+    "mtime": 1780908710.951999,
+    "ast_hash": "1c355a45e11099b3495174ea4f5f34cc",
     "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\seed-and-test.ps1": {
@@ -105,9 +95,9 @@
     "semantic_hash": "dda00c0b49411b23555c7c42b1316ebd"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\utils\\db.ts": {
-    "mtime": 1780324528.7404263,
-    "ast_hash": "3ea865893e02ad9f022fd13ab15d4e58",
-    "semantic_hash": "3ea865893e02ad9f022fd13ab15d4e58"
+    "mtime": 1781506662.3238325,
+    "ast_hash": "60411a3f016516f5dc12b408b1183aca",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\e2e\\utils\\generate-fixture.js": {
     "mtime": 1778515244.7982228,
@@ -220,8 +210,8 @@
     "semantic_hash": "ff1902c7ebeef0991931907b79946bda"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\app\\api\\payroll\\reports\\[payrollRunId]\\summary\\route.ts": {
-    "mtime": 1780728530.4516473,
-    "ast_hash": "815d45750ba872a1c8fdbfae7ea5d339",
+    "mtime": 1780908710.951999,
+    "ast_hash": "0f4989a273fee67581417c7ef7f97fe4",
     "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\app\\attendance\\[id]\\preview\\page.tsx": {
@@ -230,9 +220,9 @@
     "semantic_hash": "b5bf820df66e1340449e2256789da625"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\app\\attendance\\page.tsx": {
-    "mtime": 1779203579.0716121,
-    "ast_hash": "f7678db6a4a14704b63cfef1d914e429",
-    "semantic_hash": "f7678db6a4a14704b63cfef1d914e429"
+    "mtime": 1781506662.623872,
+    "ast_hash": "23b215666d2ba35d87aacd443e0286cf",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\app\\audit-log\\page.tsx": {
     "mtime": 1779203579.072132,
@@ -295,9 +285,9 @@
     "semantic_hash": "c8784fd4bf19691acae734f923621e64"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\app\\payroll\\run\\[payrollRunId]\\correct\\page.tsx": {
-    "mtime": 1780324528.7824788,
-    "ast_hash": "214253d066546e7739fea6c40661d2b4",
-    "semantic_hash": "214253d066546e7739fea6c40661d2b4"
+    "mtime": 1781506662.623872,
+    "ast_hash": "b6a8df72ae505bd36d0567335ab1697a",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\app\\payroll\\run\\[payrollRunId]\\correct\\preview\\page.tsx": {
     "mtime": 1779203358.3328526,
@@ -360,9 +350,9 @@
     "semantic_hash": "25c4a606999e53b4a68df1a043a7f853"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\__tests__\\attendance-upload-session.test.ts": {
-    "mtime": 1778528162.9722157,
-    "ast_hash": "59dfd70ff828e0d28474b0d06bad300d",
-    "semantic_hash": "59dfd70ff828e0d28474b0d06bad300d"
+    "mtime": 1781506662.623872,
+    "ast_hash": "9a9e40c2b7a73361bc031f0efd913a5c",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\__tests__\\employee-matcher.test.ts": {
     "mtime": 1778528162.9742134,
@@ -380,9 +370,9 @@
     "semantic_hash": "d9ad5c8e7a659ebcfe1c774e3fb260e9"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\__tests__\\upload-service.test.ts": {
-    "mtime": 1779447549.359277,
-    "ast_hash": "a5766859128d2127e715a79fcc509c34",
-    "semantic_hash": "a5766859128d2127e715a79fcc509c34"
+    "mtime": 1781506662.623872,
+    "ast_hash": "7aef9c7814212e984c87f46ec9483dff",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\__tests__\\week-detector.test.ts": {
     "mtime": 1778515244.901502,
@@ -395,19 +385,19 @@
     "semantic_hash": "700dce635f1c08e526f9a7ddad5cea96"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\actions\\attendance.actions.ts": {
-    "mtime": 1778532958.4651358,
-    "ast_hash": "cf3a297d55954e61e4421f802766761a",
-    "semantic_hash": "cf3a297d55954e61e4421f802766761a"
+    "mtime": 1781506662.6394534,
+    "ast_hash": "3bca919f2554ccffe50499669fe8a888",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\actions\\session.actions.ts": {
-    "mtime": 1778528162.9819264,
-    "ast_hash": "375751c644dd8f6bb80fdbc821918e60",
-    "semantic_hash": "375751c644dd8f6bb80fdbc821918e60"
+    "mtime": 1781506662.640494,
+    "ast_hash": "1f84e1c3ae1ddbf56bb9e1e08ad5c23c",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\components\\AttendanceDropzone.tsx": {
-    "mtime": 1780324528.7824788,
-    "ast_hash": "8b18c183f3b74926113ad0df87386f8c",
-    "semantic_hash": "8b18c183f3b74926113ad0df87386f8c"
+    "mtime": 1781506662.643239,
+    "ast_hash": "08772329220578275a0977bb09546446",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\components\\AttendancePreviewClient.tsx": {
     "mtime": 1778532958.4811265,
@@ -415,9 +405,9 @@
     "semantic_hash": "8078b059e3865f2d0e04ccf9d48490d6"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\components\\AttendanceUploadClient.tsx": {
-    "mtime": 1778528162.9908793,
-    "ast_hash": "b9bf76e89359fc787749d1ac7761bc85",
-    "semantic_hash": "b9bf76e89359fc787749d1ac7761bc85"
+    "mtime": 1781506662.643239,
+    "ast_hash": "8fd80016b3f2208a53867cfa8b6a9c7b",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\components\\EmployeeVerificationDialog.tsx": {
     "mtime": 1778528162.9966578,
@@ -430,9 +420,9 @@
     "semantic_hash": "8c9e59bf7af4c632ace7622c83641014"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\services\\attendance-upload-session.service.ts": {
-    "mtime": 1778528162.9986455,
-    "ast_hash": "b34983d4d6b08b3b7fd2fbeffb1a80ee",
-    "semantic_hash": "b34983d4d6b08b3b7fd2fbeffb1a80ee"
+    "mtime": 1781506662.643239,
+    "ast_hash": "de9774ad968cd260f935cb0c07ae84f6",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\services\\employee-matcher.service.ts": {
     "mtime": 1778528163.0029128,
@@ -450,24 +440,24 @@
     "semantic_hash": "7a5dd5b0454163d2f4a15520bed3b10f"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\services\\upload-session.service.test.ts": {
-    "mtime": 1778528163.0105946,
-    "ast_hash": "0810abf94274ad9a9c4901b0294deeae",
-    "semantic_hash": "0810abf94274ad9a9c4901b0294deeae"
+    "mtime": 1781506662.643239,
+    "ast_hash": "d8b8485757ff8521c864c6f5bcc46251",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\services\\upload-session.service.ts": {
-    "mtime": 1778528163.0142324,
-    "ast_hash": "1796e7af3234e1efaab2da3714e9343a",
-    "semantic_hash": "1796e7af3234e1efaab2da3714e9343a"
+    "mtime": 1781506662.643239,
+    "ast_hash": "e6448bbabe35004a5973819cee54f3eb",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\services\\upload.service.test.ts": {
-    "mtime": 1779447549.3622763,
-    "ast_hash": "a6452851e1b1aec885541df06e4303d4",
-    "semantic_hash": "a6452851e1b1aec885541df06e4303d4"
+    "mtime": 1781506662.643239,
+    "ast_hash": "0461327779c38de59422683e632c5990",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\services\\upload.service.ts": {
-    "mtime": 1780324528.7824788,
-    "ast_hash": "623e5fa9446f09c48e27f1e1d3145762",
-    "semantic_hash": "623e5fa9446f09c48e27f1e1d3145762"
+    "mtime": 1781506662.643239,
+    "ast_hash": "496c222e1f3fe722d8d1760aae0295c0",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\services\\week-detector.service.ts": {
     "mtime": 1780324528.7824788,
@@ -525,14 +515,14 @@
     "semantic_hash": "05a7fe805c4215fb670951a4e55fbdbd"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\employee-import-export\\__tests__\\import-service.test.ts": {
-    "mtime": 1779447549.3692715,
-    "ast_hash": "f400ead100751c06ea73fb5d49a9cfc3",
-    "semantic_hash": "f400ead100751c06ea73fb5d49a9cfc3"
+    "mtime": 1781508724.0068266,
+    "ast_hash": "e7da226bf10370c36da688f90166b101",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\employee-import-export\\__tests__\\row-fix.test.ts": {
-    "mtime": 1779082776.5733674,
-    "ast_hash": "91fcdffd4915f4ba996104d4a2c10896",
-    "semantic_hash": "91fcdffd4915f4ba996104d4a2c10896"
+    "mtime": 1781508731.099084,
+    "ast_hash": "1fb57ebf152555fcc4c7196462f359ce",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\employee-import-export\\actions\\import-export.actions.ts": {
     "mtime": 1779447549.371269,
@@ -560,9 +550,9 @@
     "semantic_hash": "88888a6fb93bf6d50e25e56d497ba721"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\employee-import-export\\services\\import.service.ts": {
-    "mtime": 1779447549.3802657,
-    "ast_hash": "6d42346cdc4a2798ece8d9fcdb265662",
-    "semantic_hash": "6d42346cdc4a2798ece8d9fcdb265662"
+    "mtime": 1781508696.988182,
+    "ast_hash": "d7d6a9886e590ed035444d5749454600",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\employee-import-export\\types\\import-export.types.ts": {
     "mtime": 1779082776.5733674,
@@ -570,9 +560,9 @@
     "semantic_hash": "de255df6e1892b113c06e680c7e24e3b"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\employee-import-export\\utils\\row-fix.utils.ts": {
-    "mtime": 1779082776.5783732,
-    "ast_hash": "a22943dad325a41ca4a921b494f77f0c",
-    "semantic_hash": "a22943dad325a41ca4a921b494f77f0c"
+    "mtime": 1781508703.9774814,
+    "ast_hash": "7fc8737361168897145d9711037c7ab0",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\employee-management\\__tests__\\bulk-actions.test.ts": {
     "mtime": 1779447549.3862612,
@@ -675,9 +665,9 @@
     "semantic_hash": "b07681d736e32970e3cd6ba932b5d8ff"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-adjustments\\__tests__\\adjustment-service.test.ts": {
-    "mtime": 1780324528.7824788,
-    "ast_hash": "27315207bc6e3e8de7248827e828ecfd",
-    "semantic_hash": "27315207bc6e3e8de7248827e828ecfd"
+    "mtime": 1780908148.7631383,
+    "ast_hash": "ca73cf8cbd8b89e2e3ce7ad228b1001d",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-adjustments\\actions\\adjustment.actions.ts": {
     "mtime": 1778531524.0829268,
@@ -715,9 +705,9 @@
     "semantic_hash": "1d1e1dd97a04f76678cacedd63d3c91f"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-adjustments\\services\\adjustment.service.ts": {
-    "mtime": 1780324528.7981105,
-    "ast_hash": "de048629796e6441b35a463b7f2f93ac",
-    "semantic_hash": "de048629796e6441b35a463b7f2f93ac"
+    "mtime": 1780908148.7651381,
+    "ast_hash": "ef7298972e960524490418534c1d34a2",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-adjustments\\types\\adjustment.types.ts": {
     "mtime": 1778531321.7384877,
@@ -725,9 +715,9 @@
     "semantic_hash": "8f532bdd5299b2b68ba2df93a2087799"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-correction\\__tests__\\correction.service.test.ts": {
-    "mtime": 1779447549.4082491,
-    "ast_hash": "c331ea0cb83e562bfd3feed7f8f4eccb",
-    "semantic_hash": "c331ea0cb83e562bfd3feed7f8f4eccb"
+    "mtime": 1780908148.7661371,
+    "ast_hash": "58ec1e5e205a9f700c277d80f190d54f",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-correction\\actions\\correction.actions.ts": {
     "mtime": 1778602079.9654133,
@@ -735,9 +725,9 @@
     "semantic_hash": "8e662380b02cf2498d6a4ee7b9ab1cf1"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-correction\\components\\CorrectionFlow.tsx": {
-    "mtime": 1780324528.7981105,
-    "ast_hash": "f62cf9ddd8bb529794abfa69990d6e6e",
-    "semantic_hash": "f62cf9ddd8bb529794abfa69990d6e6e"
+    "mtime": 1781506662.643239,
+    "ast_hash": "748e74927b2a69a86f5dc9479760b1a4",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-correction\\components\\RevisedPreview.tsx": {
     "mtime": 1778602079.9654133,
@@ -750,14 +740,14 @@
     "semantic_hash": "f47c9b1fe3ddcb64412788b21c4658fe"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-correction\\components\\__tests__\\CorrectionFlow.test.tsx": {
-    "mtime": 1780324528.7981105,
-    "ast_hash": "f12b8e1ffb52151ecca353bbc3b1d9a4",
-    "semantic_hash": "f12b8e1ffb52151ecca353bbc3b1d9a4"
+    "mtime": 1781506662.6532571,
+    "ast_hash": "bcd56c7de727ec2a5769a92965418c3d",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-correction\\services\\correction.service.ts": {
-    "mtime": 1780333612.561656,
-    "ast_hash": "171899ed9abc16bf2080c2df43bf3dd5",
-    "semantic_hash": "171899ed9abc16bf2080c2df43bf3dd5"
+    "mtime": 1780908148.7671366,
+    "ast_hash": "4a784950aabb99d3b8bc7addfafd3f78",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-correction\\types\\correction.types.ts": {
     "mtime": 1778602079.9768655,
@@ -855,8 +845,8 @@
     "semantic_hash": "faadc87edaef5fce60675797dd2dc798"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-reports\\__tests__\\report.service.test.ts": {
-    "mtime": 1780728562.3093426,
-    "ast_hash": "99e1b7463f03533bc0479d4197eb1cc3",
+    "mtime": 1780908710.951999,
+    "ast_hash": "b60d43bbcf194d9bef9c493f2271be07",
     "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-reports\\actions\\report.actions.ts": {
@@ -865,13 +855,13 @@
     "semantic_hash": "61fcadbd1ea422f8faece5bb44616e5c"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-reports\\components\\ReportSection.tsx": {
-    "mtime": 1780728536.2128253,
-    "ast_hash": "c645e4ff4e410bc260f2ff82c8155943",
+    "mtime": 1780908710.951999,
+    "ast_hash": "4269241e87455f3fb342b4c1c032325a",
     "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-reports\\services\\report.service.ts": {
-    "mtime": 1780731291.2842703,
-    "ast_hash": "4ece221e2948d305f7b821013a0d6c5e",
+    "mtime": 1780908710.951999,
+    "ast_hash": "0c86d59297e1d858a736f2f370e309bc",
     "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\payroll-reports\\types\\report.types.ts": {
@@ -938,351 +928,6 @@
     "mtime": 1779447549.42324,
     "ast_hash": "a573f91c74716a8167ecfdb0ce4d5540",
     "semantic_hash": "a573f91c74716a8167ecfdb0ce4d5540"
-  },
-  "D:\\Projects\\TPLPayroll\\skills-lock.json": {
-    "mtime": 1780491806.5666347,
-    "ast_hash": "274831a14414a71cfc0ed9e8dd73f1a1",
-    "semantic_hash": "274831a14414a71cfc0ed9e8dd73f1a1"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\rules\\graphify.md": {
-    "mtime": 1780493759.0117962,
-    "ast_hash": "a0e4d192b9e2e17256124dbfc8e24e6a",
-    "semantic_hash": "a0e4d192b9e2e17256124dbfc8e24e6a"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\diagnose\\SKILL.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "4bcd9cce196b0aa15fd65efe621f9466",
-    "semantic_hash": "4bcd9cce196b0aa15fd65efe621f9466"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\grill-me\\SKILL.md": {
-    "mtime": 1780491537.0521412,
-    "ast_hash": "0dc3fcbdb6a27228f328ea86f4505c11",
-    "semantic_hash": "0dc3fcbdb6a27228f328ea86f4505c11"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\grill-with-docs\\ADR-FORMAT.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "3c49999a3715a7b65fe8521d4bf9e188",
-    "semantic_hash": "3c49999a3715a7b65fe8521d4bf9e188"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\grill-with-docs\\CONTEXT-FORMAT.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "469f1fb6e9e7e94ecb41dc64b6d09032",
-    "semantic_hash": "469f1fb6e9e7e94ecb41dc64b6d09032"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\grill-with-docs\\SKILL.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "db95d43b9f652680bc60a27029e58cd9",
-    "semantic_hash": "db95d43b9f652680bc60a27029e58cd9"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\handoff\\SKILL.md": {
-    "mtime": 1780491537.0521412,
-    "ast_hash": "f446a9106d5064c95dc042dc195cd443",
-    "semantic_hash": "f446a9106d5064c95dc042dc195cd443"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\improve-codebase-architecture\\DEEPENING.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "83611866654c9324426ee35d6fb4295e",
-    "semantic_hash": "83611866654c9324426ee35d6fb4295e"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\improve-codebase-architecture\\HTML-REPORT.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "6be2b9d4c2c63e5c1671ab0b059ee9a1",
-    "semantic_hash": "6be2b9d4c2c63e5c1671ab0b059ee9a1"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\improve-codebase-architecture\\INTERFACE-DESIGN.md": {
-    "mtime": 1780491536.9825475,
-    "ast_hash": "495dddf4d7f1fed0240811bc71c1d9ea",
-    "semantic_hash": "495dddf4d7f1fed0240811bc71c1d9ea"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\improve-codebase-architecture\\LANGUAGE.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "ba0099d6b60d658b2aff0bba0b41dd3c",
-    "semantic_hash": "ba0099d6b60d658b2aff0bba0b41dd3c"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\improve-codebase-architecture\\SKILL.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "b75525c48539b4aa9dd4ee0cbd287d28",
-    "semantic_hash": "b75525c48539b4aa9dd4ee0cbd287d28"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\prototype\\LOGIC.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "a552096fc035656f69b24662c6e2393c",
-    "semantic_hash": "a552096fc035656f69b24662c6e2393c"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\prototype\\SKILL.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "95cf5fd1901341044feef57b4eff578e",
-    "semantic_hash": "95cf5fd1901341044feef57b4eff578e"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\prototype\\UI.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "8bce52ff0585f29ed7f613c7e1081031",
-    "semantic_hash": "8bce52ff0585f29ed7f613c7e1081031"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\setup-matt-pocock-skills\\SKILL.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "9bcdaee1739974ac0ef2679b72f90f09",
-    "semantic_hash": "9bcdaee1739974ac0ef2679b72f90f09"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\setup-matt-pocock-skills\\domain.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "39ab51eb45bcf3fc62713953acbaf5f4",
-    "semantic_hash": "39ab51eb45bcf3fc62713953acbaf5f4"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\setup-matt-pocock-skills\\issue-tracker-github.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "17c36a36e7bcda4dc814bda9bfa13438",
-    "semantic_hash": "17c36a36e7bcda4dc814bda9bfa13438"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\setup-matt-pocock-skills\\issue-tracker-gitlab.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "3b6a15cfbd5c0a2f4b5379125a638be3",
-    "semantic_hash": "3b6a15cfbd5c0a2f4b5379125a638be3"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\setup-matt-pocock-skills\\issue-tracker-local.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "1bd6a2003a877f2cece3fd0c45271d8e",
-    "semantic_hash": "1bd6a2003a877f2cece3fd0c45271d8e"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\setup-matt-pocock-skills\\triage-labels.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "85409347dbf487c8a25c9dac59708b83",
-    "semantic_hash": "85409347dbf487c8a25c9dac59708b83"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\tdd\\SKILL.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "06c57edca8db6db8f64c203c60a22de8",
-    "semantic_hash": "06c57edca8db6db8f64c203c60a22de8"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\tdd\\deep-modules.md": {
-    "mtime": 1780491536.9992044,
-    "ast_hash": "b5ab090a761366ce3c2c02117b776445",
-    "semantic_hash": "b5ab090a761366ce3c2c02117b776445"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\tdd\\interface-design.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "bcd6f09692098ec7a748a7d98e99d3ea",
-    "semantic_hash": "bcd6f09692098ec7a748a7d98e99d3ea"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\tdd\\mocking.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "d5bba1ea1f387c4809b7dc7c4e75c862",
-    "semantic_hash": "d5bba1ea1f387c4809b7dc7c4e75c862"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\tdd\\refactoring.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "e8a3e0973fa19f267a836fa6edc195ad",
-    "semantic_hash": "e8a3e0973fa19f267a836fa6edc195ad"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\tdd\\tests.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "2927904135046181aae6793038e5f6c7",
-    "semantic_hash": "2927904135046181aae6793038e5f6c7"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\to-issues\\SKILL.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "cd3376e187889fea2a1cc2b3fdc11eb3",
-    "semantic_hash": "cd3376e187889fea2a1cc2b3fdc11eb3"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\to-prd\\SKILL.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "29475ed5ecf0e1ee27ee0b11d4474134",
-    "semantic_hash": "29475ed5ecf0e1ee27ee0b11d4474134"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\triage\\AGENT-BRIEF.md": {
-    "mtime": 1780491537.0081303,
-    "ast_hash": "743cbec88c3c67a94ef095d3d59b6ddb",
-    "semantic_hash": "743cbec88c3c67a94ef095d3d59b6ddb"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\triage\\OUT-OF-SCOPE.md": {
-    "mtime": 1780491537.0081303,
-    "ast_hash": "da53d011d956415baf313fb2f6d70fbd",
-    "semantic_hash": "da53d011d956415baf313fb2f6d70fbd"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\triage\\SKILL.md": {
-    "mtime": 1780491537.0081303,
-    "ast_hash": "809533f5d59e313345d4f9a1c99e9b95",
-    "semantic_hash": "809533f5d59e313345d4f9a1c99e9b95"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\write-a-skill\\SKILL.md": {
-    "mtime": 1780491537.0521412,
-    "ast_hash": "beabe48024b635f44b1775265c777490",
-    "semantic_hash": "beabe48024b635f44b1775265c777490"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\skills\\zoom-out\\SKILL.md": {
-    "mtime": 1780491537.0081303,
-    "ast_hash": "d7610fc22629360bdc078e0e5c255d0f",
-    "semantic_hash": "d7610fc22629360bdc078e0e5c255d0f"
-  },
-  "D:\\Projects\\TPLPayroll\\.agents\\workflows\\graphify.md": {
-    "mtime": 1780493759.0117962,
-    "ast_hash": "637776aa6f7496d069afe7520c845c8a",
-    "semantic_hash": "637776aa6f7496d069afe7520c845c8a"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\diagnose\\SKILL.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "4bcd9cce196b0aa15fd65efe621f9466",
-    "semantic_hash": "4bcd9cce196b0aa15fd65efe621f9466"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\grill-me\\SKILL.md": {
-    "mtime": 1780491537.0521412,
-    "ast_hash": "0dc3fcbdb6a27228f328ea86f4505c11",
-    "semantic_hash": "0dc3fcbdb6a27228f328ea86f4505c11"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\grill-with-docs\\ADR-FORMAT.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "3c49999a3715a7b65fe8521d4bf9e188",
-    "semantic_hash": "3c49999a3715a7b65fe8521d4bf9e188"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\grill-with-docs\\CONTEXT-FORMAT.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "469f1fb6e9e7e94ecb41dc64b6d09032",
-    "semantic_hash": "469f1fb6e9e7e94ecb41dc64b6d09032"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\grill-with-docs\\SKILL.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "db95d43b9f652680bc60a27029e58cd9",
-    "semantic_hash": "db95d43b9f652680bc60a27029e58cd9"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\handoff\\SKILL.md": {
-    "mtime": 1780491537.0521412,
-    "ast_hash": "f446a9106d5064c95dc042dc195cd443",
-    "semantic_hash": "f446a9106d5064c95dc042dc195cd443"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\improve-codebase-architecture\\DEEPENING.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "83611866654c9324426ee35d6fb4295e",
-    "semantic_hash": "83611866654c9324426ee35d6fb4295e"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\improve-codebase-architecture\\HTML-REPORT.md": {
-    "mtime": 1780491536.967142,
-    "ast_hash": "6be2b9d4c2c63e5c1671ab0b059ee9a1",
-    "semantic_hash": "6be2b9d4c2c63e5c1671ab0b059ee9a1"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\improve-codebase-architecture\\INTERFACE-DESIGN.md": {
-    "mtime": 1780491536.9825475,
-    "ast_hash": "495dddf4d7f1fed0240811bc71c1d9ea",
-    "semantic_hash": "495dddf4d7f1fed0240811bc71c1d9ea"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\improve-codebase-architecture\\LANGUAGE.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "ba0099d6b60d658b2aff0bba0b41dd3c",
-    "semantic_hash": "ba0099d6b60d658b2aff0bba0b41dd3c"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\improve-codebase-architecture\\SKILL.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "b75525c48539b4aa9dd4ee0cbd287d28",
-    "semantic_hash": "b75525c48539b4aa9dd4ee0cbd287d28"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\prototype\\LOGIC.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "a552096fc035656f69b24662c6e2393c",
-    "semantic_hash": "a552096fc035656f69b24662c6e2393c"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\prototype\\SKILL.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "95cf5fd1901341044feef57b4eff578e",
-    "semantic_hash": "95cf5fd1901341044feef57b4eff578e"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\prototype\\UI.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "8bce52ff0585f29ed7f613c7e1081031",
-    "semantic_hash": "8bce52ff0585f29ed7f613c7e1081031"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\setup-matt-pocock-skills\\SKILL.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "9bcdaee1739974ac0ef2679b72f90f09",
-    "semantic_hash": "9bcdaee1739974ac0ef2679b72f90f09"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\setup-matt-pocock-skills\\domain.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "39ab51eb45bcf3fc62713953acbaf5f4",
-    "semantic_hash": "39ab51eb45bcf3fc62713953acbaf5f4"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\setup-matt-pocock-skills\\issue-tracker-github.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "17c36a36e7bcda4dc814bda9bfa13438",
-    "semantic_hash": "17c36a36e7bcda4dc814bda9bfa13438"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\setup-matt-pocock-skills\\issue-tracker-gitlab.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "3b6a15cfbd5c0a2f4b5379125a638be3",
-    "semantic_hash": "3b6a15cfbd5c0a2f4b5379125a638be3"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\setup-matt-pocock-skills\\issue-tracker-local.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "1bd6a2003a877f2cece3fd0c45271d8e",
-    "semantic_hash": "1bd6a2003a877f2cece3fd0c45271d8e"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\setup-matt-pocock-skills\\triage-labels.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "85409347dbf487c8a25c9dac59708b83",
-    "semantic_hash": "85409347dbf487c8a25c9dac59708b83"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\tdd\\SKILL.md": {
-    "mtime": 1780491536.983277,
-    "ast_hash": "06c57edca8db6db8f64c203c60a22de8",
-    "semantic_hash": "06c57edca8db6db8f64c203c60a22de8"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\tdd\\deep-modules.md": {
-    "mtime": 1780491536.9992044,
-    "ast_hash": "b5ab090a761366ce3c2c02117b776445",
-    "semantic_hash": "b5ab090a761366ce3c2c02117b776445"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\tdd\\interface-design.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "bcd6f09692098ec7a748a7d98e99d3ea",
-    "semantic_hash": "bcd6f09692098ec7a748a7d98e99d3ea"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\tdd\\mocking.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "d5bba1ea1f387c4809b7dc7c4e75c862",
-    "semantic_hash": "d5bba1ea1f387c4809b7dc7c4e75c862"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\tdd\\refactoring.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "e8a3e0973fa19f267a836fa6edc195ad",
-    "semantic_hash": "e8a3e0973fa19f267a836fa6edc195ad"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\tdd\\tests.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "2927904135046181aae6793038e5f6c7",
-    "semantic_hash": "2927904135046181aae6793038e5f6c7"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\to-issues\\SKILL.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "cd3376e187889fea2a1cc2b3fdc11eb3",
-    "semantic_hash": "cd3376e187889fea2a1cc2b3fdc11eb3"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\to-prd\\SKILL.md": {
-    "mtime": 1780491537.0002556,
-    "ast_hash": "29475ed5ecf0e1ee27ee0b11d4474134",
-    "semantic_hash": "29475ed5ecf0e1ee27ee0b11d4474134"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\triage\\AGENT-BRIEF.md": {
-    "mtime": 1780491537.0081303,
-    "ast_hash": "743cbec88c3c67a94ef095d3d59b6ddb",
-    "semantic_hash": "743cbec88c3c67a94ef095d3d59b6ddb"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\triage\\OUT-OF-SCOPE.md": {
-    "mtime": 1780491537.0081303,
-    "ast_hash": "da53d011d956415baf313fb2f6d70fbd",
-    "semantic_hash": "da53d011d956415baf313fb2f6d70fbd"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\triage\\SKILL.md": {
-    "mtime": 1780491537.0081303,
-    "ast_hash": "809533f5d59e313345d4f9a1c99e9b95",
-    "semantic_hash": "809533f5d59e313345d4f9a1c99e9b95"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\write-a-skill\\SKILL.md": {
-    "mtime": 1780491537.0521412,
-    "ast_hash": "beabe48024b635f44b1775265c777490",
-    "semantic_hash": "beabe48024b635f44b1775265c777490"
-  },
-  "D:\\Projects\\TPLPayroll\\.claude\\skills\\zoom-out\\SKILL.md": {
-    "mtime": 1780491537.0081303,
-    "ast_hash": "d7610fc22629360bdc078e0e5c255d0f",
-    "semantic_hash": "d7610fc22629360bdc078e0e5c255d0f"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\.agents\\skills\\brandkit\\SKILL.md": {
     "mtime": 1778515244.7499716,
@@ -1515,9 +1160,9 @@
     "semantic_hash": "d7610fc22629360bdc078e0e5c255d0f"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\AGENTS.md": {
-    "mtime": 1780324528.7404263,
-    "ast_hash": "8c62db2a2183ff47bdfb5c096ee9c61e",
-    "semantic_hash": "8c62db2a2183ff47bdfb5c096ee9c61e"
+    "mtime": 1781506662.3147025,
+    "ast_hash": "905bdff254193ea34a682d1592fb6e07",
+    "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\CLAUDE.md": {
     "mtime": 1778515244.7982228,
@@ -1840,13 +1485,43 @@
     "semantic_hash": "a2760511c65806022ad20adf74370ff3"
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\.agents\\rules\\graphify.md": {
-    "mtime": 1780493759.0117962,
+    "mtime": 1780843271.0103953,
     "ast_hash": "a0e4d192b9e2e17256124dbfc8e24e6a",
     "semantic_hash": ""
   },
   "D:\\Projects\\TPLPayroll\\TPLPayroll\\.agents\\workflows\\graphify.md": {
-    "mtime": 1780493759.0117962,
+    "mtime": 1780843271.0103953,
     "ast_hash": "637776aa6f7496d069afe7520c845c8a",
+    "semantic_hash": ""
+  },
+  "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\app\\api\\mock-storage\\[...path]\\route.ts": {
+    "mtime": 1781506662.623872,
+    "ast_hash": "b392d3b77e96e023c66728786c665979",
+    "semantic_hash": ""
+  },
+  "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\features\\attendance-upload\\__tests__\\attendance-actions.test.ts": {
+    "mtime": 1781506662.623872,
+    "ast_hash": "8931ca328a7a221381d8c6073bc706e3",
+    "semantic_hash": ""
+  },
+  "D:\\Projects\\TPLPayroll\\TPLPayroll\\src\\lib\\supabase-storage.ts": {
+    "mtime": 1781506662.6572804,
+    "ast_hash": "73c6269a3f4c6769034146eebb5fff55",
+    "semantic_hash": ""
+  },
+  "D:\\Projects\\TPLPayroll\\TPLPayroll\\features\\F07-payroll-reports\\enhancements\\feature-spec.md": {
+    "mtime": 1781506662.3238325,
+    "ast_hash": "5b12393eb739f23d1f93751b33585477",
+    "semantic_hash": ""
+  },
+  "D:\\Projects\\TPLPayroll\\TPLPayroll\\features\\F07-payroll-reports\\enhancements\\user-stories.md": {
+    "mtime": 1781506662.3238325,
+    "ast_hash": "4bbfdbcd20d57eb1e30a8b13f38db078",
+    "semantic_hash": ""
+  },
+  "D:\\Projects\\TPLPayroll\\TPLPayroll\\features\\F07-payroll-reports\\enhancements\\wireframes.md": {
+    "mtime": 1781506662.337338,
+    "ast_hash": "92d0352be3e06b8b47c26ef4ba46c030",
     "semantic_hash": ""
   }
 }
