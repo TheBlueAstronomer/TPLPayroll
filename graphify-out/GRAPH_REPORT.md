@@ -1,16 +1,16 @@
 # Graph Report - TPLPayroll  (2026-06-15)
 
 ## Corpus Check
-- 293 files · ~242,962 words
+- 299 files · ~245,559 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2508 nodes · 3487 edges · 213 communities (198 shown, 15 thin omitted)
+- 2566 nodes · 3539 edges · 221 communities (205 shown, 16 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 14 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `06f3d909`
+- Built from commit: `7d0fe630`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -215,6 +215,14 @@
 - [[_COMMUNITY_Community 201|Community 201]]
 - [[_COMMUNITY_Community 202|Community 202]]
 - [[_COMMUNITY_Community 203|Community 203]]
+- [[_COMMUNITY_Community 213|Community 213]]
+- [[_COMMUNITY_Community 214|Community 214]]
+- [[_COMMUNITY_Community 215|Community 215]]
+- [[_COMMUNITY_Community 216|Community 216]]
+- [[_COMMUNITY_Community 217|Community 217]]
+- [[_COMMUNITY_Community 218|Community 218]]
+- [[_COMMUNITY_Community 219|Community 219]]
+- [[_COMMUNITY_Community 220|Community 220]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `CORE DIRECTIVE: IMAGE-FIRST WEBSITE DESIGN TO CODE` - 39 edges
@@ -243,15 +251,15 @@
 ## Import Cycles
 - None detected.
 
-## Communities (213 total, 15 thin omitted)
+## Communities (221 total, 16 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.05
-Nodes (59): ActionResult, approveAdjustmentApplicationAction(), cancelAdjustmentAction(), createAdjustmentAction(), err(), getAdjustmentDetailAction(), getAdjustmentListAction(), getAdjustmentsForWeekReviewAction() (+51 more)
+Cohesion: 0.29
+Nodes (15): ActionResult, approveAdjustmentApplicationAction(), cancelAdjustmentAction(), createAdjustmentAction(), err(), getAdjustmentDetailAction(), getAdjustmentListAction(), getAdjustmentsForWeekReviewAction() (+7 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.05
-Nodes (53): ActionResult, approvePayrollAction(), calculatePayrollAction(), checkAttendanceReadinessAction(), err(), getAvailablePayrollWeeksAction(), getPendingAdjustmentsForWeekAction(), handleError() (+45 more)
+Nodes (48): ActionResult, approvePayrollAction(), calculatePayrollAction(), checkAttendanceReadinessAction(), err(), getAvailablePayrollWeeksAction(), getPendingAdjustmentsForWeekAction(), handleError() (+40 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.06
@@ -290,8 +298,8 @@ Cohesion: 0.15
 Nodes (15): main(), adapter, cleanupDatabase(), getCleanedSnapshotCount(), getCurrentRevision(), getInvoiceSnapshotCount(), getPayrollRunStatus(), getRevisionCount() (+7 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.16
-Nodes (19): AttendanceUploadRow, createAttendanceUploadSessionAction(), CreateUploadSessionInput, finalizeAttendanceUploadAction(), FinalizeUploadInput, getAttendanceUploadsAction(), getRecordsFromStorageAction(), parseFromStorageWithDatesAction() (+11 more)
+Cohesion: 0.15
+Nodes (18): createAttendanceUploadSessionAction(), CreateUploadSessionInput, FinalizeUploadInput, getAttendanceUploadsAction(), getAttendanceUploadSessionAction(), getPresignedUploadUrlAction(), PresignedUploadResult, resumeAttendanceUploadSessionAction() (+10 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.13
@@ -302,8 +310,8 @@ Cohesion: 0.08
 Nodes (25): Acceptance Criteria, Acceptance Criteria, Acceptance Criteria, Acceptance Criteria, Acceptance Criteria, Acceptance Criteria, Acceptance Criteria, Acceptance Criteria (+17 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.10
-Nodes (12): metadata, AdjustmentListTable(), AppShell(), AppShellProps, MobileNav(), NAV_ITEMS, NAV_ITEMS, NavItem (+4 more)
+Cohesion: 0.15
+Nodes (7): metadata, AdjustmentListTable(), StatusFilter, TypeFilter, AppShell(), AdjustmentStatus, AdjustmentType
 
 ### Community 15 - "Community 15"
 Cohesion: 0.08
@@ -318,12 +326,12 @@ Cohesion: 0.08
 Nodes (25): dependencies, agentic-flow, @base-ui/react, class-variance-authority, clsx, framer-motion, @hookform/resolvers, jszip (+17 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.14
-Nodes (17): adapter, pool, createAttendanceUploadSession(), CreateAttendanceUploadSessionInput, loadAttendanceUploadSession(), resumeAttendanceUploadSession(), ResumedSessionState, createUploadSession() (+9 more)
+Cohesion: 0.18
+Nodes (16): createAttendanceUploadSession(), CreateAttendanceUploadSessionInput, loadAttendanceUploadSession(), resumeAttendanceUploadSession(), ResumedSessionState, createUploadSession(), CreateUploadSessionParams, expireUploadSession() (+8 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.15
-Nodes (16): AttendanceReturnContext, FormValues, Mode, buildWhereClause(), getEmployeeList(), BulkHourlyRateUpdateInput, BulkHourlyRateUpdateSchema, BulkOperationResult (+8 more)
+Cohesion: 0.14
+Nodes (19): AttendanceReturnContext, EmployeeFormProps, FormValues, Mode, EmployeeProfileProps, buildWhereClause(), getEmployeeList(), BulkHourlyRateUpdateInput (+11 more)
 
 ### Community 20 - "Community 20"
 Cohesion: 0.09
@@ -351,19 +359,19 @@ Nodes (21): Colour Reference, Complete Enhanced View, Design Specifications, Des
 
 ### Community 26 - "Community 26"
 Cohesion: 0.13
-Nodes (14): BulkActionToolbar(), BulkActionToolbarProps, BulkDialog, EmployeeListTable(), STATUS_OPTIONS, StatusFilter, config, label (+6 more)
+Nodes (18): bulkUpdateStatusAction(), BulkActionToolbar(), BulkActionToolbarProps, BulkInactiveDialog(), BulkInactiveDialogProps, BulkRateDialog(), BulkRateDialogProps, EmployeeRateInfo (+10 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.18
-Nodes (14): getPresignedUploadUrlAction(), authHeader(), createPresignedUploadUrl(), deleteFile(), downloadFileAsBuffer(), fileExists(), getMockFilePath(), PresignedUploadUrl (+6 more)
+Cohesion: 0.15
+Nodes (15): adapter, pool, authHeader(), createPresignedUploadUrl(), deleteFile(), downloadFileAsBuffer(), fileExists(), getMockFilePath() (+7 more)
 
 ### Community 28 - "Community 28"
 Cohesion: 0.19
 Nodes (11): DashboardMetrics(), formatINR(), metadata, DashboardCard(), DashboardCardProps, DashboardCardSkeleton(), DashboardError(), countActiveEmployees() (+3 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.15
-Nodes (12): DeactivateDialog(), DeactivateDialogProps, EmployeeFormProps, computeStatus(), EmployeeProfile(), EmployeeProfileProps, formatCurrency(), formatDate() (+4 more)
+Cohesion: 0.12
+Nodes (14): DeactivateDialog(), DeactivateDialogProps, computeStatus(), EmployeeProfile(), formatCurrency(), formatDate(), config, label (+6 more)
 
 ### Community 30 - "Community 30"
 Cohesion: 0.10
@@ -389,17 +397,13 @@ Nodes (19): Code Quality, Color and Surfaces, Component Patterns, Content, Desig
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+11 more)
 
-### Community 36 - "Community 36"
-Cohesion: 0.17
-Nodes (10): bulkUpdateStatusAction(), BulkInactiveDialog(), BulkInactiveDialogProps, BulkRateDialog(), BulkRateDialogProps, EmployeeRateInfo, BulkStatusDialog(), BulkStatusDialogProps (+2 more)
-
 ### Community 37 - "Community 37"
 Cohesion: 0.11
 Nodes (19): devDependencies, dotenv, eslint, eslint-config-next, jsdom, @playwright/test, prisma, tailwindcss (+11 more)
 
 ### Community 38 - "Community 38"
-Cohesion: 0.15
-Nodes (11): matchEmployees(), trailingNumber(), validateAttendanceFile(), WorkbookParseResult, ActionResult, AttendanceFileErrorCode, AttendanceServiceError, BlockParseErrorSchema (+3 more)
+Cohesion: 0.13
+Nodes (16): ParseFromStorageResult, VerificationRequiredPayload, matchEmployees(), trailingNumber(), computeImportSummary(), WorkbookParseResult, ActionResult, AttendanceFileErrorCode (+8 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.11
@@ -418,8 +422,8 @@ Cohesion: 0.11
 Nodes (17): 1. Meta Information & Core Directive, 2. THE "ABSOLUTE ZERO" DIRECTIVE (STRICT ANTI-PATTERNS), 3. THE CREATIVE VARIANCE ENGINE, 4. HAPTIC MICRO-AESTHETICS (COMPONENT MASTERY), 5. MOTION CHOREOGRAPHY (FLUID DYNAMICS), 6. PERFORMANCE GUARDRAILS, 7. EXECUTION PROTOCOL, 8. PRE-OUTPUT CHECKLIST (+9 more)
 
 ### Community 43 - "Community 43"
-Cohesion: 0.27
-Nodes (10): ActionResult, err(), getSettingsAction(), handleError(), ok(), updateSettingsAction(), getSettings(), toAppSettings() (+2 more)
+Cohesion: 0.07
+Nodes (34): ActionResult, err(), getSettingsAction(), handleError(), ok(), updateSettingsAction(), metadata, AuditLogRecord (+26 more)
 
 ### Community 44 - "Community 44"
 Cohesion: 0.12
@@ -450,20 +454,20 @@ Cohesion: 0.12
 Nodes (16): 10. SECTION RHYTHM RULE, 12. DENSITY & SPACING DISCIPLINE, 14. IMAGE / MEDIA DIRECTION, 16. MULTI-IMAGE CONSISTENCY RULE, 17. CLARITY CHECK, 19. RESPONSE BEHAVIOR, 1. ACTIVE BASELINE CONFIGURATION, 21. FINAL GOAL (+8 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.18
-Nodes (12): downloadAndParseWorkbook(), parseFromStorageAction(), ParseFromStorageResult, AttendanceDropzone(), AttendanceDropzoneProps, DragState, UploadPhase, VerificationRequiredPayload (+4 more)
+Cohesion: 0.24
+Nodes (12): buildWhereClause(), getAdjustmentList(), AdjustmentApplicationRecord, AdjustmentListItem, AdjustmentListOptions, CreateAdjustmentInput, CreateAdjustmentSchema, PaginatedAdjustmentList (+4 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.19
-Nodes (13): DAY_LABELS, SettingsForm(), SettingsFormProps, SettingsFormValues, UpdateSettingsSchema, DEFAULT_SETTINGS, metadata, SettingsPage() (+5 more)
+Cohesion: 0.21
+Nodes (9): Props, AdjustmentEditForm(), dateToWeekValue(), FormSchema, FormValues, generatePayrollWeeks(), PayrollWeek, Props (+1 more)
 
 ### Community 53 - "Community 53"
-Cohesion: 0.18
-Nodes (11): getEmployeesForMatchingAction(), InitialDialogState, CorrectionFlow(), CorrectionFlowProps, DialogState, VerificationDialogState, isStandardWeek(), WeekSelectionDialog() (+3 more)
+Cohesion: 0.11
+Nodes (24): AttendanceUploadRow, downloadAndParseWorkbook(), finalizeAttendanceUploadAction(), getEmployeesForMatchingAction(), getRecordsFromStorageAction(), parseFromStorageAction(), parseFromStorageWithDatesAction(), AttendanceDropzone() (+16 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.14
-Nodes (5): metadata, AuditLogRecord, AuditLogViewer(), JsonContext, State
+Cohesion: 0.17
+Nodes (11): Affected Files (Implementation Reference), E02 — Employee ID Normalization, E2E Behavior Tests, E2E-E02-01: Auto-normalize legacy employee ID during import parse, E2E-E02-02: Match normalized ID against existing database record, E2E-E02-03: Normalize manually entered 15-character ID in Fix dialog, Goal, In Scope (+3 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.15
@@ -690,8 +694,8 @@ Cohesion: 0.22
 Nodes (8): Description Requirements, Process, Review Checklist, SKILL.md Template, Skill Structure, When to Add Scripts, When to Split Files, Writing Skills
 
 ### Community 111 - "Community 111"
-Cohesion: 0.29
-Nodes (5): AdjustmentForm(), FormSchema, FormValues, generatePayrollWeeks(), PayrollWeek
+Cohesion: 0.22
+Nodes (6): AdjustmentForm(), FormSchema, FormValues, generatePayrollWeeks(), PayrollWeek, metadata
 
 ### Community 112 - "Community 112"
 Cohesion: 0.25
@@ -790,8 +794,8 @@ Cohesion: 0.40
 Nodes (5): fs, generateAttendanceFile(), makeBlock(), path, XLSX
 
 ### Community 136 - "Community 136"
-Cohesion: 0.50
-Nodes (4): getAttendanceUploadSessionAction(), NewEmployeePage(), Props, metadata
+Cohesion: 0.18
+Nodes (10): Affected Files (Implementation Reference), E03 — Shortened Employee IDs, E2E Behavior Tests, E2E-E03-01: View shortened employee IDs in directory, E2E-E03-02: Create new employee with 12-character ID, Goal, In Scope, Motivation (+2 more)
 
 ### Community 137 - "Community 137"
 Cohesion: 0.40
@@ -985,25 +989,57 @@ Nodes (4): 4.1 Phase 1 In Scope: Payroll Core, 4.2 Phase 2 In Scope: Employee Do
 Cohesion: 0.67
 Nodes (3): 5.1 Attendance Report Upload, 5.2 Employee Master Import, 5. Supported File Inputs
 
+### Community 213 - "Community 213"
+Cohesion: 0.18
+Nodes (10): Component Breakdown, Component Breakdown, Component Breakdown, E03 — Shortened Employee IDs: Wireframes, Layout, Layout, Layout, Screen E03-A: Team Directory — Enhanced Employee ID Column (+2 more)
+
+### Community 214 - "Community 214"
+Cohesion: 0.27
+Nodes (8): AdjustmentEditPage(), Props, AdjustmentDetailPage(), Props, getAdjustmentDetail(), generateMetadata(), generateMetadata(), AdjustmentServiceError
+
+### Community 215 - "Community 215"
+Cohesion: 0.31
+Nodes (7): AdjustmentReviewStepWrapper(), Props, AdjustmentReviewTable(), formatWeek(), Props, RowAction, WeeklyReviewItem
+
+### Community 216 - "Community 216"
+Cohesion: 0.22
+Nodes (6): addDays(), approveAdjustmentApplication(), skipAdjustmentApplication(), prisma, validOneTimeInput, validUpdateInput
+
+### Community 217 - "Community 217"
+Cohesion: 0.32
+Nodes (4): AdjustmentDetail(), formatAmount(), formatWeek(), ApprovalStatus
+
+### Community 218 - "Community 218"
+Cohesion: 0.25
+Nodes (7): Acceptance Criteria, Acceptance Criteria, E02 — Employee ID Normalization: User Stories, Unit Tests, Unit Tests, US-E02.1: Automatic legacy ID normalization during Excel import, US-E02.2: Employee ID normalization in Fix Row Form
+
+### Community 219 - "Community 219"
+Cohesion: 0.25
+Nodes (7): Component Breakdown, Component Breakdown, E02 — Employee ID Normalization: Wireframes, Layout, Layout, Screen E02-A: Excel Import Preview — Auto-Normalized Rows, Screen E02-B: Fix Row Dialog — Manual Normalization
+
+### Community 220 - "Community 220"
+Cohesion: 0.25
+Nodes (7): Acceptance Criteria, Acceptance Criteria, E03 — Shortened Employee IDs: User Stories, Unit Tests, Unit Tests, US-E03.1: View shortened IDs in Team Directory, US-E03.2: Create new employee with 12-character ID format
+
 ## Knowledge Gaps
-- **1323 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+1318 more)
+- **1356 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+1351 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **16 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `AppShell()` connect `Community 14` to `Community 0`, `Community 2`, `Community 5`, `Community 136`, `Community 11`, `Community 45`, `Community 52`, `Community 54`, `Community 55`, `Community 57`, `Community 26`, `Community 28`?**
+- **Why does `AppShell()` connect `Community 14` to `Community 1`, `Community 2`, `Community 5`, `Community 43`, `Community 11`, `Community 45`, `Community 111`, `Community 214`, `Community 55`, `Community 57`, `Community 26`, `Community 28`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **What connects `$schema`, `style`, `rsc` to the rest of the system?**
-  _1323 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.05462962962962963 - nodes in this community are weakly interconnected._
+  _1356 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.052531645569620256 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05228105228105228 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.06142410015649452 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.061815336463223784 - nodes in this community are weakly interconnected._
 - **Should `Community 3` be split into smaller, more focused modules?**
   _Cohesion score 0.09595959595959595 - nodes in this community are weakly interconnected._
 - **Should `Community 4` be split into smaller, more focused modules?**
   _Cohesion score 0.045454545454545456 - nodes in this community are weakly interconnected._
+- **Should `Community 5` be split into smaller, more focused modules?**
+  _Cohesion score 0.0960960960960961 - nodes in this community are weakly interconnected._
