@@ -285,9 +285,9 @@ function ImportResultDialog({
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-sm" />
+      <div className="dialog-backdrop fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-sm" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-sm rounded-2xl bg-white border border-zinc-200/60 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.08)] p-6">
+        <div className="dialog-enter w-full max-w-sm rounded-2xl bg-white border border-zinc-200/60 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.08)] p-6">
           <div className="flex items-start justify-between mb-5">
             <h2 className="text-lg font-semibold tracking-tight text-zinc-900">Import Complete</h2>
           </div>
@@ -335,7 +335,7 @@ function ImportResultDialog({
                 onClose()
                 router.push('/employees')
               }}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors active:scale-[0.98]"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium py-2.5 rounded-xl transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]"
             >
               View Employees
             </button>
@@ -498,7 +498,8 @@ export function ImportPreviewClient() {
         </div>
 
         {/* ── Tab content ─────────────────────────────────────────────── */}
-        <div role="tabpanel">
+        {/* key={activeTab} re-mounts on tab change → replays the step-enter fade-slide */}
+        <div role="tabpanel" key={activeTab} className="step-enter">
           {activeTab === 'valid' && (
             <ValidRowsTable rows={validRows} />
           )}
@@ -524,20 +525,20 @@ export function ImportPreviewClient() {
           <button
             onClick={handleCancel}
             disabled={isPending}
-            className="px-4 py-2 text-sm font-medium text-zinc-700 rounded-xl border border-zinc-200 hover:bg-zinc-50 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-zinc-700 rounded-xl border border-zinc-200 hover:bg-zinc-50 transition-[background-color,transform] duration-150 ease-out active:scale-[0.98] disabled:opacity-50"
           >
             Cancel Import
           </button>
           <button
             onClick={handleConfirm}
             disabled={isPending || validRows.length === 0}
-            className="relative inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-5 py-2 rounded-xl transition-colors active:scale-[0.98] overflow-hidden"
+            className="relative inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-5 py-2 rounded-xl transition-[background-color,transform] duration-150 ease-out active:scale-[0.98] overflow-hidden"
           >
             {isPending ? (
               <>
                 <SpinnerGap size={16} className="animate-spin shrink-0" />
                 Importing…
-                <span className="absolute inset-0 -translate-x-full animate-[shimmer_1.2s_ease_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                <span className="absolute inset-0 -translate-x-full animate-[button-sweep_1.2s_linear_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
               </>
             ) : (
               `Confirm Import (${validRows.length + parseResult.duplicateIdRows.length} rows)`
@@ -566,7 +567,7 @@ export function ImportPreviewClient() {
       )}
 
       <style>{`
-        @keyframes shimmer {
+        @keyframes button-sweep {
           100% { transform: translateX(200%); }
         }
       `}</style>

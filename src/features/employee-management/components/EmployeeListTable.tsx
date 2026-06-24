@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useTransition, useEffect, useRef } from 'react'
+import { useState, useCallback, useTransition, useEffect, useRef, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { MagnifyingGlass, UsersThree, WarningCircle, Plus, CaretLeft, CaretRight, UploadSimple, DownloadSimple, CaretDown, CaretUp, SpinnerGap } from '@phosphor-icons/react'
 import { computePageRange } from '../utils/computePageRange'
@@ -183,7 +183,7 @@ export function EmployeeListTable() {
       <th className="px-4 py-3 text-left">
         <button
           onClick={() => handleSort(field)}
-          className={`inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors duration-200 active:scale-[0.98] ${
+          className={`inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider cursor-pointer transition-[background-color,transform] duration-150 ease-out active:scale-[0.98] ${
             isActive ? 'text-zinc-700' : 'text-zinc-400 hover:text-zinc-500'
           }`}
         >
@@ -258,7 +258,7 @@ export function EmployeeListTable() {
               <CaretDown size={13} className="text-zinc-400" />
             </button>
             {showImportMenu && (
-              <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl bg-white border border-zinc-200/60 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] py-1 z-20">
+              <div className="popover-enter origin-top-right absolute right-0 top-full mt-1.5 w-48 rounded-xl bg-white border border-zinc-200/60 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] py-1 z-20">
                 <button
                   onClick={() => { setShowImportMenu(false); setShowImportDialog(true) }}
                   className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
@@ -272,7 +272,7 @@ export function EmployeeListTable() {
 
           <button
             onClick={() => router.push('/employees/new')}
-            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors duration-200 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]"
           >
             <Plus size={16} weight="bold" />
             Add Employee
@@ -407,16 +407,12 @@ export function EmployeeListTable() {
                   <tr
                     key={emp.id}
                     onClick={() => router.push(`/employees/${emp.id}`)}
-                    className={`cursor-pointer transition-colors duration-150 ${
+                    style={{ '--index': Math.min(index, 5) } as CSSProperties}
+                    className={`card-reveal cursor-pointer transition-colors duration-150 ${
                       isSelected
                         ? 'bg-emerald-50/40 hover:bg-emerald-50/60'
                         : 'hover:bg-zinc-50/80'
                     }`}
-                    style={{
-                      opacity: 0,
-                      animation: `fadeSlideIn 0.3s ease forwards`,
-                      animationDelay: `${index * 60}ms`,
-                    }}
                   >
                     {/* Row checkbox */}
                     <td className="w-12 px-4 py-3 text-center">
@@ -506,13 +502,6 @@ export function EmployeeListTable() {
         </div>
       )}
 
-      {/* ── Keyframe ────────────────────────────────────────────────────── */}
-      <style>{`
-        @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateY(4px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
 
     {/* ── Floating bulk-action toolbar ──────────────────────────────────── */}

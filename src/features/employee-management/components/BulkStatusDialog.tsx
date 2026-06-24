@@ -59,12 +59,12 @@ export function BulkStatusDialog({ employees, onClose, onComplete }: BulkStatusD
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
+        className="dialog-backdrop absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
         onClick={isProcessing ? undefined : onClose}
       />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-zinc-200/60">
+      <div className="dialog-enter relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-zinc-200/60">
         {/* Icon badge */}
         <div className="mb-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-rose-50">
           <UserMinus size={20} weight="fill" className="text-rose-500" />

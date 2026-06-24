@@ -37,7 +37,7 @@ export function BulkActionToolbar({
         <button
           type="button"
           onClick={onMarkResigned}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-colors duration-150 active:scale-[0.98]"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]"
           id="bulk-mark-resigned-btn"
         >
           <UserMinus size={15} />
@@ -48,7 +48,7 @@ export function BulkActionToolbar({
         <button
           type="button"
           onClick={onMarkInactive}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition-colors duration-150 active:scale-[0.98]"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]"
           id="bulk-mark-inactive-btn"
         >
           <Prohibit size={15} />
@@ -59,7 +59,7 @@ export function BulkActionToolbar({
         <button
           type="button"
           onClick={onChangeHourlyRate}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-colors duration-150 active:scale-[0.98]"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]"
           id="bulk-change-rate-btn"
         >
           <CurrencyCircleDollar size={15} />

@@ -126,7 +126,7 @@ function Switch({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       }`}
     >
       <span
-        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-out ${
           checked ? 'translate-x-5' : 'translate-x-0'
         }`}
       />
@@ -524,7 +524,7 @@ export function EmployeeForm({
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-200/60 rounded-xl hover:bg-zinc-50 transition-colors duration-200 active:scale-[0.98]"
+            className="px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-200/60 rounded-xl hover:bg-zinc-50 transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]"
           >
             Cancel
           </button>
@@ -532,7 +532,7 @@ export function EmployeeForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="relative inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 rounded-xl transition-colors duration-200 active:scale-[0.98] overflow-hidden"
+            className="relative inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 rounded-xl transition-[background-color,transform] duration-150 ease-out active:scale-[0.98] overflow-hidden"
           >
             {isSubmitting ? (
               <>

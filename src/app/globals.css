@@ -242,6 +242,43 @@
   animation: check-pop 160ms var(--ease-out) both;
 }
 
+/* ── Dialog / popover entrances ───────────────────────────────────────────── */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modals are not anchored to a trigger → scale from center */
+.dialog-enter {
+  animation: pop-in 200ms var(--ease-out) both;
+  transform-origin: center;
+}
+
+.dialog-backdrop {
+  animation: fade-in 200ms var(--ease-out) both;
+}
+
+/* Popovers/menus anchor to their trigger — set transform-origin via a utility
+   (e.g. origin-top-right) so they scale out of the button that opened them */
+.popover-enter {
+  animation: pop-in 150ms var(--ease-out) both;
+}
+
 /* ── Reduced motion: keep comprehension fades, drop movement ──────────────── */
 @keyframes rm-fade {
   from {
@@ -255,7 +292,9 @@
 @media (prefers-reduced-motion: reduce) {
   .card-reveal,
   .step-enter,
-  .check-pop {
+  .check-pop,
+  .dialog-enter,
+  .popover-enter {
     animation: rm-fade 200ms ease both;
     animation-delay: 0ms !important;
   }

@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, PencilSimple, ClockCounterClockwise } from '@phosphor-icons/react/dist/ssr'
 import { StatusBadge } from './StatusBadge'
@@ -95,14 +96,14 @@ export function EmployeeProfile({ employee, wageHistory }: EmployeeProfileProps)
         <div className="flex items-center gap-3 shrink-0">
           <Link
             href={`/history?search=${employee.employeeId}`}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-200/60 rounded-xl hover:bg-zinc-50 transition-colors duration-200 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-200/60 rounded-xl hover:bg-zinc-50 transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]"
           >
             <ClockCounterClockwise size={15} />
             Payroll History
           </Link>
           <Link
             href={`/employees/${employee.id}/edit`}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-200/60 rounded-xl hover:bg-zinc-50 transition-colors duration-200 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-200/60 rounded-xl hover:bg-zinc-50 transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]"
           >
             <PencilSimple size={15} />
             Edit
@@ -117,13 +118,7 @@ export function EmployeeProfile({ employee, wageHistory }: EmployeeProfileProps)
       </div>
 
       {/* ── Main content grid ──────────────────────────────────────────────── */}
-      <div
-        className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 pt-8 border-t border-zinc-200/60"
-        style={{
-          opacity: 0,
-          animation: 'fadeSlideIn 0.35s ease forwards',
-        }}
-      >
+      <div className="card-reveal grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 pt-8 border-t border-zinc-200/60">
         {/* Left column — Personal Details */}
         <div>
           <SectionTitle>Personal Details</SectionTitle>
@@ -196,23 +191,13 @@ export function EmployeeProfile({ employee, wageHistory }: EmployeeProfileProps)
 
       {/* ── Wage History ───────────────────────────────────────────────────── */}
       <div
-        className="border-t border-zinc-200/60 pt-8 mt-8"
-        style={{
-          opacity: 0,
-          animation: 'fadeSlideIn 0.4s ease forwards',
-          animationDelay: '120ms',
-        }}
+        className="card-reveal border-t border-zinc-200/60 pt-8 mt-8"
+        style={{ '--index': 1 } as CSSProperties}
       >
         <SectionTitle>Wage History</SectionTitle>
         <WageHistoryTable entries={wageHistory} />
       </div>
 
-      <style>{`
-        @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateY(6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }
