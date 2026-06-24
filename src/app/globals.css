@@ -73,6 +73,8 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
+  /* Strong ease-out shared across UI motion (≈easeOutExpo) */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -142,7 +144,7 @@
 }
 
 .card-reveal {
-  animation: card-reveal 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: card-reveal 400ms var(--ease-out) both;
   animation-delay: calc(var(--index, 0) * 80ms);
 }
 
@@ -191,11 +193,11 @@
 }
 
 .animate-slideUp {
-  animation: slideUp 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slideUp 250ms var(--ease-out) both;
 }
 
 .animate-slideDown {
-  animation: slideDown 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slideDown 200ms var(--ease-out) both;
 }
 
 /* ── Progress bar fill animation ──────────────────────────────────────────── */
@@ -206,4 +208,62 @@
 
 .progress-pulse {
   animation: progressPulse 1.5s ease-in-out infinite;
+}
+
+/* ── Wizard step transition (forward fade-slide) ──────────────────────────── */
+@keyframes step-enter {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.step-enter {
+  animation: step-enter 240ms var(--ease-out) both;
+}
+
+/* ── Step-indicator completion check pop ──────────────────────────────────── */
+@keyframes check-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.check-pop {
+  animation: check-pop 160ms var(--ease-out) both;
+}
+
+/* ── Reduced motion: keep comprehension fades, drop movement ──────────────── */
+@keyframes rm-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-reveal,
+  .step-enter,
+  .check-pop {
+    animation: rm-fade 200ms ease both;
+    animation-delay: 0ms !important;
+  }
+
+  .animate-slideUp,
+  .animate-slideDown,
+  .progress-pulse,
+  .skeleton-shimmer {
+    animation: none !important;
+  }
 }

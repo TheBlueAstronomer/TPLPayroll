@@ -118,12 +118,14 @@ export function PayrollGenerateFlow({ weekStart, weekEnd }: Props) {
 
       {/* ── Step content ─────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-zinc-200/60 bg-white p-6 shadow-sm">
+        {/* key={step} re-mounts on each step change → replays step-enter */}
+        <div key={step} className="step-enter">
         {step === 0 && (
           readiness == null ? (
-            <div className="space-y-4 animate-pulse">
-              <div className="h-6 w-48 rounded bg-zinc-100" />
-              <div className="h-4 w-32 rounded bg-zinc-100" />
-              <div className="h-20 rounded-xl bg-zinc-100" />
+            <div className="space-y-4">
+              <div className="h-6 w-48 rounded skeleton-shimmer" />
+              <div className="h-4 w-32 rounded skeleton-shimmer" />
+              <div className="h-20 rounded-xl skeleton-shimmer" />
             </div>
           ) : (
             <AttendanceVerificationStep
@@ -149,9 +151,9 @@ export function PayrollGenerateFlow({ weekStart, weekEnd }: Props) {
               {summaryError}
             </div>
           ) : summary == null ? (
-            <div className="space-y-4 animate-pulse">
-              <div className="h-6 w-48 rounded bg-zinc-100" />
-              <div className="h-64 rounded-xl bg-zinc-100" />
+            <div className="space-y-4">
+              <div className="h-6 w-48 rounded skeleton-shimmer" />
+              <div className="h-64 rounded-xl skeleton-shimmer" />
             </div>
           ) : (
             <>
@@ -173,6 +175,7 @@ export function PayrollGenerateFlow({ weekStart, weekEnd }: Props) {
         {step === 3 && approvalResult && (
           <ApprovalConfirmationStep weekLabel={weekLabel} result={approvalResult} />
         )}
+        </div>
       </div>
     </div>
   )

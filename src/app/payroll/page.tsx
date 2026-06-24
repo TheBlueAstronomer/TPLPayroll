@@ -11,9 +11,9 @@ export const metadata = {
 
 function TableSkeleton() {
   return (
-    <div className="space-y-2 animate-pulse">
+    <div className="space-y-2">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="h-12 rounded-lg bg-zinc-100" />
+        <div key={i} className="h-12 rounded-lg skeleton-shimmer" />
       ))}
     </div>
   )

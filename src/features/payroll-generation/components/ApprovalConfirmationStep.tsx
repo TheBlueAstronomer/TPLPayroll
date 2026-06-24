@@ -62,7 +62,7 @@ export function ApprovalConfirmationStep({ weekLabel, result }: Props) {
 
       <style>{`
         @keyframes scaleIn {
-          from { transform: scale(0); opacity: 0; }
+          from { transform: scale(0.8); opacity: 0; }
           to   { transform: scale(1); opacity: 1; }
         }
       `}</style>

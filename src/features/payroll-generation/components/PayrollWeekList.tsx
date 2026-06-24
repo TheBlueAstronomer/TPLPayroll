@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { CheckCircle, WarningCircle } from '@phosphor-icons/react/dist/ssr'
 import { getAvailablePayrollWeeks } from '@/features/payroll-generation/services/payroll.service'
@@ -61,7 +62,7 @@ function ActionCell({ week }: { week: PayrollWeekItem }) {
     return (
       <Link
         href={`/payroll/run/${week.payrollRunId}`}
-        className="rounded-xl border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 active:scale-[0.98]"
+        className="rounded-xl border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 transition-[background-color,transform] duration-150 ease-out hover:bg-zinc-50 active:scale-[0.98]"
       >
         View
       </Link>
@@ -72,7 +73,7 @@ function ActionCell({ week }: { week: PayrollWeekItem }) {
     return (
       <Link
         href={`/payroll/generate/${week.weekId}`}
-        className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700 active:scale-[0.98]"
+        className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-[background-color,transform] duration-150 ease-out hover:bg-emerald-700 active:scale-[0.98]"
       >
         Generate
       </Link>
@@ -135,8 +136,12 @@ export async function PayrollWeekList() {
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-100">
-          {weeks.map((week) => (
-            <tr key={week.weekId} className="transition-colors hover:bg-zinc-50/80">
+          {weeks.map((week, i) => (
+            <tr
+              key={week.weekId}
+              style={{ '--index': i } as CSSProperties}
+              className="card-reveal transition-colors hover:bg-zinc-50/80"
+            >
               <td className="px-4 py-3">
                 <span className="text-sm font-medium text-zinc-900">
                   {formatWeekRange(week.weekStart, week.weekEnd)}
