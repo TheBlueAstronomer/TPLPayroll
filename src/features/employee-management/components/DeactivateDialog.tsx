@@ -43,7 +43,7 @@ export function DeactivateDialog({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`px-4 py-2 text-sm font-medium rounded-xl border transition-colors duration-200 active:scale-[0.98] ${
+        className={`px-4 py-2 text-sm font-medium rounded-xl border transition-[background-color,transform] duration-150 ease-out active:scale-[0.98] ${
           isCurrentlyActive
             ? 'border-rose-200 text-rose-600 hover:bg-rose-50 bg-white'
             : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 bg-white'
@@ -62,12 +62,12 @@ export function DeactivateDialog({
         >
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
+            className="dialog-backdrop absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
             onClick={() => !isPending && setOpen(false)}
           />
 
           {/* Panel */}
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border border-zinc-200/60">
+          <div className="dialog-enter relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border border-zinc-200/60">
             {/* Icon */}
             <div className={`mb-4 inline-flex items-center justify-center w-10 h-10 rounded-full ${
               isCurrentlyActive ? 'bg-rose-50' : 'bg-emerald-50'
@@ -109,7 +109,7 @@ export function DeactivateDialog({
                 type="button"
                 disabled={isPending}
                 onClick={handleConfirm}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-xl transition-colors duration-200 active:scale-[0.98] disabled:opacity-70 ${
+                className={`px-4 py-2 text-sm font-medium text-white rounded-xl transition-[background-color,transform] duration-150 ease-out active:scale-[0.98] disabled:opacity-70 ${
                   isCurrentlyActive
                     ? 'bg-rose-600 hover:bg-rose-700'
                     : 'bg-emerald-600 hover:bg-emerald-700'

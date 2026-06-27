@@ -66,15 +66,8 @@ export function WageHistoryTable({ entries }: WageHistoryTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-100">
-          {entries.map((entry, index) => (
-            <tr
-              key={entry.id}
-              style={{
-                opacity: 0,
-                animation: 'fadeSlideIn 0.3s ease forwards',
-                animationDelay: `${index * 50}ms`,
-              }}
-            >
+          {entries.map((entry) => (
+            <tr key={entry.id}>
               <td className="py-3 text-sm text-zinc-600">
                 {formatDate(entry.effectiveFrom)}
               </td>
@@ -99,12 +92,6 @@ export function WageHistoryTable({ entries }: WageHistoryTableProps) {
         </tbody>
       </table>
 
-      <style>{`
-        @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateY(4px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }

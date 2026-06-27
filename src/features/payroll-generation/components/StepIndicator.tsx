@@ -24,7 +24,7 @@ export function StepIndicator({ steps, currentStep }: Props) {
             <div className="flex flex-col items-center gap-1.5">
               <div
                 className={[
-                  'flex h-8 w-8 items-center justify-center rounded-full text-xs font-mono font-medium transition-all',
+                  'flex h-8 w-8 items-center justify-center rounded-full text-xs font-mono font-medium transition-colors duration-300 ease-out',
                   isDone
                     ? 'bg-emerald-600 text-white'
                     : isCurrent
@@ -32,7 +32,7 @@ export function StepIndicator({ steps, currentStep }: Props) {
                       : 'border border-zinc-300 bg-white text-zinc-400',
                 ].join(' ')}
               >
-                {isDone ? <Check size={14} weight="bold" /> : index + 1}
+                {isDone ? <Check size={14} weight="bold" className="check-pop" /> : index + 1}
               </div>
               <span
                 className={`whitespace-nowrap text-xs ${
@@ -45,11 +45,12 @@ export function StepIndicator({ steps, currentStep }: Props) {
 
             {/* ── Connector ──────────────────────────────────────────── */}
             {!isLast && (
-              <div
-                className={`mb-5 h-[2px] w-12 sm:w-16 md:w-20 transition-colors ${
-                  isDone ? 'bg-emerald-600' : 'bg-zinc-200'
-                }`}
-              />
+              <div className="mb-5 h-[2px] w-12 overflow-hidden rounded-full bg-zinc-200 sm:w-16 md:w-20">
+                <div
+                  className="h-full w-full origin-left bg-emerald-600 transition-transform duration-300 ease-[var(--ease-out)] motion-reduce:transition-none"
+                  style={{ transform: isDone ? 'scaleX(1)' : 'scaleX(0)' }}
+                />
+              </div>
             )}
           </div>
         )

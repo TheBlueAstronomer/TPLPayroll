@@ -151,7 +151,7 @@ export default async function PayrollRunPage({ params }: Props) {
           <form action={beginPayrollCorrectionAction.bind(null, payrollRunId)}>
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-50 active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition-[background-color,transform] duration-150 ease-out hover:bg-zinc-50 active:scale-[0.98]"
             >
               <PencilSimple size={14} />
               Correct Payroll
